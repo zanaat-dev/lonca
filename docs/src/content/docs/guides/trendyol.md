@@ -98,5 +98,5 @@ console.log(res.raw); // whatever the gateway sent — usually undefined for 200
 ## See also
 
 - [`sdks/trendyol/README.md`](https://github.com/zanaat-dev/lonca/blob/main/sdks/trendyol/README.md) — full per-resource cheat sheet with method signatures
-- [API Reference](/api/) — exhaustive type information
+- [API Reference](/api/readme/) — exhaustive type information
 - [`examples/try-trendyol.mts`](https://github.com/zanaat-dev/lonca/blob/main/examples/try-trendyol.mts) — read-only smoke script you can run against your own creds

@@ -40,4 +40,4 @@ There's no widely-adopted open standard. Marketplaces sometimes ship official SD
 1. Read the [Installation](/installation/) page.
 2. Configure [Authentication](/authentication/) for the marketplace you target.
 3. Skim the per-SDK guide ([Trendyol](/guides/trendyol/) or [Hepsiburada](/guides/hepsiburada/)) for end-to-end usage flows.
-4. Use the [API Reference](/api/) sidebar for method-by-method detail.
+4. Use the [API Reference](/api/readme/) sidebar for method-by-method detail.

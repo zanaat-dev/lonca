@@ -33,7 +33,7 @@ The parser:
 - Normalizes each shipment package via the same path used by `client.orders.list()`
 - Surfaces a `WebhookEventStatus` union (`CREATED | PICKING | INVOICED | SHIPPED | DELIVERED | UNDELIVERED | RETURNED | CANCELLED | UNPACKED | UNSUPPLIED | AT_COLLECTION_POINT | VERIFIED`) plus `PackageCreatedBy` (`order-creation | cancel | split | transfer`)
 
-See [Trendyol guide](/guides/trendyol/) for context and [API Reference](/api/) for the exact `WebhookEvent` type.
+See [Trendyol guide](/guides/trendyol/) for context and [API Reference](/api/readme/) for the exact `WebhookEvent` type.
 
 ## Hepsiburada — endpoint-per-event
 
@@ -112,6 +112,6 @@ If you're behind a reverse proxy (nginx, Cloudflare, IIS), make sure `PUT` is al
 
 ## See also
 
-- [API Reference → @lonca/trendyol → `parseWebhookEvent`](/api/)
-- [API Reference → @lonca/hepsiburada → `parseHepsiburadaWebhookEvent`](/api/)
+- [API Reference → @lonca/trendyol → `parseWebhookEvent`](/api/readme/)
+- [API Reference → @lonca/hepsiburada → `parseHepsiburadaWebhookEvent`](/api/readme/)
 - [Trendyol guide](/guides/trendyol/) and [Hepsiburada guide](/guides/hepsiburada/) for the surrounding flow

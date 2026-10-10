@@ -114,4 +114,4 @@ try {
 }
 ```
 
-See the [`@lonca/core` API reference](/api/) for the full error hierarchy.
+See the [`@lonca/core` API reference](/api/readme/) for the full error hierarchy.
