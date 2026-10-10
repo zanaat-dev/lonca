@@ -1,3 +1,10 @@
+/**
+ * Shared building blocks of the Lonca SDKs: errors, money, pagination,
+ * order status, retry, rate limiting and the HTTP transport.
+ *
+ * @module @lonca/core
+ */
+
 export * from './capabilities.js';
 export * from './currency.js';
 export * from './money.js';

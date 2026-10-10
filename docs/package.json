@@ -10,7 +10,8 @@
     "prebuild": "pnpm run sync-brand",
     "dev": "astro dev",
     "build": "astro build",
-    "preview": "astro preview"
+    "preview": "astro preview",
+    "check-links": "node scripts/check-links.mjs"
   },
   "dependencies": {
     "@astrojs/starlight": "^0.42.5",

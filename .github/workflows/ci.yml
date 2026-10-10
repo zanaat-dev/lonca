@@ -49,6 +49,12 @@ jobs:
       - name: Build
         run: pnpm build
 
+      # Every internal link and asset in the built docs must resolve (catches pages that
+      # TypeDoc/Starlight stop generating, and hand-written links to moved pages).
+      - name: Docs link check
+        if: matrix.node == 22
+        run: pnpm docs:check-links
+
       # Roadmap 4.3: SDK TypeScript response types vs specs/ (offline, reads committed files only).
       # Warn-only: the report goes to the job summary and never fails the job. One matrix leg is
       # enough — the result does not depend on the Node version.
