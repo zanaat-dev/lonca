@@ -40,14 +40,14 @@ pnpm drift --out-dir /tmp/drift           # default: drift-output/ (gitignored)
 pnpm drift --no-known                     # ignore the known-discrepancy overlay
 ```
 
-| Flag                             | Default                      | Effect                                                   |
-| -------------------------------- | ---------------------------- | -------------------------------------------------------- |
-| `--only <marketplace>`           | all                          | Restrict to `hepsiburada` / `trendyol`. Repeatable.      |
-| `--fail-on <level>`              | `breaking`                   | `breaking`, `additive` (breaking + additive) or `never`. |
-| `--out-dir <dir>`                | `drift-output/`              | Where `report.md` and `report.json` are written.         |
-| `--snapshots-dir`, `--specs-dir` | `probe-snapshots/`, `specs/` | Alternative inputs (used by the tests).                  |
-| `--known <file>`                 | see below                    | Known-discrepancy overlay; the file must exist.          |
-| `--no-known`                     | off                          | Ignore the overlay (every finding at its own severity).  |
+| Flag                             | Default                      | Effect                                                      |
+| -------------------------------- | ---------------------------- | ----------------------------------------------------------- |
+| `--only <marketplace>`           | all                          | Restrict to `hepsiburada` / `n11` / `trendyol`. Repeatable. |
+| `--fail-on <level>`              | `breaking`                   | `breaking`, `additive` (breaking + additive) or `never`.    |
+| `--out-dir <dir>`                | `drift-output/`              | Where `report.md` and `report.json` are written.            |
+| `--snapshots-dir`, `--specs-dir` | `probe-snapshots/`, `specs/` | Alternative inputs (used by the tests).                     |
+| `--known <file>`                 | see below                    | Known-discrepancy overlay; the file must exist.             |
+| `--no-known`                     | off                          | Ignore the overlay (every finding at its own severity).     |
 
 Exit codes: `0` nothing at or above `--fail-on` (also when there is **no wire baseline yet** —
 the CLI then prints "run `pnpm probe` to capture"), `1` findings at or above `--fail-on`, `2`
@@ -153,7 +153,8 @@ undocumented endpoints (`unmatched-operation`) are usually better left visible a
   generates — record the observed type with `x-lonca-observed-types` (reported as `known`).
 - **additive** — the field is real but undocumented. Expose it in the SDK if useful, and mark
   the spec property `x-lonca-observed: true` (Trendyol: the observation pass of
-  `pnpm specs:trendyol:build`, see [`specs/trendyol/README.md`](../../specs/trendyol/README.md)).
+  `pnpm specs:trendyol:build`, see [`specs/trendyol/README.md`](../../specs/trendyol/README.md);
+  n11: the same pass in `pnpm specs:n11:build`, see [`specs/n11/README.md`](../../specs/n11/README.md)).
 - **warning** — `undocumented-null`: make sure the SDK type allows `null` (or normalises it
   away); the spec most likely just lacks `nullable`, so accept it in the overlay.
   `unmatched-operation`: add the missing definition to `specs/`, or fix the SDK path.
@@ -216,6 +217,10 @@ Only map a type that **genuinely mirrors a wire object**:
 - **Hepsiburada** — the public types whose normaliser copies same-named fields with `typeof`
   guards or `pickFields` (`Order`, `AccountingTransaction`, `CatalogProduct`, supplier rows, …):
   a field whose name or JSON type is wrong there is silently never populated.
+- **n11** — the resources' internal wire interfaces, as for Trendyol: `N11CategoryWire`,
+  `N11CategoryAttributesWire`, `N11ProductQueryResponse` and `N11PackagePageWire` (the
+  envelopes reach every nested node). The public `N11*` types are normalised (string ids,
+  `Money`, ISO dates) and stay unmapped.
 
 Intentionally **unmapped**:
 

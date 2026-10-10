@@ -146,7 +146,7 @@ describe('loadSdkTypeMap', () => {
     const entries = loadSdkTypeMap(join(REPO, SDK_TYPE_MAP_FILE));
     expect(entries.length).toBeGreaterThan(20);
     expect(new Set(entries.map((e) => e.marketplace))).toEqual(
-      new Set(['hepsiburada', 'trendyol']),
+      new Set(['hepsiburada', 'n11', 'trendyol']),
     );
   });
 });

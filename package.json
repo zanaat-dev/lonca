@@ -55,6 +55,8 @@
     "specs:trendyol:build": "node scripts/specs/build-trendyol.mjs trendyol-reference-capture.json",
     "specs:trendyol:check": "node scripts/specs/build-trendyol.mjs trendyol-reference-capture.json --check",
     "specs:trendyol:coverage": "node scripts/specs/coverage-trendyol.mjs",
+    "specs:n11:build": "node scripts/specs/build-n11.mjs",
+    "specs:n11:check": "node scripts/specs/build-n11.mjs --check",
     "changeset": "changeset",
     "version-packages": "changeset version",
     "release": "turbo run build && changeset publish"

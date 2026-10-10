@@ -164,8 +164,10 @@ describe('pnpm drift:types (real SDK sources, specs and wire baseline)', () => {
     expect(cli()).toBe(0);
     expect(errors).toEqual([]);
     const { json } = readReport();
-    expect(json.marketplaces.map((m) => m.marketplace)).toEqual(['hepsiburada', 'trendyol']);
-    for (const m of json.marketplaces) expect(m.entries.length).toBeGreaterThan(10);
+    expect(json.marketplaces.map((m) => m.marketplace)).toEqual(['hepsiburada', 'n11', 'trendyol']);
+    // n11 maps its four REST read envelopes; the others map many more types.
+    for (const m of json.marketplaces)
+      expect(m.entries.length).toBeGreaterThanOrEqual(m.marketplace === 'n11' ? 4 : 11);
   }, 30_000);
 });
 

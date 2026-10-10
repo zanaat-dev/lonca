@@ -1,0 +1,47 @@
+{
+  "marketplace": "n11",
+  "portal": "https://developer.n11.com/documentation/",
+  "compiledAt": "2026-10-11",
+  "generator": "scripts/specs/build-n11.mjs",
+  "source": "scripts/specs/n11/source.mjs",
+  "probeSnapshot": {
+    "file": "probe-snapshots/n11.json",
+    "env": "prod"
+  },
+  "files": [
+    {
+      "file": "order.json",
+      "section": "Sipariş Entegrasyonu",
+      "sectionUrl": "https://developer.n11.com/documentation/n11-siparis-entegrasyonu/",
+      "title": "n11 Sipariş Entegrasyonu (REST)",
+      "servers": [
+        "https://api.n11.com"
+      ],
+      "paths": 6,
+      "operations": 6,
+      "schemas": 15,
+      "observed": {
+        "properties": 0,
+        "typeMismatches": 1,
+        "untypedObserved": 4
+      }
+    },
+    {
+      "file": "product.json",
+      "section": "Ürün Entegrasyonu",
+      "sectionUrl": "https://developer.n11.com/documentation/n11-marketplace-entegrasyonu/",
+      "title": "n11 Ürün Entegrasyonu (REST)",
+      "servers": [
+        "https://api.n11.com"
+      ],
+      "paths": 8,
+      "operations": 8,
+      "schemas": 20,
+      "observed": {
+        "properties": 0,
+        "typeMismatches": 1,
+        "untypedObserved": 0
+      }
+    }
+  ]
+}
