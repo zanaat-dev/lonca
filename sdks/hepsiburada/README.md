@@ -11,7 +11,7 @@ Type-safe TypeScript SDK for the [Hepsiburada Marketplace API](https://developer
 > [!IMPORTANT]
 > **Unofficial.** This is an independent, community-maintained SDK. It is not affiliated with, endorsed by, or supported by Hepsiburada. "Hepsiburada" and related names are trademarks of their respective owners.
 
-See [Stability & versioning](https://zanaat.dev/lonca/stability/) for the semver policy and what counts as the public API.
+See [Stability & versioning](https://lonca.zanaat.dev/stability/) for the semver policy and what counts as the public API.
 
 ## Coverage
 
@@ -609,7 +609,7 @@ The script calls one read endpoint per resource and reports `✓` for `200 OK`, 
 
 ## Stability
 
-`1.x` — stable, verified read-only against the production API. Breaking changes ship only in major versions; see [Stability & versioning](https://zanaat.dev/lonca/stability/).
+`1.x` — stable, verified read-only against the production API. Breaking changes ship only in major versions; see [Stability & versioning](https://lonca.zanaat.dev/stability/).
 
 - **`0.6.0`** (Phase 2d) — webhook event parser + casing regression tests + smoke script
 - **`0.5.0`** (Phase 2c) — ergonomics + strict types: `ClaimStatus` union, `skuList` required, per-host path casing

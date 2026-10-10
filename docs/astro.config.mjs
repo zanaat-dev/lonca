@@ -5,8 +5,7 @@ import starlightTypeDoc, { typeDocSidebarGroup } from 'starlight-typedoc';
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://zanaat.dev',
-  base: '/lonca',
+  site: 'https://lonca.zanaat.dev',
   integrations: [
     starlight({
       title: 'Lonca SDKs',
