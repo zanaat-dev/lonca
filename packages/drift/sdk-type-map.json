@@ -467,6 +467,42 @@
       "pointer": "data.rows[]",
       "ignore": ["raw"],
       "note": "Public type; pickFields copies the listed fields when their JSON type matches."
+    },
+    {
+      "marketplace": "n11",
+      "sdkType": "N11CategoryWire",
+      "source": "sdks/n11/src/resources/categories.ts",
+      "spec": "n11/product.json",
+      "operation": "GET /cdn/categories",
+      "pointer": "categories[]",
+      "note": "Wire node the categories normaliser reads (recursive through subCategories)."
+    },
+    {
+      "marketplace": "n11",
+      "sdkType": "N11CategoryAttributesWire",
+      "source": "sdks/n11/src/resources/categories.ts",
+      "spec": "n11/product.json",
+      "operation": "GET /cdn/category/{categoryId}/attribute",
+      "pointer": "(root)",
+      "note": "Wire envelope getAttributes reads; reaches the attribute and value nodes."
+    },
+    {
+      "marketplace": "n11",
+      "sdkType": "N11ProductQueryResponse",
+      "source": "sdks/n11/src/resources/products.ts",
+      "spec": "n11/product.json",
+      "operation": "GET /ms/product-query",
+      "pointer": "(root)",
+      "note": "Spring page envelope products.list reads; reaches the product row node."
+    },
+    {
+      "marketplace": "n11",
+      "sdkType": "N11PackagePageWire",
+      "source": "sdks/n11/src/resources/orders.ts",
+      "spec": "n11/order.json",
+      "operation": "GET /rest/delivery/v1/shipmentPackages",
+      "pointer": "(root)",
+      "note": "Page envelope orders.list reads; reaches the package, address, line and history nodes."
     }
   ]
 }

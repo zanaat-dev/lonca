@@ -177,11 +177,13 @@
       "wire": [
         {
           "operation": {
-            "key": "GET api.n11.com/cdn/category/{}/attribute",
-            "unmatched": true,
+            "key": "GET /cdn/category/{categoryId}/attribute",
+            "spec": "n11/product.json",
+            "operationId": "getCategoryAttributesList",
             "method": "GET",
-            "host": "api.n11.com",
-            "path": "/cdn/category/{}/attribute"
+            "path": "/cdn/category/{categoryId}/attribute",
+            "specPath": "/cdn/category/{categoryId}/attribute",
+            "server": "https://api.n11.com"
           },
           "status": 200,
           "contentType": "application/json",
@@ -285,11 +287,13 @@
         },
         {
           "operation": {
-            "key": "GET api.n11.com/ms/product-query",
-            "unmatched": true,
+            "key": "GET /ms/product-query",
+            "spec": "n11/product.json",
+            "operationId": "getSellerProducts",
             "method": "GET",
-            "host": "api.n11.com",
-            "path": "/ms/product-query"
+            "path": "/ms/product-query",
+            "specPath": "/ms/product-query",
+            "server": "https://api.n11.com"
           },
           "status": 200,
           "contentType": "application/json",
@@ -707,11 +711,13 @@
       "wire": [
         {
           "operation": {
-            "key": "GET api.n11.com/cdn/categories",
-            "unmatched": true,
+            "key": "GET /cdn/categories",
+            "spec": "n11/product.json",
+            "operationId": "getCategories",
             "method": "GET",
-            "host": "api.n11.com",
-            "path": "/cdn/categories"
+            "path": "/cdn/categories",
+            "specPath": "/cdn/categories",
+            "server": "https://api.n11.com"
           },
           "status": 200,
           "contentType": "application/json",
@@ -2633,11 +2639,13 @@
       "wire": [
         {
           "operation": {
-            "key": "GET api.n11.com/rest/delivery/v1/shipmentPackages",
-            "unmatched": true,
+            "key": "GET /rest/delivery/v1/shipmentPackages",
+            "spec": "n11/order.json",
+            "operationId": "getShipmentPackages",
             "method": "GET",
-            "host": "api.n11.com",
-            "path": "/rest/delivery/v1/shipmentPackages"
+            "path": "/rest/delivery/v1/shipmentPackages",
+            "specPath": "/rest/delivery/v1/shipmentPackages",
+            "server": "https://api.n11.com"
           },
           "status": 200,
           "contentType": "application/json",
@@ -3493,11 +3501,13 @@
       "wire": [
         {
           "operation": {
-            "key": "GET api.n11.com/ms/product-query",
-            "unmatched": true,
+            "key": "GET /ms/product-query",
+            "spec": "n11/product.json",
+            "operationId": "getSellerProducts",
             "method": "GET",
-            "host": "api.n11.com",
-            "path": "/ms/product-query"
+            "path": "/ms/product-query",
+            "specPath": "/ms/product-query",
+            "server": "https://api.n11.com"
           },
           "status": 200,
           "contentType": "application/json",

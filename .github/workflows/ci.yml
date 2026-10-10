@@ -46,6 +46,13 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      # specs/n11 is generated from two committed inputs (scripts/specs/n11/source.mjs and
+      # probe-snapshots/n11.json), so unlike Trendyol's portal capture the check needs no
+      # network: it fails when either input changed without `pnpm specs:n11:build`.
+      - name: n11 specs up to date
+        if: matrix.node == 22
+        run: pnpm specs:n11:check
+
       - name: Build
         run: pnpm build
 

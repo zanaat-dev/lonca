@@ -1,0 +1,1430 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "n11 Ürün Entegrasyonu (REST)",
+    "version": "2026-10-11",
+    "description": "REST services of the \"Ürün Entegrasyonu\" section of the n11 developer portal: the category tree, category attributes, the seller product query, the asynchronous product tasks and task details. n11 publishes no machine-readable definition; this document is compiled by hand from the section's pages (field tables first, examples second). The SOAP services of the same section (questions, catalogue search) are not included.",
+    "x-lonca-source": {
+      "kind": "hand-compiled",
+      "portal": "https://developer.n11.com/documentation/",
+      "section": "Ürün Entegrasyonu",
+      "sectionUrl": "https://developer.n11.com/documentation/n11-marketplace-entegrasyonu/",
+      "compiledAt": "2026-10-11",
+      "compiledFrom": "scripts/specs/n11/source.mjs",
+      "generator": "scripts/specs/build-n11.mjs"
+    },
+    "x-lonca-observed-source": {
+      "snapshot": "probe-snapshots/n11.json",
+      "env": "prod",
+      "note": "Properties marked x-lonca-observed were seen in production responses but are not on the documentation page. x-lonca-observed-types lists the JSON types seen where they disagree with the documented type, or where the page gives no type at all."
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.n11.com",
+      "description": "Canlı ortam. n11 bir test ortamı belgelemiyor."
+    }
+  ],
+  "tags": [
+    {
+      "name": "Kategori",
+      "description": "Kategori ağacı ve kategori özellikleri"
+    },
+    {
+      "name": "Ürün",
+      "description": "Ürün sorgulama ve ürün task servisleri"
+    }
+  ],
+  "security": [
+    {
+      "appKey": [],
+      "appSecret": []
+    }
+  ],
+  "paths": {
+    "/cdn/categories": {
+      "get": {
+        "tags": [
+          "Kategori"
+        ],
+        "summary": "Kategori Ağacı Listeleme",
+        "operationId": "getCategories",
+        "description": "Tüm n11 kategori ağacını tek istekle döner; parametre gerekmez. subCategories değerinin null dönmesi o kategorinin en alt kırılım olduğunu ifade eder. Ürün yükleme servisinde en alt kırılım olan kategorinin id değeri iletilmelidir. Sayfa yalnızca appKey başlığını ister; changelog'daki 2025-06-17 ve 2025-07-17 duyuruları kategori servislerinin 2025-08-15 itibarıyla API Key & Secret olmadan çalışmayacağını söyler, bu yüzden iki güvenlik seçeneği de listelenmiştir.",
+        "security": [
+          {
+            "appKey": [],
+            "appSecret": []
+          },
+          {
+            "appKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Kategori ağacı",
+            "x-lonca-doc-basis": "example",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryTree"
+                }
+              }
+            }
+          }
+        },
+        "x-lonca-doc-url": "https://developer.n11.com/documentation/n11-marketplace-entegrasyonu/kategori-agaci-listeleme/"
+      }
+    },
+    "/cdn/category/{categoryId}/attribute": {
+      "get": {
+        "tags": [
+          "Kategori"
+        ],
+        "summary": "Kategori Özellikleri Listeleme",
+        "operationId": "getCategoryAttributesList",
+        "description": "Endpoint içindeki categoryId değerine göre kategoriye ait attribute'ları (id, value ve value id) listeler; request parametresi yoktur. isMandatory: true olan attribute'lar CreateProduct servisinde zorunludur. isVariant: true olan attribute için aynı productMainId ile gönderilen ürünler aynı sayfada seçenek olarak görünür. isCustomValue: true ise listeden bir valueId ya da customValue ile yeni bir değer iletilebilir.",
+        "parameters": [
+          {
+            "name": "categoryId",
+            "in": "path",
+            "required": true,
+            "description": "GetCategories servisinden alınan kategori id değeri.",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "security": [
+          {
+            "appKey": [],
+            "appSecret": []
+          },
+          {
+            "appKey": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Kategoriye ait özellikler ve değerleri",
+            "x-lonca-doc-basis": "example",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CategoryAttributes"
+                }
+              }
+            }
+          }
+        },
+        "x-lonca-doc-url": "https://developer.n11.com/documentation/n11-marketplace-entegrasyonu/kategori-ozellikleri-listeleme/"
+      }
+    },
+    "/ms/product-query": {
+      "get": {
+        "tags": [
+          "Ürün"
+        ],
+        "summary": "Satıcı Ürün Sorgulama",
+        "operationId": "getSellerProducts",
+        "description": "Request parametrelerinde zorunluluk yoktur; hiçbir parametre girilmediğinde satıcının tüm ürünleri page 0 size 20 olacak şekilde listelenir. stockCode her istekte tek bir değer alır. Sayfalama için page 0'dan başlayıp totalPages alanını dikkate alarak content'i boş dönen sayfa son sayfa kabul edilebilir. Response alanlarının karakter sayısı ve veri tipleri ürün sayısının artışıyla değişebilir (ör. n11ProductId 9 haneden 10 haneye çıkabilir).",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "description": "n11 Ürün kodu ile listeleme.",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "productMainId",
+            "in": "query",
+            "description": "Ürün grup kodu ile listeleme.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "stockCode",
+            "in": "query",
+            "description": "Satıcı ürün kodu ile listeleme. Her istekte tek bir değer alır.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "saleStatus",
+            "in": "query",
+            "description": "Ürün satış durumuna göre listeleme. On_Sale: Satışta, Out_Of_Stock: Stokta Yok.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "On_Sale",
+                "Out_Of_Stock"
+              ]
+            }
+          },
+          {
+            "name": "productStatus",
+            "in": "query",
+            "description": "Ürün onay durumuna göre listeleme. Active: Onaylı, InCatalogApproval: Katalog Onay Sürecinde, Suspended: Beklemede, CatalogRejected: Katalogdan Reddedildi, Prohibited: Yasaklı, Unlisted: Limit Dışı, InApproval: Aksiyon Bekleyen.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Active",
+                "InCatalogApproval",
+                "Suspended",
+                "CatalogRejected",
+                "Prohibited",
+                "Unlisted",
+                "InApproval"
+              ]
+            }
+          },
+          {
+            "name": "brandName",
+            "in": "query",
+            "description": "Satıcı panelindeki ürünleri marka ismine göre listeler.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "categoryIds",
+            "in": "query",
+            "description": "Kategori ID ile listeleme (tablodaki tip: \"long list\"). Lonca: the page does not say how several values are encoded (comma-separated or repeated parameter).",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "format": "int64"
+              }
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Sayfa numarası. Varsayılan 0.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "Sayfa boyutu. Varsayılan 20, maksimum 250.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20,
+              "maximum": 250
+            }
+          },
+          {
+            "name": "sender",
+            "in": "query",
+            "description": "Gönderici tipi. SELLER: Satıcı gönderir, N11: n11 Depo gönderir, ALL: Tümü. Gönderilmediği takdirde varsayılan değer SELLER olarak alınır.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "SELLER",
+                "N11",
+                "ALL"
+              ],
+              "default": "SELLER"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Satıcının ürünleri (sayfalı)",
+            "x-lonca-doc-basis": "table",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductQueryPage"
+                }
+              }
+            }
+          }
+        },
+        "x-lonca-doc-url": "https://developer.n11.com/documentation/n11-marketplace-entegrasyonu/satici-urun-sorgulama/"
+      }
+    },
+    "/ms/product/task-details/page-query": {
+      "post": {
+        "tags": [
+          "Ürün"
+        ],
+        "summary": "Task Detail Sorgulama",
+        "operationId": "getTaskDetails",
+        "description": "Ürün task'larının sonucunu sayfalı döner. itemCode ürünün stockCode değeridir; skus.content içindeki status ürün bazlı sonucu verir (SUCCESS veya FAIL), hata detayı reasons alanındadır. Ana seviyedeki status task'ın genel durumudur: PROCESSED işlem tamamlandı, IN_QUEUE işlem devam ediyor, REJECT task işleme alınmadı.",
+        "requestBody": {
+          "required": true,
+          "x-lonca-doc-basis": "example",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TaskDetailsRequest"
+              },
+              "example": {
+                "taskId": 362,
+                "pageable": {
+                  "page": 0,
+                  "size": 1000
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task detayı",
+            "x-lonca-doc-basis": "example",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TaskDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-lonca-doc-url": "https://developer.n11.com/documentation/n11-marketplace-entegrasyonu/task-detail-sorgulama/"
+      }
+    },
+    "/ms/product/tasks/price-stock-update": {
+      "post": {
+        "tags": [
+          "Ürün"
+        ],
+        "summary": "Ürün Fiyat-Stok Güncelleme",
+        "operationId": "updatePriceAndStock",
+        "description": "İsteği JSON formatında body'de raw olarak gönderin. Tek seferde maksimum 1000 sku gönderilebilir. Her başarılı istek için response'ta ID (taskId) döner; işlemin sonucu TaskDetails servisi ile kontrol edilir. Fiyat güncellemelerinde listPrice ve salePrice birlikte gönderilmelidir; küsurat nokta ile ayrılmalı ve noktadan sonra 2 hane iletilmelidir, aksi halde istek FAIL olur. Sadece fiyat veya sadece stok güncellenecekse diğer alanlar gönderilmeyebilir; istekte olmayan alanlar güncellenmez. listPrice ve salePrice aynı olabilir; listPrice salePrice'tan düşük olamaz.",
+        "requestBody": {
+          "required": true,
+          "x-lonca-doc-basis": "table",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PriceStockUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task oluşturuldu",
+            "x-lonca-doc-basis": "table",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductTask"
+                }
+              }
+            }
+          }
+        },
+        "x-lonca-doc-url": "https://developer.n11.com/documentation/n11-marketplace-entegrasyonu/urun-fiyat-stok-guncelleme/"
+      }
+    },
+    "/ms/product/tasks/product-create": {
+      "post": {
+        "tags": [
+          "Ürün"
+        ],
+        "summary": "Ürün Yükleme",
+        "operationId": "createProduct",
+        "description": "İsteği JSON formatında body'de raw olarak gönderin. Tek seferde maksimum 1000 sku gönderilebilir. Her başarılı istek için response'ta ID (taskId) döner; işlemin sonucu TaskDetails servisi ile kontrol edilir. Ürün yüklemeden önce zorunlu özellikler doldurulmalı ve customValue alanı kontrol edilmelidir (GetCategoryAttributesList). Ürün görsel boyutu maksimum 10 MB olmalıdır. Gönderilen barcode n11 kataloğundaki bir barkodla eşleşirse ürün, attribute özelliklerine bakılmaksızın satıcı onayı bekliyor statüsünde açılır. Ürün bazlı shipmentTemplate (kargo şablon adı) gönderilmelidir. Aynı productMainId ile gönderilen ve variant/slicer özelliği olan ürünler varyantlı açılır.",
+        "requestBody": {
+          "required": true,
+          "x-lonca-doc-basis": "table",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task oluşturuldu",
+            "x-lonca-doc-basis": "table",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductTask"
+                }
+              }
+            }
+          }
+        },
+        "x-lonca-doc-url": "https://developer.n11.com/documentation/n11-marketplace-entegrasyonu/urun-yukleme/"
+      }
+    },
+    "/ms/product/tasks/product-delete": {
+      "post": {
+        "tags": [
+          "Ürün"
+        ],
+        "summary": "Ürün Silme",
+        "operationId": "deleteProduct",
+        "description": "İsteği JSON formatında body'de raw olarak gönderin. Tek seferde maksimum 1000 sku gönderilebilir. Her başarılı istek için response'ta ID (taskId) döner; işlemin sonucu TaskDetails servisi ile kontrol edilir.",
+        "requestBody": {
+          "required": true,
+          "x-lonca-doc-basis": "table",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductDeleteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task oluşturuldu",
+            "x-lonca-doc-basis": "table",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductTask"
+                }
+              }
+            }
+          }
+        },
+        "x-lonca-doc-url": "https://developer.n11.com/documentation/n11-marketplace-entegrasyonu/urun-silme/"
+      }
+    },
+    "/ms/product/tasks/product-update": {
+      "post": {
+        "tags": [
+          "Ürün"
+        ],
+        "summary": "Ürün Bilgisi Güncelleme",
+        "operationId": "updateProduct",
+        "description": "İsteği JSON formatında body'de raw olarak gönderin. Tek seferde maksimum 1000 sku gönderilebilir. Her başarılı istek için response'ta ID (taskId) döner; işlemin sonucu TaskDetails servisi ile kontrol edilir. productMainId silinmek isteniyorsa deleteProductMainId true, maxPurchaseQuantity silinmek isteniyorsa deleteMaxPurchaseQuantity true gönderilmelidir (bu durumda satın alım adet sınırı olmadığı kabul edilir). attributes alanında stok kodu bazında ürün güvenliği attribute değerleri gönderilir; ürün temel özellikleri (Marka, Renk, Beden vb.) yalnızca n11 tarafından güncellenebilir. Güncellenebilecek ürün güvenliği ve besin değeri attribute id'leri sayfadaki \"Ürün Güvenliği Bilgileri ve Besin Değerleri\" tablosunda listelenir.",
+        "requestBody": {
+          "required": true,
+          "x-lonca-doc-basis": "table",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProductUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Task oluşturuldu",
+            "x-lonca-doc-basis": "table",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductTask"
+                }
+              }
+            }
+          }
+        },
+        "x-lonca-doc-url": "https://developer.n11.com/documentation/n11-marketplace-entegrasyonu/urun-bilgisi-guncelleme/"
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Category": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "parentId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Üst kategori id; kök kategorilerde null.",
+            "nullable": true
+          },
+          "name": {
+            "type": "string"
+          },
+          "subCategories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Category"
+            },
+            "description": "Alt kategoriler. null ise kategori en alt kırılımdır (leaf).",
+            "nullable": true
+          }
+        }
+      },
+      "CategoryAttribute": {
+        "type": "object",
+        "properties": {
+          "attributeId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Özellik id (ör. 1: Marka)."
+          },
+          "categoryId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "attributeName": {
+            "type": "string"
+          },
+          "isMandatory": {
+            "type": "boolean",
+            "description": "true ise CreateProduct servisinde ürün bazlı gönderilmesi zorunludur."
+          },
+          "isVariant": {
+            "type": "boolean",
+            "description": "true ise aynı productMainId ile gönderilen ürünler aynı sayfada seçenek olarak görünür."
+          },
+          "isSlicer": {
+            "type": "boolean"
+          },
+          "isCustomValue": {
+            "type": "boolean",
+            "description": "true ise listeden bir valueId ya da customValue ile yeni bir değer iletilebilir."
+          },
+          "isN11Grouping": {
+            "type": "boolean"
+          },
+          "attributeOrder": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "attributeValues": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "format": "int64",
+                  "description": "Değer id (valueId)"
+                },
+                "value": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Özelliğin n11 tarafından tanımlı değerleri."
+          }
+        }
+      },
+      "CategoryAttributes": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Kategori id"
+          },
+          "name": {
+            "type": "string",
+            "description": "Kategori adı"
+          },
+          "categoryAttributes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CategoryAttribute"
+            }
+          }
+        }
+      },
+      "CategoryTree": {
+        "type": "object",
+        "properties": {
+          "categories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Category"
+            },
+            "description": "Kök kategoriler (parentId: null)."
+          }
+        }
+      },
+      "PriceStockUpdateRequest": {
+        "type": "object",
+        "required": [
+          "payload"
+        ],
+        "properties": {
+          "payload": {
+            "type": "object",
+            "required": [
+              "integrator",
+              "skus"
+            ],
+            "properties": {
+              "integrator": {
+                "type": "string",
+                "description": "Entegratör ve API kullanıcısının verilebilecek özel ismi. Tüm gönderimlerinizde aynı değer kullanmanızı rica ederiz."
+              },
+              "skus": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/PriceStockUpdateSku"
+                },
+                "description": "Tek seferde maksimum 1000 sku.",
+                "x-lonca-doc-example-only": true
+              }
+            },
+            "x-lonca-doc-example-only": true
+          }
+        }
+      },
+      "PriceStockUpdateSku": {
+        "type": "object",
+        "required": [
+          "stockCode"
+        ],
+        "properties": {
+          "stockCode": {
+            "type": "string",
+            "description": "Tedarikçinin ürüne belirlediği uniq kod; SKU güncellemelerinde zorunludur."
+          },
+          "listPrice": {
+            "type": "number",
+            "description": "Ürün liste fiyatı (PSF). Fiyat güncellemesinde salePrice ile birlikte zorunludur."
+          },
+          "salePrice": {
+            "type": "number",
+            "description": "Ürün satış fiyatı (TSF). Fiyat güncellemesinde listPrice ile birlikte zorunludur."
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Stok miktarı."
+          },
+          "currencyType": {
+            "type": "string",
+            "enum": [
+              "TL",
+              "USD",
+              "EUR"
+            ],
+            "description": "Ürün liste fiyatı para birimi (tablodaki tip: text)."
+          }
+        }
+      },
+      "ProductCreateRequest": {
+        "type": "object",
+        "required": [
+          "payload"
+        ],
+        "properties": {
+          "payload": {
+            "type": "object",
+            "required": [
+              "integrator",
+              "skus"
+            ],
+            "properties": {
+              "integrator": {
+                "type": "string",
+                "description": "API Kullanıcı/Entegratör Firma ismini yazınız. Tüm gönderimlerinizde aynı ismi iletiniz."
+              },
+              "skus": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ProductCreateSku"
+                },
+                "description": "Tek seferde maksimum 1000 sku.",
+                "x-lonca-doc-example-only": true
+              }
+            },
+            "x-lonca-doc-example-only": true
+          }
+        }
+      },
+      "ProductCreateSku": {
+        "type": "object",
+        "required": [
+          "title",
+          "description",
+          "categoryId",
+          "currencyType",
+          "productMainId",
+          "preparingDay",
+          "shipmentTemplate",
+          "stockCode",
+          "quantity",
+          "images",
+          "attributes",
+          "salePrice",
+          "listPrice",
+          "vatRate"
+        ],
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Ürün ismi; marka, cinsiyet, renk veya ürün bilgisini ekleyerek yazabilirsiniz."
+          },
+          "description": {
+            "type": "string",
+            "description": "Ürüne ait açıklamalar (tablodaki tip: HTML-string)."
+          },
+          "categoryId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "GetCategories servisinden alınan kategorinin en alt kırılım id değeri."
+          },
+          "currencyType": {
+            "type": "string",
+            "enum": [
+              "TL",
+              "USD",
+              "EUR"
+            ],
+            "description": "TL, USD, EUR kullanılabilir. USD ve EUR Merkez Bankası kur oranına göre güncellenir."
+          },
+          "productMainId": {
+            "type": "string",
+            "description": "Ürüne ait tüm modeller için aynı id. Varyantlı ürün açmak için Renk ve Beden değerlerinin tamamında aynı değer kullanılmalıdır."
+          },
+          "preparingDay": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Ürünün kargoya verilmesi için gereken süre."
+          },
+          "shipmentTemplate": {
+            "type": "string",
+            "description": "Hesabım > Teslimat Bilgilerim alanından oluşturulan kargo şablonunun ismi."
+          },
+          "maxPurchaseQuantity": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Tekil alıcı başına maksimum satın alım adedi."
+          },
+          "stockCode": {
+            "type": "string",
+            "description": "Ürüne ait belirlenen uniq değer; stok-fiyat güncellemeleri stockCode'a göre yapılır. Maksimum değeri 255."
+          },
+          "catalogId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "n11 katalogundaki id değeri. Örnekte null.",
+            "nullable": true
+          },
+          "barcode": {
+            "type": "string",
+            "description": "Sadece ulusal barkodlar kaydedilir; n11 katalogundaki barkodla eşleştirme için yazılır. Lonca: one example sends a JSON number, another the string \"null\"."
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Stok miktarı. Maksimum değer 999.999.",
+            "maximum": 999999
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "url",
+                "order"
+              ],
+              "properties": {
+                "url": {
+                  "type": "string",
+                  "description": "SSL sertifikalı \"https\" formatında görsel adresi."
+                },
+                "order": {
+                  "type": "integer",
+                  "format": "int32",
+                  "description": "Görsel sırası."
+                }
+              }
+            },
+            "description": "Ürün görsellerinin URL listesi (tabloda \"images/url/order\", tip string)."
+          },
+          "attributes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "valueId",
+                "customValue"
+              ],
+              "properties": {
+                "id": {
+                  "type": "integer",
+                  "format": "int64",
+                  "description": "Kategori özellik servisindeki özellik id değeri."
+                },
+                "valueId": {
+                  "type": "integer",
+                  "format": "int64",
+                  "description": "isCustomValue false ise kategori özellik servisindeki valueId yazılmalıdır.",
+                  "nullable": true
+                },
+                "customValue": {
+                  "type": "string",
+                  "description": "isCustomValue true ise serbest değer yazılabilir. Lonca: the examples send the string \"null\" when a valueId is given.",
+                  "nullable": true
+                }
+              }
+            },
+            "description": "Ürünün kategori özellik bilgileri (tablodaki tip: string). isMandatory: true olan özellikler zorunludur."
+          },
+          "salePrice": {
+            "type": "number",
+            "description": "Ürün satış fiyatı (tablodaki tip: amount)."
+          },
+          "listPrice": {
+            "type": "number",
+            "description": "Ürün liste fiyatı (satış fiyatı düşük olunca üstü çizilen fiyat, PSF; tablodaki tip: amount)."
+          },
+          "vatRate": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Ürün KDV oranı.",
+            "enum": [
+              0,
+              1,
+              10,
+              20
+            ]
+          }
+        }
+      },
+      "ProductDeleteRequest": {
+        "type": "object",
+        "required": [
+          "payload"
+        ],
+        "properties": {
+          "payload": {
+            "type": "object",
+            "required": [
+              "integrator",
+              "skus"
+            ],
+            "properties": {
+              "integrator": {
+                "type": "string",
+                "description": "API Kullanıcı/Entegratör Firma ismini yazınız. Tüm gönderimlerinizde aynı ismi iletiniz."
+              },
+              "skus": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ProductDeleteSku"
+                },
+                "description": "Tek seferde maksimum 1000 sku.",
+                "x-lonca-doc-example-only": true
+              }
+            },
+            "x-lonca-doc-example-only": true
+          }
+        }
+      },
+      "ProductDeleteSku": {
+        "type": "object",
+        "required": [
+          "stockCode"
+        ],
+        "properties": {
+          "stockCode": {
+            "type": "string",
+            "description": "Silinecek ürüne ait satıcı stok kodu."
+          }
+        }
+      },
+      "ProductQueryItem": {
+        "type": "object",
+        "properties": {
+          "n11ProductId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "N11 Ürün Kodu. 9 haneden 10 haneye çıkabilir."
+          },
+          "sellerId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Mağaza ID"
+          },
+          "sellerNickname": {
+            "type": "string",
+            "description": "Mağaza Adı. Lonca: the example value is an unquoted token (invalid JSON); typed string."
+          },
+          "stockCode": {
+            "type": "string",
+            "description": "Satıcı Stok Kodu"
+          },
+          "title": {
+            "type": "string",
+            "description": "Ürün Adı"
+          },
+          "description": {
+            "type": "string",
+            "description": "Ürün açıklaması"
+          },
+          "categoryId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Kategori ID"
+          },
+          "productMainId": {
+            "type": "string",
+            "description": "Model Kodu"
+          },
+          "status": {
+            "type": "string",
+            "description": "Ürün Aktifliği (ör. Active)."
+          },
+          "saleStatus": {
+            "type": "string",
+            "description": "Satış Durumu (ör. On_Sale)."
+          },
+          "preparingDay": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Kargo Hazırlık Süresi"
+          },
+          "shipmentTemplate": {
+            "type": "string",
+            "description": "Kargo Şablonu"
+          },
+          "maxPurchaseQuantity": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Maksimum Satın Alım Adedi",
+            "x-lonca-observed-types": [
+              "null"
+            ]
+          },
+          "customTextOptions": {
+            "type": "array",
+            "items": {},
+            "description": "Müşteriye Özel Ürün Seçeneği. Örnekte boş dizi."
+          },
+          "catalogId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Ürün Katalog ID"
+          },
+          "barcode": {
+            "description": "Barkod. Lonca: the page gives no type (example value null or absent)."
+          },
+          "groupId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Ürün Katalog Grup ID"
+          },
+          "currencyType": {
+            "type": "string",
+            "description": "Para Birimi (ör. TL)."
+          },
+          "salePrice": {
+            "type": "number",
+            "description": "Satış Fiyatı"
+          },
+          "listPrice": {
+            "type": "number",
+            "description": "Liste Fiyatı"
+          },
+          "quantity": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Stok Adedi"
+          },
+          "rejectInfo": {
+            "description": "Ürün katalog ret bilgisi (status: CatalogRejected ise bu parametre verilmektedir). Lonca: the page gives no type (example value null or absent)."
+          },
+          "attributes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "attributeId": {
+                  "type": "integer",
+                  "format": "int64"
+                },
+                "attributeName": {
+                  "type": "string"
+                },
+                "attributeValue": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Ürün Özellikleri"
+          },
+          "imageUrls": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Görsel Linkleri"
+          },
+          "vatRate": {
+            "type": "integer",
+            "format": "int32",
+            "description": "KDV Oranı"
+          },
+          "commissionRate": {
+            "type": "number",
+            "description": "Komisyon Oranı"
+          },
+          "sender": {
+            "type": "string",
+            "description": "Gönderici tipi; SELLER: Satıcı gönderir, N11: n11 depo gönderir."
+          }
+        }
+      },
+      "ProductQueryPage": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProductQueryItem"
+            },
+            "x-lonca-doc-example-only": true
+          },
+          "pageable": {
+            "type": "object",
+            "properties": {
+              "sort": {
+                "description": "Sıralama bilgisi. Lonca: the page gives no type (example value null or absent)."
+              },
+              "pageNumber": {
+                "type": "integer",
+                "format": "int32"
+              },
+              "pageSize": {
+                "type": "integer",
+                "format": "int32"
+              },
+              "offset": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "paged": {
+                "type": "boolean"
+              },
+              "unpaged": {
+                "type": "boolean"
+              }
+            },
+            "x-lonca-doc-example-only": true
+          },
+          "last": {
+            "type": "boolean",
+            "x-lonca-doc-example-only": true
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Toplam Ürün Sayısı"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Toplam Sayfa Sayısı"
+          },
+          "first": {
+            "type": "boolean",
+            "x-lonca-doc-example-only": true
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Mevcut Sayfa Numarası"
+          },
+          "sort": {
+            "description": "Sıralama bilgisi. Lonca: the page gives no type (example value null or absent).",
+            "x-lonca-doc-example-only": true
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Sayfadaki Ürün Sayısı"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Listelenen Ürün Adedi"
+          },
+          "empty": {
+            "type": "boolean",
+            "x-lonca-doc-example-only": true
+          }
+        }
+      },
+      "ProductTask": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Task id; TaskDetails'de bu id ile sorgulanmalıdır."
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "SKU_UPDATE",
+              "PRODUCT_UPDATE",
+              "PRODUCT_CREATE",
+              "PRODUCT_DELETE"
+            ],
+            "description": "SKU_UPDATE: Stok Fiyat Güncelleme, PRODUCT_UPDATE: Ürün Güncelleme, PRODUCT_CREATE: Ürün Yükleme, PRODUCT_DELETE: Ürün Silme."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "IN_QUEUE",
+              "REJECT"
+            ],
+            "description": "IN_QUEUE: Task işleniyor, TaskDetails'den sorgulayınız. REJECT: Task işlenmemiştir, reasons alanını kontrol ediniz."
+          },
+          "reasons": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Status bilgisine göre nedenler. Task işleme alındığında \"X sku işlenmeye alındı.\" döner."
+          }
+        }
+      },
+      "ProductUpdateRequest": {
+        "type": "object",
+        "required": [
+          "payload"
+        ],
+        "properties": {
+          "payload": {
+            "type": "object",
+            "required": [
+              "integrator",
+              "skus"
+            ],
+            "properties": {
+              "integrator": {
+                "type": "string",
+                "description": "Entegratör ve API kullanıcısının verilebilecek özel ismi. Tüm gönderimlerinizde aynı değer kullanmanızı rica ederiz."
+              },
+              "skus": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/ProductUpdateSku"
+                },
+                "description": "Tek seferde maksimum 1000 sku.",
+                "x-lonca-doc-example-only": true
+              }
+            },
+            "x-lonca-doc-example-only": true
+          }
+        }
+      },
+      "ProductUpdateSku": {
+        "type": "object",
+        "required": [
+          "stockCode"
+        ],
+        "properties": {
+          "stockCode": {
+            "type": "string",
+            "description": "Tedarikçinin ürüne belirlediği uniq kod; SKU güncellemelerinde zorunludur."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Active",
+              "Suspended"
+            ],
+            "description": "Satışta olması için \"Active\", satıştan çekmek için \"Suspended\"."
+          },
+          "preparingDay": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Ürün bazlı kargoya gönderim süresi.",
+            "minimum": 1
+          },
+          "shipmentTemplate": {
+            "type": "string",
+            "description": "Satıcı Panelinde Hesabım > Teslimat Bilgileri alanındaki \"Şablon Adı\"."
+          },
+          "deleteProductMainId": {
+            "type": "boolean",
+            "description": "productMainId silinmek isteniyorsa true."
+          },
+          "productMainId": {
+            "type": "string",
+            "description": "Ana ürün kodu; aynı modele ait ürün özelliklerini birleştirir."
+          },
+          "deleteMaxPurchaseQuantity": {
+            "type": "boolean",
+            "description": "maxPurchaseQuantity silinmek isteniyorsa true."
+          },
+          "maxPurchaseQuantity": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Ürün bazlı maksimum satın alınabilecek adet."
+          },
+          "description": {
+            "type": "string",
+            "description": "Ürün açıklaması"
+          },
+          "vatRate": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Ürün KDV oranı.",
+            "enum": [
+              0,
+              1,
+              10,
+              20
+            ]
+          },
+          "attributes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "id",
+                "valueId",
+                "customValue"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Kategori özellik servisindeki özellik id değeri. Lonca: typed string as in the table; the example sends a JSON number."
+                },
+                "valueId": {
+                  "type": "string",
+                  "description": "isCustomValue false ise valueId yazılmalıdır. Lonca: typed string as in the table; the example sends a JSON number or null.",
+                  "nullable": true
+                },
+                "customValue": {
+                  "type": "string",
+                  "description": "isCustomValue true ise serbest değer yazılabilir.",
+                  "nullable": true
+                }
+              }
+            },
+            "description": "Güncellenecek ürün güvenliği attribute değerleri (tablodaki tip: string). attributes gönderildiğinde id, valueId ve customValue zorunludur."
+          }
+        }
+      },
+      "Sort": {
+        "type": "object",
+        "properties": {
+          "empty": {
+            "type": "boolean"
+          },
+          "sorted": {
+            "type": "boolean"
+          },
+          "unsorted": {
+            "type": "boolean"
+          }
+        }
+      },
+      "TaskDetails": {
+        "type": "object",
+        "properties": {
+          "taskId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "skus": {
+            "$ref": "#/components/schemas/TaskSkuPage"
+          },
+          "createdDate": {
+            "type": "string",
+            "description": "Örnek biçim: \"12-08-2024 06:12:05\" (dd-MM-yyyy HH:mm:ss)."
+          },
+          "modifiedDate": {
+            "type": "string",
+            "description": "Örnek biçim: \"12-08-2024 06:12:11\" (dd-MM-yyyy HH:mm:ss)."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PROCESSED",
+              "IN_QUEUE",
+              "REJECT"
+            ],
+            "description": "PROCESSED: işlem tamamlandı, IN_QUEUE: işlem devam ediyor, REJECT: task işleme alınmadı."
+          }
+        }
+      },
+      "TaskDetailsRequest": {
+        "type": "object",
+        "properties": {
+          "taskId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Ürün task servislerinin döndüğü id."
+          },
+          "pageable": {
+            "type": "object",
+            "properties": {
+              "page": {
+                "type": "integer",
+                "format": "int32"
+              },
+              "size": {
+                "type": "integer",
+                "format": "int32"
+              }
+            }
+          }
+        }
+      },
+      "TaskSkuPage": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TaskSkuResult"
+            }
+          },
+          "pageable": {
+            "type": "object",
+            "properties": {
+              "sort": {
+                "$ref": "#/components/schemas/Sort"
+              },
+              "offset": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "pageNumber": {
+                "type": "integer",
+                "format": "int32"
+              },
+              "pageSize": {
+                "type": "integer",
+                "format": "int32"
+              },
+              "paged": {
+                "type": "boolean"
+              },
+              "unpaged": {
+                "type": "boolean"
+              }
+            }
+          },
+          "last": {
+            "type": "boolean"
+          },
+          "totalElements": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "sort": {
+            "$ref": "#/components/schemas/Sort"
+          },
+          "first": {
+            "type": "boolean"
+          },
+          "number": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "numberOfElements": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "empty": {
+            "type": "boolean"
+          }
+        }
+      },
+      "TaskSkuResult": {
+        "type": "object",
+        "properties": {
+          "taskId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "ownerId": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "itemCode": {
+            "type": "string",
+            "description": "Ürünün stockCode değeri."
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "SUCCESS",
+              "FAIL"
+            ],
+            "description": "Ürün bazlı işlem sonucu."
+          },
+          "sku": {
+            "type": "object",
+            "description": "Gönderilen SKU verisi. Lonca: the only example is a price/stock (SKU_UPDATE) task; the fields for other task types are not documented.",
+            "properties": {
+              "salePrice": {
+                "type": "number"
+              },
+              "listPrice": {
+                "type": "number"
+              },
+              "currencyType": {
+                "type": "string"
+              },
+              "reasons": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "stock": {
+                "type": "integer",
+                "format": "int32"
+              }
+            }
+          },
+          "reasons": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "İşlem başarısız olduğunda hata detayı."
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "appKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "appKey",
+        "description": "n11 API anahtarı. Sayfalar \"Authorization no auth seçiniz. Headers alanına appKey ve appSecret bilgisini eklemeniz gerekir.\" der; bazı sayfalar başlığı küçük harfle (appkey) yazar. HTTP başlık adları büyük/küçük harf duyarsızdır."
+      },
+      "appSecret": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "appSecret",
+        "description": "n11 API şifresi (appsecret)."
+      }
+    }
+  }
+}

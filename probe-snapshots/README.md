@@ -5,11 +5,11 @@ Committed structural baselines produced by [`scripts/probe/run.mts`](../scripts/
 sets and JSON types — and never a value. Format and drift rules are documented in
 [`scripts/probe/README.md`](../scripts/probe/README.md).
 
-| File               | Environment | Captured   | Result          | Wire baseline (`wire`)                                   |
-| ------------------ | ----------- | ---------- | --------------- | -------------------------------------------------------- |
-| `hepsiburada.json` | prod        | 2026-10-10 | 15 ok / 0 error | 15 operations, 4 with no spec match                      |
-| `n11.json`         | prod        | 2026-10-10 | 11 ok / 0 error | 8 operations (4 SOAP `POST` reads), no n11 spec yet      |
-| `trendyol.json`    | prod        | 2026-10-10 | 18 ok / 0 error | 17 operations (one `POST` read), all matched to `specs/` |
+| File               | Environment | Captured   | Result          | Wire baseline (`wire`)                                                         |
+| ------------------ | ----------- | ---------- | --------------- | ------------------------------------------------------------------------------ |
+| `hepsiburada.json` | prod        | 2026-10-10 | 15 ok / 0 error | 15 operations, 4 with no spec match                                            |
+| `n11.json`         | prod        | 2026-10-10 | 11 ok / 0 error | 8 operations: 4 REST matched to `specs/n11/`, 4 SOAP `POST` reads with no spec |
+| `trendyol.json`    | prod        | 2026-10-10 | 18 ok / 0 error | 17 operations (one `POST` read), all matched to `specs/`                       |
 
 All baselines are taken against **production**. Every probe is a read-only GET, except the
 Trendyol buybox `POST` read and n11's SOAP reads (SOAP is always `POST`). n11 has no sandbox at
@@ -23,7 +23,13 @@ with a reason. Seeded 2026-10-09 with the 11 then-breaking findings of the first
 (2 Trendyol docs-vs-prod contradictions the SDK already handles, 9 Hepsiburada `null`s on
 properties the upstream spec does not mark `nullable`). With it, `pnpm drift` on this baseline
 reports 0 breaking findings; the only warnings left are the 4 Hepsiburada endpoints `specs/`
-does not document.
+does not document and n11's 4 SOAP endpoints (SOAP is out of scope for `specs/`).
+
+`specs/n11/` was added on 2026-10-11, after this baseline was captured. The 5 n11 REST wire
+entries (4 operations; `categories.getAttributes` also reads `product-query`) were then re-matched offline against the new specs with the same matcher the probe
+runner records with (`buildOperationIndex` from `@lonca/drift`): only their `operation` field
+changed, from a redacted unmatched path to the spec template, which is what the next
+`pnpm probe:prod` records anyway. The shapes were not touched and no n11 endpoint was called.
 
 ## Regenerating
 

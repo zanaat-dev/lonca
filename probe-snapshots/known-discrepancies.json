@@ -106,6 +106,38 @@
       "since": "2026-10-10"
     },
     {
+      "marketplace": "n11",
+      "operation": "GET /rest/delivery/v1/shipmentPackages",
+      "path": "content[].shippingAddress.countryCode",
+      "kind": "sdk-unknown-field",
+      "reason": "The SDK types billing and shipping address with one interface (N11AddressWire in sdks/n11/src/resources/orders.ts); countryCode is a billing-address field (docs and prod). normalizeAddress copies only the fields present, so it is simply absent on shippingAddress.",
+      "since": "2026-10-11"
+    },
+    {
+      "marketplace": "n11",
+      "operation": "GET /rest/delivery/v1/shipmentPackages",
+      "path": "content[].shippingAddress.invoiceType",
+      "kind": "sdk-unknown-field",
+      "reason": "The SDK types billing and shipping address with one interface (N11AddressWire in sdks/n11/src/resources/orders.ts); invoiceType is a billing-address field (docs and prod). normalizeAddress copies only the fields present, so it is simply absent on shippingAddress.",
+      "since": "2026-10-11"
+    },
+    {
+      "marketplace": "n11",
+      "operation": "GET /rest/delivery/v1/shipmentPackages",
+      "path": "content[].shippingAddress.taxHouse",
+      "kind": "sdk-unknown-field",
+      "reason": "The SDK types billing and shipping address with one interface (N11AddressWire in sdks/n11/src/resources/orders.ts); taxHouse is a billing-address field (docs and prod). normalizeAddress copies only the fields present, so it is simply absent on shippingAddress.",
+      "since": "2026-10-11"
+    },
+    {
+      "marketplace": "n11",
+      "operation": "GET /rest/delivery/v1/shipmentPackages",
+      "path": "content[].shippingAddress.taxId",
+      "kind": "sdk-unknown-field",
+      "reason": "The SDK types billing and shipping address with one interface (N11AddressWire in sdks/n11/src/resources/orders.ts); taxId is a billing-address field (docs and prod). normalizeAddress copies only the fields present, so it is simply absent on shippingAddress.",
+      "since": "2026-10-11"
+    },
+    {
       "marketplace": "trendyol",
       "operation": "GET /integration/member/countries/domestic/TR/cities/{CityCode}/districts",
       "path": "[].code",

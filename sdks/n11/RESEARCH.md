@@ -31,7 +31,9 @@ SOAP services still in use do have WSDLs, and the portal links them, for example
 `CatalogService.wsdl`, `SellerInvoiceService.wsdl`, `ReturnService.wsdl` and
 `ClaimCancelService.wsdl`. Those files are served by the **API host** (`api.n11.com`), not by the
 docs site, so I did not fetch them: this task was not allowed to call any n11 API endpoint. As a
-result, this PR has **no `specs/n11/` and no capture script** (see section 9).
+result, the research PR had **no `specs/n11/` and no capture script** (see section 9). Since
+2026-10-11, [`specs/n11/`](../../specs/n11/) holds an OpenAPI document of the REST pages,
+compiled by hand (section 9); the SOAP side is still not described there.
 
 ## 2. API style: REST is current, SOAP is still in use
 
@@ -269,6 +271,17 @@ must not retry faults that are not transient.
   down on request. Asking `sellerintegration@n11.com` for
   permission first would be cheap insurance.
 
+- **Done for REST (2026-10-11):** the second option.
+  [`specs/n11/`](../../specs/n11/README.md) has one document per portal section with REST
+  operations (`product.json`: 8 operations, `order.json`: 6), compiled by hand from the pages
+  into `scripts/specs/n11/source.mjs` and built by `scripts/specs/build-n11.mjs`
+  (`pnpm specs:n11:build` / `specs:n11:check`). Fields seen on prod but missing from the pages
+  would be added as `x-lonca-observed` from `probe-snapshots/n11.json` (none with the
+  2026-10-10 baseline; two docs-vs-prod `null`s are marked `x-lonca-observed-types`). The licence
+  note names
+  "n11.com", as the portal footer does, not a legal entity. The WSDLs are still not fetched or
+  redistributed (question 11 in section 11).
+
 ## 10. What the skeleton covers
 
 - **Package.** `sdks/n11/` is `@lonca/n11`, `"private": true`, version `0.0.0`. Changesets never
@@ -383,6 +396,9 @@ totalPages, page, size, content }`, where `pageCount` equals the number of rows 
     needed a meaningful `User-Agent`)?
 11. **WSDLs.** May we fetch and redistribute `api.n11.com/ws/*.wsdl` in `specs/n11/`? Should we ask
     `sellerintegration@n11.com`?
+    _(Still open. `specs/n11/` (2026-10-11) covers the REST pages only, compiled by hand from the
+    portal; SOAP stays out of `specs/` until this is answered, so `pnpm drift` keeps reporting the
+    four SOAP probe exchanges as unmatched.)_
 12. **Credential scope.** Can one key pair access everything (products, orders, returns), or are
     there per-service permissions?
 
@@ -391,9 +407,12 @@ totalPages, page, size, content }`, where `pageCount` equals the number of rows 
 1. ~~Get an n11 seller or integrator account. Add `N11_APP_KEY` / `N11_APP_SECRET` and contract
    probes for `categories`, `product-query` and `shipmentPackages` (read-only).~~ Done on
    2026-10-10 (keys in `.env.prod`, since n11 has no sandbox).
-2. Decide the `specs/n11/` source (WSDL capture, a hand-compiled OpenAPI, or both). Write
+2. ~~Decide the `specs/n11/` source (WSDL capture, a hand-compiled OpenAPI, or both). Write
    `scripts/specs/{fetch,build}-n11.mjs` the same way as Trendyol's, so the scripts read only the
-   docs portal.
+   docs portal.~~ Done on 2026-10-11 for REST: a hand-compiled OpenAPI
+   (`scripts/specs/n11/source.mjs` + `scripts/specs/build-n11.mjs`, no fetch script because the
+   portal has nothing machine-readable to fetch). The 4 REST probe exchanges now match it in
+   `pnpm drift` (0 breaking). A WSDL capture waits for question 11.
 3. Fill in REST resources (categories, products writes and task details, inventory, orders) and
    reach the CONTRIBUTING minimum.
 4. Add the SOAP layer (section 8) for questions, returns and invoice links.

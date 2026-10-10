@@ -1,0 +1,1162 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "n11 Sipariş Entegrasyonu (REST)",
+    "version": "2026-10-11",
+    "description": "REST services of the \"Sipariş Entegrasyonu\" section of the n11 developer portal: order (shipment package) listing, order line approval, package split, split by quantity with line cancel, logistics collection request and labour costs. n11 publishes no machine-readable definition; this document is compiled by hand from the section's pages (field tables first, examples second). The SOAP invoice-link service of the same section is not included.",
+    "x-lonca-source": {
+      "kind": "hand-compiled",
+      "portal": "https://developer.n11.com/documentation/",
+      "section": "Sipariş Entegrasyonu",
+      "sectionUrl": "https://developer.n11.com/documentation/n11-siparis-entegrasyonu/",
+      "compiledAt": "2026-10-11",
+      "compiledFrom": "scripts/specs/n11/source.mjs",
+      "generator": "scripts/specs/build-n11.mjs"
+    },
+    "x-lonca-observed-source": {
+      "snapshot": "probe-snapshots/n11.json",
+      "env": "prod",
+      "note": "Properties marked x-lonca-observed were seen in production responses but are not on the documentation page. x-lonca-observed-types lists the JSON types seen where they disagree with the documented type, or where the page gives no type at all."
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.n11.com",
+      "description": "Canlı ortam. n11 bir test ortamı belgelemiyor."
+    }
+  ],
+  "tags": [
+    {
+      "name": "Sipariş",
+      "description": "Sipariş paketleri ve sipariş kalemleri"
+    }
+  ],
+  "security": [
+    {
+      "appKey": [],
+      "appSecret": []
+    }
+  ],
+  "paths": {
+    "/rest/delivery/v1/collectionRequest": {
+      "put": {
+        "tags": [
+          "Sipariş"
+        ],
+        "summary": "Toplama Talebi Oluşturma",
+        "operationId": "createCollectionRequest",
+        "description": "GetShipmentPackages servisinden Picking dönen kalemler için lojistik firma (Horoz, Ceva, Borusan) toplama talebi oluşturur. Paketteki tüm sipariş kalemleri için istek gönderilmelidir; eksik ya da hatalı gönderimde \"Eksik ya da uygun olmayan sipariş öğesi bulunmaktadır.\" hatası alınır.",
+        "requestBody": {
+          "required": true,
+          "x-lonca-doc-basis": "table",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CollectionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Sonuç",
+            "x-lonca-doc-basis": "example",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CodeMessage"
+                }
+              }
+            }
+          }
+        },
+        "x-lonca-doc-url": "https://developer.n11.com/documentation/n11-siparis-entegrasyonu/toplama-talebi-olusturma/"
+      }
+    },
+    "/rest/delivery/v1/shipmentPackages": {
+      "get": {
+        "tags": [
+          "Sipariş"
+        ],
+        "summary": "Sipariş Listeleme Servisi",
+        "operationId": "getShipmentPackages",
+        "description": "Servise 1 dakika içinde maksimum 1000 istek atılabilir. status her istekte tek bir değer alır. 2024 Kasım öncesi sipariş verisi bu servisten verilmez. Sonuçlar son güncelleme tarihine göre sıralanır (orderByDirection). Yalnızca startDate girilirse sonraki 15 günün, yalnızca endDate girilirse önceki 15 günün kayıtları listelenir; iki tarih arasında çok fark varsa endDate'ten önceki son 15 gün listelenir. Satır bazlı fatura tutarı: (price * quantity) - (sellerDiscount + sellerCouponDiscount) = sellerInvoiceAmount. Konuma Özel Teslimat siparişlerinde paket numarası (id) null döner. sender gönderilmediğinde mağaza siparişleri listelenir. orderNumber 12 haneden 13 haneye çıkabilir.",
+        "parameters": [
+          {
+            "name": "startDate",
+            "in": "query",
+            "description": "Belirtilen tarihten sonraki siparişleri getirir. Timestamp (milliseconds) ve GMT+3 olarak gönderilmelidir.",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "endDate",
+            "in": "query",
+            "description": "Belirtilen tarihe kadar olan siparişleri getirir. Timestamp (milliseconds) ve GMT+3 olarak gönderilmelidir.",
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Sadece belirtilen sayfadaki bilgileri döndürür.",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "Bir sayfada listelenecek maksimum adet. Maksimum 100.",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "maximum": 100
+            }
+          },
+          {
+            "name": "orderNumber",
+            "in": "query",
+            "description": "Sipariş numarası ile sorgulama.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "packageIds",
+            "in": "query",
+            "description": "Paket numarası ile sorgulama.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Belirtilen statüdeki siparişleri getirir. Her istekte tek bir değer alır.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "Created",
+                "Picking",
+                "Shipped",
+                "Cancelled",
+                "Delivered",
+                "Unpacked",
+                "UnSupplied"
+              ]
+            }
+          },
+          {
+            "name": "orderByDirection",
+            "in": "query",
+            "description": "ASC: eskiden yeniye, DESC: yeniden eskiye sıralar.",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ASC",
+                "DESC"
+              ]
+            }
+          },
+          {
+            "name": "orderByField",
+            "in": "query",
+            "description": "true girildiğinde paketin lastModifiedDate alanına göre sorgulama yapılır; kaldırıldığında ya da false olduğunda tarih aralığı sipariş oluşturma tarihi olarak baz alınır (tablodaki tip: string). Lonca: the page's example URL spells it \"orderbyField\".",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "true",
+                "false"
+              ]
+            }
+          },
+          {
+            "name": "sender",
+            "in": "query",
+            "description": "Gönderici tipi: SELLER (satıcı gönderir), n11 (n11 depo gönderir), ALL (tümü). Gönderilmediği takdirde varsayılan değer SELLER olarak alınır. Lonca: this table writes \"n11\" where the product-query table and the response field write \"N11\".",
+            "schema": {
+              "type": "string",
+              "default": "SELLER"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Sipariş paketleri (sayfalı)",
+            "x-lonca-doc-basis": "table",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShipmentPackagesPage"
+                }
+              }
+            }
+          }
+        },
+        "x-lonca-doc-url": "https://developer.n11.com/documentation/n11-siparis-entegrasyonu/siparis-listeleme-servisi/"
+      }
+    },
+    "/rest/delivery/v1/splitCombinePackage": {
+      "post": {
+        "tags": [
+          "Sipariş"
+        ],
+        "summary": "Sipariş Paket Bölme",
+        "operationId": "splitCombinePackage",
+        "description": "Siparişler yalnızca Picking statüsünde bölünebilir; Created statüsündekiler bölünemez. Bölünen ana paketin statüsü Unpacked olur, bölünmüş paketler Picking statüsünde, aynı orderNumber, farklı id (paket numarası) ve farklı cargoTrackingNumber (kampanya kodu) ile oluşur. orderLineId değerleri GetShipmentPackages servisinden alınır. Gönderilen orderLineId'ler dışındaki ürünler otomatik olarak yeni bir pakette oluşur. Birden fazla ürün içeren bölünmüş paketler tekrar bölünebilir. Her splitGroups öğesi bir paket oluşturur.",
+        "requestBody": {
+          "required": true,
+          "x-lonca-doc-basis": "example",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SplitCombinePackageRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Oluşan paketler",
+            "x-lonca-doc-basis": "example",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SplitPackageResult"
+                }
+              }
+            }
+          }
+        },
+        "x-lonca-doc-url": "https://developer.n11.com/documentation/n11-siparis-entegrasyonu/siparis-paket-bolme/"
+      }
+    },
+    "/rest/delivery/v1/splitPackageByQuantity": {
+      "post": {
+        "tags": [
+          "Sipariş"
+        ],
+        "summary": "Miktar Bazlı Paket Bölme & Sipariş Ürün İptali",
+        "operationId": "splitPackageByQuantity",
+        "description": "Siparişler yalnızca Picking statüsünde bölünebilir; Created statüsündekiler bölünemez. Bölünen ana paketin statüsü Unpacked olur, bölünmüş paketler Picking statüsünde, aynı orderNumber, farklı id (paket numarası) ve farklı cargoTrackingNumber (kampanya kodu) ile oluşur. orderLineId değerleri GetShipmentPackages servisinden alınır. quantities ile oluşacak paketteki ürün miktarı gönderilir; toplam sipariş ürün miktarını aşamaz. Body içinde yalnızca aynı siparişe ait ürünler bulunmalıdır. Bölme sonrası yeni ürün satırları için yeni orderLineId'ler üretilir. Bu servisle paket bölme ile birlikte parçalı ürün iptali yapılabilir, fakat yalnızca iptal yapılamaz; iptal edilen paket UnSupplied olur.",
+        "requestBody": {
+          "required": true,
+          "x-lonca-doc-basis": "example",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SplitPackageByQuantityRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Oluşan paketler",
+            "x-lonca-doc-basis": "example",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SplitPackageResult"
+                }
+              }
+            }
+          }
+        },
+        "x-lonca-doc-url": "https://developer.n11.com/documentation/n11-siparis-entegrasyonu/miktar-bazli-paket-bolme-siparis-urun-iptali/"
+      }
+    },
+    "/rest/order/v1/labor-costs": {
+      "put": {
+        "tags": [
+          "Sipariş"
+        ],
+        "summary": "Sipariş Kalemine İşçilik Bedeli Gönderme",
+        "operationId": "updateLaborCosts",
+        "description": "Hatalı ya da uygun olmayan orderLineId'ler için hata mesajı dönülür, kalanlar işleme alınır. Birden fazla orderLineId gönderilebilir. İşçilik KDV oranı varsayılan 20'dir. Hesaplama sonucu amountExcludingVAT alanında verilir. İşçilik bedeli eklenebilen kategoriler sayfadaki listede yer alır.",
+        "requestBody": {
+          "required": true,
+          "x-lonca-doc-basis": "table",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LaborCostsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Satır bazlı sonuç",
+            "x-lonca-doc-basis": "example",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LaborCostResults"
+                }
+              }
+            }
+          }
+        },
+        "x-lonca-doc-url": "https://developer.n11.com/documentation/n11-siparis-entegrasyonu/siparis-kalemine-iscilik-bedeli-gonderme/"
+      }
+    },
+    "/rest/order/v1/update": {
+      "put": {
+        "tags": [
+          "Sipariş"
+        ],
+        "summary": "Sipariş Kalemlerini Güncelleme",
+        "operationId": "updateOrder",
+        "description": "Şu an için yalnızca Picking statü güncellemesi (sipariş kalemlerini onaylama) yapılabilir. GetShipmentPackages servisinden Created dönen kalemler güncellenebilir. Hatalı ya da statüsü uygun olmayan lineId'ler için hata mesajı dönülür, kalanlar işleme alınır. lineId için orderLineId baz alınmalıdır; birden fazla lineId gönderilebilir, status tek olmalıdır.",
+        "requestBody": {
+          "required": true,
+          "x-lonca-doc-basis": "table",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOrderRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Satır bazlı sonuç",
+            "x-lonca-doc-basis": "example",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LineResults"
+                }
+              }
+            }
+          }
+        },
+        "x-lonca-doc-url": "https://developer.n11.com/documentation/n11-siparis-entegrasyonu/siparis-kalemlerini-guncelleme-servisi/"
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "BillingAddress": {
+        "type": "object",
+        "description": "Fatura adresi",
+        "properties": {
+          "address": {
+            "type": "string",
+            "x-lonca-doc-example-only": true
+          },
+          "city": {
+            "type": "string",
+            "x-lonca-doc-example-only": true
+          },
+          "district": {
+            "type": "string",
+            "x-lonca-doc-example-only": true
+          },
+          "neighborhood": {
+            "type": "string",
+            "x-lonca-doc-example-only": true
+          },
+          "fullName": {
+            "type": "string",
+            "x-lonca-doc-example-only": true
+          },
+          "gsm": {
+            "type": "string",
+            "x-lonca-doc-example-only": true
+          },
+          "tcId": {
+            "type": "string",
+            "x-lonca-doc-example-only": true
+          },
+          "postalCode": {
+            "type": "string",
+            "x-lonca-doc-example-only": true
+          },
+          "taxId": {
+            "description": "Vergi no. Lonca: the page gives no type (example value null or absent).",
+            "x-lonca-doc-example-only": true,
+            "x-lonca-observed-types": [
+              "null",
+              "string"
+            ]
+          },
+          "taxHouse": {
+            "description": "Vergi dairesi. Lonca: the page gives no type (example value null or absent).",
+            "x-lonca-doc-example-only": true,
+            "x-lonca-observed-types": [
+              "null",
+              "string"
+            ]
+          },
+          "invoiceType": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Fatura tipi, 1: Bireysel, 2: Kurumsal.",
+            "enum": [
+              1,
+              2
+            ]
+          },
+          "countryCode": {
+            "type": "string",
+            "description": "Alıcı ülke kodu. Lonca: the example value is the string \"null\"; the Mikro İhracat example has \"RU\".",
+            "x-lonca-observed-types": [
+              "null"
+            ]
+          }
+        }
+      },
+      "CodeMessage": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "CollectionRequest": {
+        "type": "object",
+        "properties": {
+          "collectionRequestDetails": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Paket / Kampanya kodu."
+                },
+                "orderLineId": {
+                  "type": "integer",
+                  "format": "int64",
+                  "description": "Talep oluşturulacak item id bilgisi."
+                },
+                "boxQuantity": {
+                  "type": "integer",
+                  "format": "int32",
+                  "description": "Koli adedi."
+                },
+                "desi": {
+                  "type": "number",
+                  "description": "Toplam desi."
+                },
+                "shipmentCompany": {
+                  "type": "string",
+                  "enum": [
+                    "HLZ",
+                    "CEVA",
+                    "BL"
+                  ],
+                  "description": "Kargo firma kısa kodu. HLZ: Horoz Lojistik, CEVA: Ceva Lojistik, BL: Ceva Tedarik Zinciri (Borusan)."
+                }
+              }
+            },
+            "description": "Paketteki tüm sipariş kalemleri gönderilmelidir. Lonca: the table has no type column; types follow the example.",
+            "x-lonca-doc-example-only": true
+          }
+        }
+      },
+      "LaborCostResults": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "lineId": {
+                  "type": "integer",
+                  "format": "int64"
+                },
+                "status": {
+                  "type": "string",
+                  "description": "Satır bazlı sonuç (ör. SUCCESS)."
+                },
+                "reasons": {
+                  "type": "string",
+                  "description": "Sonuç mesajı (tek bir string)."
+                },
+                "details": {
+                  "type": "object",
+                  "properties": {
+                    "totalLaborCostExcludingVAT": {
+                      "type": "number"
+                    },
+                    "laborVatRate": {
+                      "type": "integer",
+                      "format": "int32"
+                    },
+                    "amountExcludingVAT": {
+                      "type": "number",
+                      "description": "Item bazlı KDV hariç birim fiyat - işçilik bedeli KDV tutarı."
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "LaborCostsRequest": {
+        "type": "object",
+        "properties": {
+          "laborCostDetails": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "orderLineId": {
+                  "type": "integer",
+                  "format": "int64",
+                  "description": "İşçilik bedeli eklenecek sipariş ürün id bilgisi."
+                },
+                "totalLaborCostExcludingVAT": {
+                  "type": "number",
+                  "description": "KDV hariç işçilik bedeli (tablodaki tip: amount)."
+                },
+                "laborVatRate": {
+                  "type": "integer",
+                  "format": "int32",
+                  "description": "İşçilik bedeli KDV oranı. null ya da gönderilmediği takdirde 20 olarak baz alınır.",
+                  "enum": [
+                    0,
+                    1,
+                    10,
+                    20
+                  ],
+                  "default": 20,
+                  "nullable": true
+                }
+              }
+            },
+            "x-lonca-doc-example-only": true
+          }
+        }
+      },
+      "LineResults": {
+        "type": "object",
+        "properties": {
+          "content": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "lineId": {
+                  "type": "integer",
+                  "format": "int64"
+                },
+                "status": {
+                  "type": "string",
+                  "description": "Satır bazlı sonuç (ör. SUCCESS)."
+                },
+                "reasons": {
+                  "type": "string",
+                  "description": "Sonuç mesajı (tek bir string)."
+                }
+              }
+            }
+          }
+        }
+      },
+      "PackageHistory": {
+        "type": "object",
+        "properties": {
+          "createdDate": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Epoch milisaniye.",
+            "x-lonca-doc-example-only": true
+          },
+          "status": {
+            "type": "string",
+            "description": "Paket statüsü. Lonca: two example values carry a leading space (\" Shipped\", \" Delivered\").",
+            "x-lonca-doc-example-only": true
+          }
+        }
+      },
+      "ShipmentPackage": {
+        "type": "object",
+        "properties": {
+          "billingAddress": {
+            "$ref": "#/components/schemas/BillingAddress"
+          },
+          "shippingAddress": {
+            "$ref": "#/components/schemas/ShippingAddress"
+          },
+          "orderNumber": {
+            "type": "string",
+            "description": "Sipariş numarası. 12 haneden 13 haneye çıkabilir."
+          },
+          "id": {
+            "type": "string",
+            "description": "Paket numarası. Konuma Özel Teslimat siparişlerinde null döner.",
+            "nullable": true
+          },
+          "customerEmail": {
+            "type": "string",
+            "description": "Alıcı mail adresi"
+          },
+          "customerfullName": {
+            "type": "string",
+            "description": "Alıcı ad soyad (invoiceType: 2 ise Firma Ünvanı bu alandan döner)."
+          },
+          "customerId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Alıcı ID bilgisi"
+          },
+          "taxId": {
+            "description": "Vergi no. Lonca: the page gives no type (example value null or absent).",
+            "x-lonca-observed-types": [
+              "null",
+              "string"
+            ]
+          },
+          "taxOffice": {
+            "description": "Vergi dairesi. Lonca: the page gives no type (example value null or absent).",
+            "x-lonca-observed-types": [
+              "null",
+              "string"
+            ]
+          },
+          "tcIdentityNumber": {
+            "type": "string",
+            "description": "TC kimlik numarası"
+          },
+          "cargoSenderNumber": {
+            "type": "string",
+            "description": "Kargo takip numarası. Lonca: null or absent in this page's example; typed from the Mikro İhracat example.",
+            "nullable": true,
+            "x-lonca-doc-url": "https://developer.n11.com/documentation/mikro-ihracat/mikro-ihracat/"
+          },
+          "cargoTrackingNumber": {
+            "type": "string",
+            "description": "Kargo barkod numarası / Kargo kampanya kodu"
+          },
+          "cargoTrackingLink": {
+            "type": "string",
+            "description": "Kargo takip linki"
+          },
+          "shipmentCompanyId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Kargo firma id (GetShipmentCompanies metodu ile listelenebilir)."
+          },
+          "cargoProviderName": {
+            "type": "string",
+            "description": "Kargo firma ünvanı (GetShipmentCompanies metodu ile listelenebilir)."
+          },
+          "shipmentMethod": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Kargo yöntemi, 1: Kargo, 2: Diğer (dijital, hediye, online teslimat).",
+            "enum": [
+              1,
+              2
+            ]
+          },
+          "installmentChargeWithVATprice": {
+            "type": "number",
+            "description": "KDV dahil vade farkı"
+          },
+          "lines": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ShipmentPackageLine"
+            },
+            "description": "Sipariş ürün satırları"
+          },
+          "lastModifiedDate": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Sipariş son hareket tarihi (epoch milisaniye)."
+          },
+          "agreedDeliveryDate": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Maksimum kargolama tarihi (epoch milisaniye)."
+          },
+          "totalAmount": {
+            "type": "number",
+            "description": "Toplam tutar"
+          },
+          "totalDiscountAmount": {
+            "type": "number",
+            "description": "Toplam indirim tutarı"
+          },
+          "packageHistories": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PackageHistory"
+            },
+            "description": "Paket geçmişi (paketin geçmiş statüleri, tarih bazlı)."
+          },
+          "shipmentPackageStatus": {
+            "type": "string",
+            "description": "Sipariş statüsü (Created, Picking, Shipped, Cancelled, Delivered, Unpacked, UnSupplied)."
+          },
+          "micro": {
+            "type": "boolean",
+            "description": "true: e-İhracat siparişi, null: Yurt içi siparişi.",
+            "nullable": true
+          },
+          "hsCode": {
+            "type": "string",
+            "description": "Ürünün uluslararası gümrük sınıflandırma kodu (GTİP / HS Kodu). Lonca: null or absent in this page's example; typed from the Mikro İhracat example.",
+            "nullable": true,
+            "x-lonca-doc-url": "https://developer.n11.com/documentation/mikro-ihracat/mikro-ihracat/"
+          },
+          "invoiceLink": {
+            "type": "string",
+            "description": "Sipariş Fatura Linki (yalnızca e-İhracat siparişlerinde kullanılmaktadır). Lonca: null or absent in this page's example; typed from the Mikro İhracat example.",
+            "nullable": true,
+            "x-lonca-doc-url": "https://developer.n11.com/documentation/mikro-ihracat/mikro-ihracat/"
+          },
+          "invoiceDate": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Sipariş Fatura Tarihi (yalnızca e-İhracat siparişlerinde kullanılmaktadır); Timestamp (milliseconds), GMT+3. Lonca: null or absent in this page's example; typed from the Mikro İhracat example.",
+            "nullable": true,
+            "x-lonca-doc-url": "https://developer.n11.com/documentation/mikro-ihracat/mikro-ihracat/"
+          },
+          "etgbNo": {
+            "type": "string",
+            "description": "Elektronik Ticaret Gümrük Beyanname Numarası; sipariş teslim edildikten sonra n11 tarafından doldurulur. Lonca: null or absent in this page's example; typed from the Mikro İhracat example.",
+            "nullable": true,
+            "x-lonca-doc-url": "https://developer.n11.com/documentation/mikro-ihracat/mikro-ihracat/"
+          },
+          "etgbDate": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Elektronik Ticaret Gümrük Beyanname Tarihi; sipariş teslim edildikten sonra n11 tarafından doldurulur. Lonca: null or absent in this page's example; typed from the Mikro İhracat example.",
+            "nullable": true,
+            "x-lonca-doc-url": "https://developer.n11.com/documentation/mikro-ihracat/mikro-ihracat/"
+          },
+          "deliveryAddressType": {
+            "type": "string",
+            "enum": [
+              "KTN",
+              "EASYPOINT",
+              "PUP"
+            ],
+            "description": "Teslimat adresi tipi. null haricinde bir değer aldığında sipariş bir teslimat noktası siparişidir ve shippingAddress teslimat noktasının adresidir.",
+            "nullable": true
+          },
+          "sellerId": {
+            "type": "integer",
+            "format": "int64",
+            "x-lonca-doc-example-only": true
+          },
+          "isReturned": {
+            "type": "boolean",
+            "description": "Lonca: only in the Mikro İhracat page's example (false there).",
+            "x-lonca-doc-example-only": true,
+            "x-lonca-doc-url": "https://developer.n11.com/documentation/mikro-ihracat/mikro-ihracat/"
+          },
+          "dst_office_id": {
+            "description": "Lonca: only in the Mikro İhracat page's example (null there). Lonca: the page gives no type (example value null or absent).",
+            "x-lonca-doc-example-only": true,
+            "x-lonca-doc-url": "https://developer.n11.com/documentation/mikro-ihracat/mikro-ihracat/"
+          }
+        }
+      },
+      "ShipmentPackageLine": {
+        "type": "object",
+        "properties": {
+          "quantity": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Sipariş ürün adedi"
+          },
+          "productId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "N11 ürün kodu"
+          },
+          "productName": {
+            "type": "string",
+            "description": "Ürün adı"
+          },
+          "stockCode": {
+            "type": "string",
+            "description": "Satıcı ürün kodu"
+          },
+          "variantAttributes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "x-lonca-doc-example-only": true
+                },
+                "value": {
+                  "type": "string",
+                  "x-lonca-doc-example-only": true
+                }
+              }
+            },
+            "description": "Ürün varyant özellikleri"
+          },
+          "customTextOptionValues": {
+            "type": "array",
+            "items": {},
+            "description": "Müşteriye özel ürün seçeneği. Örnekte boş dizi."
+          },
+          "price": {
+            "type": "number",
+            "description": "Sipariş ürün birim fiyatı (indirimler hariç)"
+          },
+          "dueAmount": {
+            "type": "number",
+            "description": "Tahsil edilecek tutar"
+          },
+          "installmentChargeWithVAT": {
+            "type": "number",
+            "description": "KDV dahil vade farkı (ürün bazlı)"
+          },
+          "sellerCouponDiscount": {
+            "type": "number",
+            "description": "Mağaza kupon indirimi"
+          },
+          "sellerCampaignCommissionDiscount": {
+            "type": "number",
+            "description": "Kampanyalı komisyon indirim tutarı"
+          },
+          "sellerDiscount": {
+            "type": "number",
+            "description": "Mağaza indirimi"
+          },
+          "mallDiscount": {
+            "type": "number",
+            "description": "Ürün ile ilgili N11 indirimi"
+          },
+          "sellerInvoiceAmount": {
+            "type": "number",
+            "description": "Mağaza fatura tutarı"
+          },
+          "totalMallDiscountPrice": {
+            "type": "number",
+            "description": "N11 indirimleri toplamı"
+          },
+          "orderLineId": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Sipariş ürün ID"
+          },
+          "orderItemLineItemStatusName": {
+            "type": "string",
+            "description": "Sipariş ürün statüsü"
+          },
+          "totalSellerDiscountPrice": {
+            "type": "number",
+            "description": "Mağaza indirim toplamı"
+          },
+          "vatRate": {
+            "type": "number",
+            "description": "Sipariş ürün KDV oranı"
+          },
+          "commissionRate": {
+            "type": "number",
+            "description": "Sipariş ürün komisyon oranı"
+          },
+          "sellerCampaignCommissionRate": {
+            "type": "number",
+            "description": "Kampanyalı komisyon indirim oranı"
+          },
+          "taxDeductionRate": {
+            "type": "number",
+            "description": "Sipariş ürün vergi kesinti oranı"
+          },
+          "totalLaborCostExcludingVAT": {
+            "type": "number",
+            "description": "Sipariş ürün işçilik ücreti"
+          },
+          "netMarketingFeeRate": {
+            "type": "number",
+            "description": "Pazarlama hizmet bedeli oranı"
+          },
+          "netMarketplaceFeeRate": {
+            "type": "number",
+            "description": "Pazaryeri hizmet bedeli oranı"
+          },
+          "barcode": {
+            "type": "string",
+            "description": "Ürün barkodu. Lonca: null or absent in this page's example; typed from the Mikro İhracat example.",
+            "nullable": true,
+            "x-lonca-doc-url": "https://developer.n11.com/documentation/mikro-ihracat/mikro-ihracat/"
+          },
+          "deliveryFeeType": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Kargo Ödeme Tipi, 1: Şartlı Kargo (n11 Öder), 3: Mağaza Öder, 5: Şartlı Kargo (Mağaza Öder).",
+            "enum": [
+              1,
+              3,
+              5
+            ]
+          },
+          "sellerDiscountedPrice": {
+            "type": "number",
+            "description": "Mağaza indirimli fiyat"
+          },
+          "sender": {
+            "type": "string",
+            "description": "Gönderici tipi, SELLER: Satıcı gönderir, N11: n11 depo gönderir."
+          },
+          "productOrigin": {
+            "type": "string",
+            "description": "Sipariş ürün menşei bilgisi. Lonca: null or absent in this page's example; typed from the Mikro İhracat example.",
+            "nullable": true,
+            "x-lonca-doc-url": "https://developer.n11.com/documentation/mikro-ihracat/mikro-ihracat/"
+          }
+        }
+      },
+      "ShipmentPackagesPage": {
+        "type": "object",
+        "properties": {
+          "pageCount": {
+            "type": "integer",
+            "format": "int32",
+            "x-lonca-doc-example-only": true
+          },
+          "totalPages": {
+            "type": "integer",
+            "format": "int32",
+            "x-lonca-doc-example-only": true
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "x-lonca-doc-example-only": true
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32",
+            "x-lonca-doc-example-only": true
+          },
+          "content": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ShipmentPackage"
+            },
+            "x-lonca-doc-example-only": true
+          }
+        }
+      },
+      "ShippingAddress": {
+        "type": "object",
+        "description": "Teslimat adresi. Teslimat noktası siparişlerinde teslimat noktasının adresidir.",
+        "properties": {
+          "address": {
+            "type": "string",
+            "x-lonca-doc-example-only": true
+          },
+          "city": {
+            "type": "string",
+            "x-lonca-doc-example-only": true
+          },
+          "district": {
+            "type": "string",
+            "x-lonca-doc-example-only": true
+          },
+          "neighborhood": {
+            "type": "string",
+            "x-lonca-doc-example-only": true
+          },
+          "fullName": {
+            "type": "string",
+            "description": "Teslimat noktası siparişlerinde (deliveryAddressType null değilse) null döner.",
+            "nullable": true,
+            "x-lonca-doc-example-only": true
+          },
+          "gsm": {
+            "type": "string",
+            "x-lonca-doc-example-only": true
+          },
+          "tcId": {
+            "type": "string",
+            "x-lonca-doc-example-only": true
+          },
+          "postalCode": {
+            "type": "string",
+            "x-lonca-doc-example-only": true
+          }
+        }
+      },
+      "SplitCombinePackageRequest": {
+        "type": "object",
+        "properties": {
+          "splitGroups": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "orderLineIds": {
+                  "type": "array",
+                  "items": {
+                    "type": "integer",
+                    "format": "int64"
+                  },
+                  "description": "Aynı pakette olacak sipariş ürün id'leri."
+                }
+              }
+            },
+            "description": "Oluşturulacak her paket için bir grup."
+          }
+        }
+      },
+      "SplitPackageByQuantityRequest": {
+        "type": "object",
+        "properties": {
+          "cancelledItems": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "cancelReasonId": {
+                  "type": "integer",
+                  "format": "int32",
+                  "description": "İptal nedeni. 61: Stok Tükendi, 62: Kusurlu/Defolu/Bozuk Ürün, 63: Hatalı Fiyat, 64: Mücbir Sebep, 65: Diğer.",
+                  "enum": [
+                    61,
+                    62,
+                    63,
+                    64,
+                    65
+                  ]
+                },
+                "orderLineId": {
+                  "type": "integer",
+                  "format": "int64"
+                },
+                "quantity": {
+                  "type": "integer",
+                  "format": "int32",
+                  "description": "İptal edilecek miktar."
+                }
+              }
+            },
+            "description": "İptal edilecek sipariş ürünleri (paket bölme ile birlikte)."
+          },
+          "splitPackages": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "packageDetails": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "orderLineId": {
+                        "type": "integer",
+                        "format": "int64"
+                      },
+                      "quantities": {
+                        "type": "integer",
+                        "format": "int32",
+                        "description": "Oluşacak paketteki ürün miktarı."
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Oluşturulacak her paket için bir packageDetails listesi."
+          }
+        }
+      },
+      "SplitPackageResult": {
+        "type": "object",
+        "properties": {
+          "code": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "message": {
+            "type": "string"
+          },
+          "splitPackageOrderItems": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "orderNumber": {
+                  "type": "string"
+                },
+                "packageId": {
+                  "type": "string"
+                },
+                "orderLineId": {
+                  "type": "integer",
+                  "format": "int64"
+                },
+                "stockCode": {
+                  "type": "string"
+                },
+                "quantity": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            }
+          }
+        }
+      },
+      "UpdateOrderRequest": {
+        "type": "object",
+        "properties": {
+          "lines": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "lineId": {
+                  "type": "integer",
+                  "format": "int64",
+                  "description": "Onaylanacak item id bilgisi (GetShipmentPackages'taki orderLineId)."
+                }
+              }
+            },
+            "x-lonca-doc-example-only": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "Picking"
+            ],
+            "description": "Onaylandı statüsü."
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "appKey": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "appKey",
+        "description": "n11 API anahtarı. Sayfalar \"Authorization no auth seçiniz. Headers alanına appKey ve appSecret bilgisini eklemeniz gerekir.\" der; bazı sayfalar başlığı küçük harfle (appkey) yazar. HTTP başlık adları büyük/küçük harf duyarsızdır."
+      },
+      "appSecret": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "appSecret",
+        "description": "n11 API şifresi (appsecret)."
+      }
+    }
+  }
+}

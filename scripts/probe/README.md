@@ -81,8 +81,9 @@ only call read operations: shipment companies, return and cancel claim lists, th
 lists, and the question list → detail (once per run, since n11 allows one listing per minute). The
 maintainer approved them on 2026-10-10. SOAP bodies are XML, so their `wire` entries record
 `non-json` and the shape comes from the SDK's normalised return value. n11 documents no sandbox, so its credentials are prod ones and only belong in
-`.env.prod`. With no `specs/n11/` yet, `pnpm drift` reports its four operations as
-"no spec match" warnings.
+`.env.prod`. The four REST operations match the hand-compiled
+[`specs/n11/`](../../specs/n11/README.md); the four SOAP endpoints have no spec (SOAP is out of
+scope for `specs/`), so `pnpm drift` reports them as "no spec match" warnings.
 
 Add a probe by appending `{ name, call }` to the registry in `probes/<marketplace>.mts`; the
 name is the snapshot key, so keep it stable.
