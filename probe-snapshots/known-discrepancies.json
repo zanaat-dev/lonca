@@ -208,6 +208,22 @@
       "kind": "sdk-unknown-field",
       "reason": "Defensive fallback only: the SDK reads buyboxInfo (docs and prod) and falls back to content if a response ever uses that envelope; neither the docs nor prod have it.",
       "since": "2026-10-10"
+    },
+    {
+      "marketplace": "trendyol",
+      "operation": "GET /integration/order/sellers/{sellerId}/orders",
+      "path": "content[].whoPays",
+      "kind": "sdk-unknown-field",
+      "reason": "Deprecated SDK field: whoPays is not in the Trendyol docs/spec and absent from every prod order sample (seen once on a May 2026 stage package). Kept as @deprecated in ShipmentPackage.whoPays and still mapped when present (sdks/trendyol/src/resources/orders.ts); removal planned for the next major.",
+      "since": "2026-10-10"
+    },
+    {
+      "marketplace": "trendyol",
+      "operation": "GET /integration/order/sellers/{sellerId}/orders/stream",
+      "path": "content[].whoPays",
+      "kind": "sdk-unknown-field",
+      "reason": "Deprecated SDK field: whoPays is not in the Trendyol docs/spec and absent from every prod order sample (seen once on a May 2026 stage package). Kept as @deprecated in ShipmentPackage.whoPays and still mapped when present (sdks/trendyol/src/resources/orders.ts); removal planned for the next major.",
+      "since": "2026-10-10"
     }
   ]
 }
