@@ -137,5 +137,5 @@ for (const event of ORDER_WEBHOOK_EVENTS) {
 ## See also
 
 - [`sdks/hepsiburada/README.md`](https://github.com/zanaat-dev/lonca/blob/main/sdks/hepsiburada/README.md) — full per-resource cheat sheet with method signatures, wire-shape notes, and version history
-- [API Reference](/api/) — exhaustive type information
+- [API Reference](/api/readme/) — exhaustive type information
 - [`examples/try-hepsiburada.mts`](https://github.com/zanaat-dev/lonca/blob/main/examples/try-hepsiburada.mts) — read-only smoke script

@@ -234,4 +234,4 @@ The fake client needs no credentials and never touches the network, so it runs i
 - [Trendyol guide](/guides/trendyol/) — the full resource-by-resource tour
 - [Webhook events guide](/guides/webhook-events/) — both marketplaces' webhook models side by side
 - [Authentication](/authentication/) — credentials, environments, `.env` layout
-- [API reference](/api/) — every exported function, class, and type
+- [API reference](/api/readme/) — every exported function, class, and type
