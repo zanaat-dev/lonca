@@ -153,6 +153,7 @@ interface TrendyolShipmentPackageNode {
   cargoSenderNumber?: string;
 
   deliveryType?: string;
+  /** Undocumented and not seen on prod; kept so a value Trendyol does send still reaches `whoPays`. */
   whoPays?: number;
   timeSlotId?: number;
   fastDelivery?: boolean;

@@ -337,6 +337,11 @@ export interface ShipmentPackage {
 
   // ─── Delivery ───
   deliveryType?: string;
+  /**
+   * @deprecated Not in Trendyol's documentation and absent from every production order sample;
+   * it was only seen once on a stage package (May 2026). Still passed through when Trendyol
+   * sends it, but do not rely on it. It will be removed in the next major version.
+   */
   whoPays?: number;
   timeSlotId?: number;
   fastDelivery?: boolean;
