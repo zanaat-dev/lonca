@@ -31,13 +31,13 @@ There's no widely-adopted open standard. Marketplaces sometimes ship official SD
 ## Design principles
 
 - **Live-verified**. Every endpoint is typed from a real sandbox response, not just an OpenAPI spec. The Hepsiburada SDK was built by probing SIT directly and recording the wire shape per surface.
-- **Spec-faithful**. Method signatures mirror the published paths / parameters / body shapes. We document the quirks instead of papering over them — see for example the [per-host casing matrix](/lonca/guides/hepsiburada/#casing-quirks).
+- **Spec-faithful**. Method signatures mirror the published paths / parameters / body shapes. We document the quirks instead of papering over them — see for example the [per-host casing matrix](/guides/hepsiburada/#casing-quirks).
 - **No magic**. Plain `fetch`, plain TypeScript. No code generation, no opaque proxy classes. You can read the SDK source and find the exact URL each method builds.
 - **Forward-compatible**. Every returned row carries a `raw: Record<string, unknown>` escape hatch — undocumented fields stay accessible without an SDK release.
 
 ## Where to start
 
-1. Read the [Installation](/lonca/installation/) page.
-2. Configure [Authentication](/lonca/authentication/) for the marketplace you target.
-3. Skim the per-SDK guide ([Trendyol](/lonca/guides/trendyol/) or [Hepsiburada](/lonca/guides/hepsiburada/)) for end-to-end usage flows.
-4. Use the [API Reference](/lonca/api/) sidebar for method-by-method detail.
+1. Read the [Installation](/installation/) page.
+2. Configure [Authentication](/authentication/) for the marketplace you target.
+3. Skim the per-SDK guide ([Trendyol](/guides/trendyol/) or [Hepsiburada](/guides/hepsiburada/)) for end-to-end usage flows.
+4. Use the [API Reference](/api/) sidebar for method-by-method detail.

@@ -33,7 +33,7 @@ const client = createTrendyolClient({
 
 `integratorName` is **required** — Trendyol uses it to attribute API traffic, and sends it in the `User-Agent` / `x-agentname` headers the SDK builds for you. Use `'SelfIntegration'` if the seller owns the integration code, otherwise your company or product name (max 30 alphanumeric characters). Auth itself is HTTP Basic with the key/secret pair; the SDK handles the headers.
 
-See the [Authentication guide](/lonca/authentication/) for the full credential story across both marketplaces.
+See the [Authentication guide](/authentication/) for the full credential story across both marketplaces.
 
 ## 5–10 min: Read your catalog
 
@@ -227,11 +227,11 @@ console.log(result?.status); // 'COMPLETED'
 The fake client needs no credentials and never touches the network, so it runs in CI as-is. Seed a `handler` to script exact responses per request, or `batchStatus: 'FAILED'` to exercise your error paths — no mocking framework, no recorded fixtures.
 :::
 
-**Know what's stable.** The SDK is pre-1.0; the [Stability & versioning page](/lonca/stability/) spells out what can change between minors.
+**Know what's stable.** The SDK is pre-1.0; the [Stability & versioning page](/stability/) spells out what can change between minors.
 
 ## See also
 
-- [Trendyol guide](/lonca/guides/trendyol/) — the full resource-by-resource tour
-- [Webhook events guide](/lonca/guides/webhook-events/) — both marketplaces' webhook models side by side
-- [Authentication](/lonca/authentication/) — credentials, environments, `.env` layout
-- [API reference](/lonca/api/) — every exported function, class, and type
+- [Trendyol guide](/guides/trendyol/) — the full resource-by-resource tour
+- [Webhook events guide](/guides/webhook-events/) — both marketplaces' webhook models side by side
+- [Authentication](/authentication/) — credentials, environments, `.env` layout
+- [API reference](/api/) — every exported function, class, and type

@@ -20,7 +20,7 @@ Open-source SDKs and tooling for Turkish e-commerce marketplaces.
 > [!NOTE]
 > ✅ **Stable** — all three packages (`@lonca/core`, `@lonca/trendyol`, `@lonca/hepsiburada`) are `1.0`. Breaking changes ship only in major versions.
 
-See [Stability & versioning](https://zanaat.dev/lonca/stability/) for the semver policy, deprecation windows, and what counts as the public API.
+See [Stability & versioning](https://lonca.zanaat.dev/stability/) for the semver policy, deprecation windows, and what counts as the public API.
 
 ## Table of contents
 
@@ -62,7 +62,7 @@ Lonca aims to fill this gap with a community-maintained open standard.
 
 📄 **OpenAPI specs**: [`specs/`](specs/) — curated per-service OpenAPI 3.0 documents for Hepsiburada (7 files, 67 operations) and Trendyol ([`specs/trendyol/`](specs/trendyol/): 13 files, 95 operations, covering every endpoint `@lonca/trendyol` calls). Both are captured from the marketplaces' developer portals and redistributed under the marketplaces' copyright. See [`specs/README.md`](specs/README.md).
 
-📚 **Docs & API reference**: [zanaat.dev/lonca](https://zanaat.dev/lonca) — guides, end-to-end flows, and full TypeDoc API reference. Built with [Astro Starlight](https://starlight.astro.build), regenerated on each push to `main`.
+📚 **Docs & API reference**: [lonca.zanaat.dev](https://lonca.zanaat.dev/) — guides, end-to-end flows, and full TypeDoc API reference. Built with [Astro Starlight](https://starlight.astro.build), regenerated on each push to `main`.
 
 Need an SDK for another marketplace? Open a [marketplace request](https://github.com/zanaat-dev/lonca/issues/new?template=marketplace_request.yml).
 
