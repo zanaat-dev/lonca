@@ -1,3 +1,9 @@
+/**
+ * Type-safe client for the Hepsiburada marketplace API.
+ *
+ * @module @lonca/hepsiburada
+ */
+
 export {
   createHepsiburadaClient,
   type CreateClientOptions,

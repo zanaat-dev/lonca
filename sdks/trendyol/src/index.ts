@@ -1,3 +1,9 @@
+/**
+ * Type-safe client for the Trendyol marketplace API.
+ *
+ * @module @lonca/trendyol
+ */
+
 export { createTrendyolClient, type CreateClientOptions, type TrendyolClient } from './client.js';
 export { parseWebhookEvent } from './parse-webhook-event.js';
 export { normalizeShipmentPackage } from './resources/orders.js';
