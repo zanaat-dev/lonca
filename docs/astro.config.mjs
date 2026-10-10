@@ -42,6 +42,10 @@ export default defineConfig({
           tsconfig: '../tsconfig.base.json',
           typeDoc: {
             entryPointStrategy: 'expand',
+            // A readme keeps starlight-typedoc from deleting the per-package entry pages
+            // (it drops nested README.md files when no readme is configured, which left
+            // the module links on /api/readme/ pointing at 404s).
+            readme: './api-overview.md',
             excludeInternal: true,
             excludePrivate: true,
             includeVersion: false,
