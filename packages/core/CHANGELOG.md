@@ -1,5 +1,11 @@
 # @lonca/core
 
+## 1.1.0
+
+### Minor Changes
+
+- [#179](https://github.com/zanaat-dev/lonca/pull/179) [`70938e6`](https://github.com/zanaat-dev/lonca/commit/70938e652a643ac45baf3cbeb400e4ca2874447d) Thanks [@keparlak](https://github.com/keparlak)! - `createRequester` accepts a `rawBody` string that is sent exactly as given (e.g. a SOAP envelope), taking precedence over the JSON-serialised `body`. Set the matching `Content-Type` through `headers`.
+
 ## 1.0.1
 
 ### Patch Changes

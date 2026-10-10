@@ -1,5 +1,13 @@
 # @lonca/hepsiburada
 
+## 1.2.1
+
+### Patch Changes
+
+- [#192](https://github.com/zanaat-dev/lonca/pull/192) [`853f459`](https://github.com/zanaat-dev/lonca/commit/853f45980ecaa8645045d9f34d7add027cc2bee1) Thanks [@keparlak](https://github.com/keparlak)! - Package metadata and README links point to the project's new home: the repository moved to [github.com/zanaat-dev/lonca](https://github.com/zanaat-dev/lonca) and the docs to [lonca.zanaat.dev](https://lonca.zanaat.dev). Old GitHub URLs keep redirecting. No code changes.
+- Updated dependencies [[`70938e6`](https://github.com/zanaat-dev/lonca/commit/70938e652a643ac45baf3cbeb400e4ca2874447d)]:
+  - @lonca/core@1.1.0
+
 ## 1.2.0
 
 ### Minor Changes
