@@ -12,7 +12,7 @@ export default defineConfig({
       description:
         'Type-safe TypeScript SDKs for Turkish e-commerce marketplaces (Trendyol, Hepsiburada).',
       logo: {
-        // Source-of-truth: the org brand repo (zanaat-dev/.github/brand), fetched
+        // Source-of-truth: the repo's brand/ directory, copied
         // into docs/public/brand/ via `pnpm docs:sync-brand` (runs automatically
         // before docs:dev / docs:build). The SVG carries its own
         // `prefers-color-scheme` rule, so a single file adapts to Starlight's

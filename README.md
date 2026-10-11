@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/zanaat-dev/.github/main/brand/logomark.svg" alt="Lonca" height="48">
+  <img src="https://raw.githubusercontent.com/zanaat-dev/lonca/main/brand/logomark.svg" alt="Lonca" height="48">
 </p>
 
 # Lonca

@@ -1,5 +1,5 @@
 <p align="left">
-  <img src="https://raw.githubusercontent.com/zanaat-dev/.github/main/brand/logomark.svg" alt="Lonca" height="32">
+  <img src="https://raw.githubusercontent.com/zanaat-dev/lonca/main/brand/logomark.svg" alt="Lonca" height="32">
 </p>
 
 # @lonca/core
