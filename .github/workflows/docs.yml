@@ -42,6 +42,10 @@ jobs:
 
       - name: Build docs site
         run: pnpm docs:build
+        env:
+          # Waitlist endpoint for the landing page forms (infra/waitlist-worker).
+          # Unset until the worker is deployed; the forms then say "opens soon".
+          PUBLIC_WAITLIST_URL: ${{ vars.PUBLIC_WAITLIST_URL }}
 
       - uses: actions/configure-pages@v6
 

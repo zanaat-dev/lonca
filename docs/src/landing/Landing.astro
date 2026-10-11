@@ -1,0 +1,399 @@
+---
+// Lonca landing page (Turkish at /, English at /en/). Standalone page outside
+// Starlight; the docs keep their own routes (/overview/, /guides/…, /api/…).
+import { codeToHtml } from 'shiki';
+import { copy, type Lang } from './copy';
+import trendyolPkg from '../../../sdks/trendyol/package.json';
+import hepsiburadaPkg from '../../../sdks/hepsiburada/package.json';
+import corePkg from '../../../packages/core/package.json';
+import logomarkRaw from '../../../brand/logomark.svg?raw';
+import iconRaw from '../../../brand/icon.svg?raw';
+import './landing.css';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = copy[lang];
+
+// The brand SVGs carry a <style> that sets `svg { color }` for light/dark;
+// inlined into this page it would leak onto every SVG, so drop it and let
+// the surrounding CSS colour the marks through currentColor.
+const inline = (raw: string) =>
+  raw
+    .replace(/<style>[\s\S]*?<\/style>/, '')
+    .replace(/\swidth="[^"]*"/, '')
+    .replace(/\sheight="[^"]*"/, '')
+    .replace('<svg', '<svg aria-hidden="true" focusable="false"');
+const logomark = inline(logomarkRaw);
+const icon = inline(iconRaw);
+
+const docsHref = '/overview/';
+const githubHref = 'https://github.com/zanaat-dev/lonca';
+const waitlistEndpoint = import.meta.env.PUBLIC_WAITLIST_URL ?? '';
+const canonical = new URL(lang === 'tr' ? '/' : '/en/', Astro.site);
+
+const releases = [
+  { name: '@lonca/trendyol', version: trendyolPkg.version },
+  { name: '@lonca/hepsiburada', version: hepsiburadaPkg.version },
+  { name: '@lonca/core', version: corePkg.version },
+];
+
+const trendyolCode = `import { createTrendyolClient } from '@lonca/trendyol';
+import { paginate } from '@lonca/core';
+
+const trendyol = createTrendyolClient({
+  sellerId: 12345,
+  apiKey: process.env.TRENDYOL_API_KEY!,
+  apiSecret: process.env.TRENDYOL_API_SECRET!,
+  env: 'prod',
+  integratorName: 'SelfIntegration',
+});
+
+for await (const pkg of paginate((p) => trendyol.orders.list({ ...p, status: 'Created' }))) {
+  console.log(pkg.orderNumber, pkg.status, pkg.lines.length);
+}`;
+
+const hepsiburadaCode = `import { createHepsiburadaClient } from '@lonca/hepsiburada';
+
+const hb = createHepsiburadaClient({
+  merchantId: process.env.HB_MERCHANT_ID!,
+  username: process.env.HB_API_USER!,
+  password: process.env.HB_API_PASS!,
+  env: 'prod',
+  integratorName: 'SelfIntegration',
+});
+
+const page = await hb.listings.list({ offset: 0, limit: 100 });
+for (const l of page.items) {
+  console.log(l.hepsiburadaSku, l.availableStock, l.price);
+}`;
+
+const trendyolHtml = await codeToHtml(trendyolCode, { lang: 'ts', theme: 'github-dark' });
+const hepsiburadaHtml = await codeToHtml(hepsiburadaCode, { lang: 'ts', theme: 'github-dark' });
+
+const pollHref = 'https://github.com/zanaat-dev/lonca/discussions/categories/polls';
+const issuesHref =
+  'https://github.com/zanaat-dev/lonca/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22';
+const releasesHref = 'https://github.com/zanaat-dev/lonca/releases';
+const guideHref = '/guides/trendyol-in-30-minutes/';
+---
+
+<!doctype html>
+<html lang={t.htmlLang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{t.title}</title>
+    <meta name="description" content={t.description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="alternate" hreflang="tr" href={new URL('/', Astro.site)} />
+    <link rel="alternate" hreflang="en" href={new URL('/en/', Astro.site)} />
+    <link rel="icon" href="/brand/icon.svg" type="image/svg+xml" />
+    <meta name="theme-color" content="#0a0b0c" />
+    <meta property="og:title" content={t.title} />
+    <meta property="og:description" content={t.description} />
+    <meta property="og:image" content={new URL('/brand/social-preview.png', Astro.site)} />
+    <link rel="preload" href="/fonts/FamiljenGrotesk-latin.woff2" as="font" type="font/woff2" crossorigin />
+  </head>
+  <body>
+    <div class="page">
+      <div class="column-rules" aria-hidden="true"></div>
+
+      <header class="top">
+        <nav class="frame" aria-label={lang === 'tr' ? 'Ana menü' : 'Main'}>
+          <a class="brand" href={lang === 'tr' ? '/' : '/en/'} aria-label={t.nav.home} set:html={logomark} />
+          <span class="div-a" aria-hidden="true"></span>
+          <ul class="links">
+            <li><a href="#saticilar">{t.nav.sellers}</a></li>
+            <li><a href="#gelistiriciler">{t.nav.developers}</a></li>
+            <li><a href="#fiyatlar">{t.nav.pricing}</a></li>
+            <li><a href={docsHref}>{t.nav.docs}</a></li>
+          </ul>
+          <span class="div-b" aria-hidden="true"></span>
+          <a class="star" href={githubHref} rel="noopener">
+            <svg viewBox="0 0 16 16" aria-hidden="true" fill="currentColor"
+              ><path
+                d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"
+              ></path></svg
+            >
+            <span>{t.nav.star}</span>
+          </a>
+          <a class="cta-pill" href="#bekleme">{t.nav.waitlist}</a>
+        </nav>
+      </header>
+
+      <main>
+        <section class="fold" aria-labelledby="hero-title">
+          <h1 class="h1" id="hero-title">
+            <span class="l1">{t.hero.line1}</span>
+            <span class="l2">{t.hero.line2}</span>
+          </h1>
+          <p class="sub">{t.hero.sub}</p>
+
+          <form class="waitlist" id="bekleme" data-endpoint={waitlistEndpoint} data-lang={lang} novalidate>
+            <label class="sr-only" for="waitlist-email">{t.hero.emailLabel}</label>
+            <input
+              id="waitlist-email"
+              name="email"
+              type="email"
+              autocomplete="email"
+              inputmode="email"
+              required
+              placeholder={t.hero.emailPlaceholder}
+            />
+            <button type="submit">{t.hero.submit}</button>
+          </form>
+          <p class="waitlist-note" role="status" aria-live="polite"></p>
+
+          <button class="npm" type="button" data-copy={t.hero.npm} data-copied={t.hero.copied}>
+            <code>{t.hero.npm}</code>
+          </button>
+
+          <figure class="hub" role="img" aria-label={t.hub.label}>
+            <canvas aria-hidden="true"></canvas>
+            <span class="pill trendyol">{t.hub.trendyol}</span>
+            <span class="pill hepsiburada">{t.hub.hepsiburada}</span>
+            <span class="pill n11">{t.hub.n11} <small>({t.hub.soon})</small></span>
+            <span class="engine" set:html={icon} />
+            <p class="engine-label">{t.hub.engine} <span>· {t.hub.engineSub}</span></p>
+            <span class="pill code">{t.hub.code} <small>· {t.hub.today}</small></span>
+            <span class="pill panel dashed">{t.hub.panel} <small>· {t.hub.soon}</small></span>
+          </figure>
+        </section>
+
+        <section class="facts" aria-label={lang === 'tr' ? 'Lonca farkı' : 'What is different'}>
+          {
+            t.facts.map((f) => (
+              <div class="fact">
+                <h2>{f.title}</h2>
+                <p>{f.body}</p>
+              </div>
+            ))
+          }
+        </section>
+
+        <section class="band compare" id="saticilar" aria-labelledby="compare-title">
+          <div class="band-head">
+            <h2 id="compare-title">{t.compare.title}</h2>
+            <p>{t.compare.lead}</p>
+          </div>
+          <div class="table-wrap">
+            <table class="ledger" data-reveal>
+              <thead>
+                <tr>
+                  <th scope="col"><span class="sr-only">{lang === 'tr' ? 'Özellik' : 'Feature'}</span></th>
+                  <th scope="col">{t.compare.them}</th>
+                  <th scope="col" class="us">{t.compare.us}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {
+                  t.compare.rows.map((r, i) => (
+                    <tr style={`--i:${i}`}>
+                      <th scope="row">{r.label}</th>
+                      <td class="them">{'plain' in r && r.plain ? r.them : <span>{r.them}</span>}</td>
+                      <td class="us">{r.us}</td>
+                    </tr>
+                  ))
+                }
+              </tbody>
+            </table>
+          </div>
+          <p class="fineprint">{t.compare.note}</p>
+        </section>
+
+        <section class="band how" aria-labelledby="how-title">
+          <div class="band-head">
+            <h2 id="how-title">{t.how.title}</h2>
+          </div>
+          <ol class="steps">
+            {
+              t.how.steps.map((s) => (
+                <li>
+                  <h3>{s.title}</h3>
+                  <p>{s.body}</p>
+                </li>
+              ))
+            }
+          </ol>
+        </section>
+
+        <section class="band codesign" aria-labelledby="codesign-title">
+          <div class="band-head">
+            <h2 id="codesign-title">{t.codesign.title}</h2>
+            <p>{t.codesign.lead}</p>
+          </div>
+          <form class="waitlist-full" data-endpoint={waitlistEndpoint} data-lang={lang} novalidate>
+            <fieldset class="needs">
+              <legend class="sr-only">{t.codesign.lead}</legend>
+              {
+                t.codesign.needs.map((n, i) => (
+                  <label class="need">
+                    <input type="checkbox" name="needs" value={n} id={`need-${i}`} />
+                    <span>{n}</span>
+                  </label>
+                ))
+              }
+            </fieldset>
+            <div class="row">
+              <label class="sr-only" for="codesign-email">{t.hero.emailLabel}</label>
+              <input id="codesign-email" name="email" type="email" autocomplete="email" required placeholder={t.hero.emailPlaceholder} />
+              <label class="sr-only" for="codesign-volume">{t.codesign.volumeLabel}</label>
+              <select id="codesign-volume" name="volume">
+                <option value="">{t.codesign.volumeLabel}</option>
+                {t.codesign.volumes.map((v) => <option value={v}>{v}</option>)}
+              </select>
+              <button type="submit">{t.hero.submit}</button>
+            </div>
+            <p class="form-note" role="status" aria-live="polite"></p>
+          </form>
+        </section>
+
+        <section class="band proof" aria-labelledby="proof-title">
+          <div class="band-head">
+            <h2 id="proof-title">{t.proof.title}</h2>
+            <p>{t.proof.lead}</p>
+          </div>
+          <dl class="facts-grid">
+            <div>
+              <dt>{t.proof.license}</dt>
+              <dd>MIT</dd>
+            </div>
+            <div>
+              <dt>Trendyol</dt>
+              <dd>{t.proof.trendyolSurface}</dd>
+            </div>
+            <div>
+              <dt>Hepsiburada</dt>
+              <dd>{t.proof.hbSurface}</dd>
+            </div>
+            <div class="wide">
+              <dt>{t.proof.latest}</dt>
+              <dd>
+                <ul class="releases">
+                  {
+                    releases.map((r) => (
+                      <li>
+                        <code>{r.name}</code> <span>{r.version}</span>
+                      </li>
+                    ))
+                  }
+                </ul>
+                <a class="arrow" href={releasesHref} rel="noopener">{t.proof.releases} →</a>
+              </dd>
+            </div>
+            <div class="wide">
+              <dt>{t.proof.status}</dt>
+              <dd>
+                <ul class="status">
+                  <li><i class="dot on" aria-hidden="true"></i>Trendyol · {t.proof.verified}</li>
+                  <li><i class="dot on" aria-hidden="true"></i>Hepsiburada · {t.proof.verified}</li>
+                  <li><i class="dot half" aria-hidden="true"></i>n11 · {t.proof.building}</li>
+                </ul>
+                <a class="arrow" href={pollHref} rel="noopener">{t.proof.vote} →</a>
+              </dd>
+            </div>
+          </dl>
+          <p class="independent">{t.proof.independent}</p>
+        </section>
+
+        <section class="band dev" id="gelistiriciler" aria-labelledby="dev-title">
+          <div class="band-head">
+            <h2 id="dev-title">{t.dev.title}</h2>
+            <p>{t.dev.lead}</p>
+          </div>
+          <div class="code-card">
+            <div class="tabs" role="tablist" aria-label="SDK">
+              <button role="tab" aria-selected="true" aria-controls="code-trendyol" id="tab-trendyol">Trendyol</button>
+              <button role="tab" aria-selected="false" aria-controls="code-hb" id="tab-hb" tabindex="-1">Hepsiburada</button>
+              <button class="npm-inline" type="button" data-copy="npm i @lonca/trendyol" data-copied={t.hero.copied}>
+                <code>npm i @lonca/trendyol</code>
+              </button>
+            </div>
+            <div role="tabpanel" id="code-trendyol" aria-labelledby="tab-trendyol">
+              <Fragment set:html={trendyolHtml} />
+            </div>
+            <div role="tabpanel" id="code-hb" aria-labelledby="tab-hb" hidden>
+              <Fragment set:html={hepsiburadaHtml} />
+            </div>
+          </div>
+          <ul class="dev-links">
+            <li><a href={docsHref}>{t.dev.docs} →</a></li>
+            <li><a href={guideHref}>{t.dev.guide} →</a></li>
+            <li><a href={githubHref} rel="noopener">{t.dev.github} →</a></li>
+            <li><a href={issuesHref} rel="noopener">{t.dev.issues} →</a></li>
+          </ul>
+        </section>
+
+        <section class="band pricing" id="fiyatlar" aria-labelledby="pricing-title">
+          <div class="band-head">
+            <h2 id="pricing-title">{t.pricing.title}</h2>
+          </div>
+          <div class="plans">
+            {
+              t.pricing.plans.map((p) => (
+                <article class="plan">
+                  <h3>{p.name}</h3>
+                  <p class="plan-price">{p.price}</p>
+                  <p class="plan-note">{p.note}</p>
+                  <p class="plan-status">{p.tag}</p>
+                </article>
+              ))
+            }
+          </div>
+        </section>
+
+        <section class="band faq" aria-labelledby="faq-title">
+          <div class="band-head">
+            <h2 id="faq-title">{t.faq.title}</h2>
+          </div>
+          <div class="qa">
+            {
+              t.faq.items.map((f) => (
+                <details>
+                  <summary>{f.q}</summary>
+                  <p>{f.a}</p>
+                </details>
+              ))
+            }
+          </div>
+        </section>
+
+        <section class="closing" aria-labelledby="closing-title">
+          <canvas class="closing-pattern" aria-hidden="true"></canvas>
+          <div class="closing-inner">
+            <h2 id="closing-title">{t.closing.title}</h2>
+            <p>{t.closing.sub}</p>
+            <a class="cta-solid" href="#bekleme">{t.hero.submit}</a>
+          </div>
+        </section>
+      </main>
+
+      <footer class="site-foot">
+        <div class="foot-row">
+          <span class="foot-brand" set:html={logomark} />
+          <p>{t.footer.project}</p>
+          <p class="foot-contact">{t.footer.contact}</p>
+          <ul>
+            <li><a href={docsHref}>{t.nav.docs}</a></li>
+            <li><a href={githubHref} rel="noopener">GitHub</a></li>
+            <li><a href={t.nav.langHref} hreflang={lang === 'tr' ? 'en' : 'tr'}>{t.nav.langSwitch}</a></li>
+          </ul>
+        </div>
+        <p class="foot-disclaimer">{t.footer.disclaimer}</p>
+      </footer>
+    </div>
+
+    <script>
+      import { mountHub } from './hub';
+      import { mountWaitlist, mountCopy, mountTabs, mountReveal, mountPattern } from './interactions';
+      document.querySelectorAll<HTMLElement>('.hub').forEach(mountHub);
+      document.querySelectorAll<HTMLFormElement>('form.waitlist, form.waitlist-full').forEach(mountWaitlist);
+      document.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach(mountCopy);
+      document.querySelectorAll<HTMLElement>('.code-card').forEach(mountTabs);
+      mountReveal();
+      document.querySelectorAll<HTMLCanvasElement>('.closing-pattern').forEach(mountPattern);
+    </script>
+  </body>
+</html>

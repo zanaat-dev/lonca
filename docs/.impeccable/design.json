@@ -1,0 +1,181 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-11T00:00:00Z",
+  "title": "Design System: Lonca",
+  "extensions": {
+    "colorMeta": {
+      "ground": { "role": "neutral", "displayName": "Engine Room Black", "canonical": "#0a0b0c", "tonalRamp": ["oklch(15% 0.003 248)", "oklch(25% 0.003 248)", "oklch(35% 0.003 248)", "oklch(45% 0.003 248)", "oklch(55% 0.003 248)", "oklch(65% 0.003 248)", "oklch(80% 0.003 248)", "oklch(95% 0.003 248)"] },
+      "ink": { "role": "neutral", "displayName": "Cool Paper Ink", "canonical": "#e9edf1", "tonalRamp": ["oklch(15% 0.007 248)", "oklch(25% 0.007 248)", "oklch(35% 0.007 248)", "oklch(45% 0.007 248)", "oklch(55% 0.007 248)", "oklch(65% 0.007 248)", "oklch(80% 0.007 248)", "oklch(95% 0.007 248)"] },
+      "ink-2": { "role": "neutral", "displayName": "Quiet Ink", "canonical": "#acadb0", "tonalRamp": ["oklch(15% 0.004 271)", "oklch(25% 0.004 271)", "oklch(35% 0.004 271)", "oklch(45% 0.004 271)", "oklch(55% 0.004 271)", "oklch(65% 0.004 271)", "oklch(80% 0.004 271)", "oklch(95% 0.004 271)"] },
+      "ink-3": { "role": "neutral", "displayName": "Muted Ink", "canonical": "#7c8085", "tonalRamp": ["oklch(15% 0.009 254)", "oklch(25% 0.009 254)", "oklch(35% 0.009 254)", "oklch(45% 0.009 254)", "oklch(55% 0.009 254)", "oklch(65% 0.009 254)", "oklch(80% 0.009 254)", "oklch(95% 0.009 254)"] },
+      "ink-4": { "role": "neutral", "displayName": "Fact Ink", "canonical": "#8a8e93", "tonalRamp": ["oklch(15% 0.009 254)", "oklch(25% 0.009 254)", "oklch(35% 0.009 254)", "oklch(45% 0.009 254)", "oklch(55% 0.009 254)", "oklch(65% 0.009 254)", "oklch(80% 0.009 254)", "oklch(95% 0.009 254)"] },
+      "line": { "role": "neutral", "displayName": "Hairline", "canonical": "#1c1f22", "tonalRamp": ["oklch(15% 0.007 248)", "oklch(25% 0.007 248)", "oklch(35% 0.007 248)", "oklch(45% 0.007 248)", "oklch(55% 0.007 248)", "oklch(65% 0.007 248)", "oklch(80% 0.007 248)", "oklch(95% 0.007 248)"] },
+      "line-2": { "role": "neutral", "displayName": "Strong Hairline", "canonical": "#2a2d31", "tonalRamp": ["oklch(15% 0.008 256)", "oklch(25% 0.008 256)", "oklch(35% 0.008 256)", "oklch(45% 0.008 256)", "oklch(55% 0.008 256)", "oklch(65% 0.008 256)", "oklch(80% 0.008 256)", "oklch(95% 0.008 256)"] },
+      "field": { "role": "neutral", "displayName": "Field", "canonical": "#1f2123", "tonalRamp": ["oklch(15% 0.005 248)", "oklch(25% 0.005 248)", "oklch(35% 0.005 248)", "oklch(45% 0.005 248)", "oklch(55% 0.005 248)", "oklch(65% 0.005 248)", "oklch(80% 0.005 248)", "oklch(95% 0.005 248)"] },
+      "chip": { "role": "neutral", "displayName": "Chip", "canonical": "#151719", "tonalRamp": ["oklch(15% 0.005 248)", "oklch(25% 0.005 248)", "oklch(35% 0.005 248)", "oklch(45% 0.005 248)", "oklch(55% 0.005 248)", "oklch(65% 0.005 248)", "oklch(80% 0.005 248)", "oklch(95% 0.005 248)"] },
+      "accent": { "role": "primary", "displayName": "Lonca Blue", "canonical": "#3e77d2", "tonalRamp": ["oklch(15% 0.05 259)", "oklch(25% 0.09 259)", "oklch(35% 0.12 259)", "oklch(45% 0.15 259)", "oklch(57.7% 0.152 259)", "oklch(65% 0.14 259)", "oklch(80% 0.08 259)", "oklch(95% 0.025 259)"] },
+      "accent-hover": { "role": "primary", "displayName": "Lifted Blue", "canonical": "#4a83de" },
+      "accent-soft": { "role": "primary", "displayName": "Signal Blue", "canonical": "#5b8fe6", "tonalRamp": ["oklch(15% 0.05 260)", "oklch(25% 0.09 260)", "oklch(35% 0.12 260)", "oklch(45% 0.14 260)", "oklch(55% 0.142 260)", "oklch(65.4% 0.142 260)", "oklch(80% 0.08 260)", "oklch(95% 0.025 260)"] },
+      "accent-ink": { "role": "primary", "displayName": "Blue Ink", "canonical": "#ffffff" },
+      "paper": { "role": "neutral", "displayName": "Paper", "canonical": "#eaeef8", "tonalRamp": ["oklch(15% 0.014 268)", "oklch(25% 0.014 268)", "oklch(35% 0.014 268)", "oklch(45% 0.014 268)", "oklch(55% 0.014 268)", "oklch(65% 0.014 268)", "oklch(80% 0.014 268)", "oklch(95% 0.014 268)"] },
+      "state-ok": { "role": "state", "displayName": "Sent Green", "canonical": "#7fc29b" },
+      "state-error": { "role": "state", "displayName": "Error Coral", "canonical": "#e58b7a" },
+      "status-live": { "role": "state", "displayName": "Live Green", "canonical": "#4fae7c" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Hero headline only; second line in Muted Ink. clamp(36px, 11vw, 48px) at 999px and below." },
+      "headline": { "displayName": "Headline", "purpose": "Band and closing headings." },
+      "numeral": { "displayName": "Numeral", "purpose": "Plan prices; proof figures use clamp(20px, 2cqw, 30px)." },
+      "title": { "displayName": "Title", "purpose": "Step and plan names." },
+      "body": { "displayName": "Body", "purpose": "Band leads and closing line, max 62ch." },
+      "body-sm": { "displayName": "Body small", "purpose": "Dense prose: FAQ answers, plan notes, buttons." },
+      "label": { "displayName": "Mono label", "purpose": "Comparison table column heads (uppercase); proof terms at 0.04em sentence case." },
+      "code": { "displayName": "Code", "purpose": "Code card blocks; 13px for inline package names." }
+    },
+    "shadows": [
+      { "name": "engine-lift", "value": "0 0 0 1px rgba(255,255,255,0.6) inset, 0 0.9cqw 3.4cqw rgba(0,0,0,0.45)", "purpose": "The hub's engine node only." },
+      { "name": "engine-glow", "value": "radial-gradient(rgba(240,243,250,0.9) 0, rgba(225,230,242,0.42) 22%, rgba(200,206,222,0.12) 50%, rgba(10,11,12,0) 100%), radius 140 hub units, canvas-drawn", "purpose": "Single light source behind the engine node." },
+      { "name": "live-halo", "value": "0 0 0 3px rgba(79,174,124,0.18)", "purpose": "Production-verified status dot." },
+      { "name": "header-glass", "value": "background: color-mix(in srgb, #0a0b0c 88%, transparent); backdrop-filter: blur(10px)", "purpose": "Sticky header." }
+    ],
+    "motion": [
+      { "name": "ease-out-expo", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Small movement: chip lift, FAQ indicator rotation (0.25s), ledger strike draw (0.7s)." },
+      { "name": "color-fade", "value": "0.2s ease", "purpose": "Hover colour and border changes." },
+      { "name": "ledger-strike", "value": "background-size 0% to 100% over 0.7s, delay calc(row * 120ms + 150ms), trigger at 35% in view", "purpose": "Strike-through of category values in the comparison." },
+      { "name": "hub-dots", "value": "2600ms cycle, inputs phased 700ms apart; panel line 1.6x slower at 28% alpha", "purpose": "Order dots travelling through the engine; paused off screen; static under reduced motion." },
+      { "name": "closing-pattern", "value": "28px cell, blue alpha 0.05 to 0.17, pulse period ~1400ms, drift 1px per 90ms", "purpose": "Closing band background; runs only when visible and motion is allowed." },
+      { "name": "reduced-motion", "value": "@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important } }", "purpose": "Global kill switch; canvases draw one static frame." }
+    ],
+    "breakpoints": [
+      { "name": "narrow", "value": "999px", "purpose": "At or below: fold becomes a flow grid with 16px gutters, header 56px, column rules hidden, all three-column grids stack." }
+    ],
+    "geometry": [
+      { "name": "page-cqw", "value": "comp px / 10.24, in cqw of .page", "purpose": "All fold and header lengths above 999px." },
+      { "name": "hub-cqw", "value": "comp px / 4.70, in cqw of the hub figure", "purpose": "All lengths inside the hub; canvas bleeds 60 units each side." }
+    ],
+    "starlightMap": {
+      "--sl-font": "Familjen Grotesk stack",
+      "--sl-font-mono": "JetBrains Mono stack",
+      "--sl-color-black": "ground",
+      "--sl-color-white": "ink",
+      "--sl-color-gray-2": "ink-2",
+      "--sl-color-gray-3": "ink-4",
+      "--sl-color-gray-5": "line-2",
+      "--sl-color-hairline": "line",
+      "--sl-color-hairline-light": "line-2",
+      "--sl-color-accent": "accent",
+      "--sl-color-accent-low": "#142644",
+      "--sl-color-accent-high": "#b8cdf2",
+      "light-theme-accent": "#2c63bd"
+    }
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The waitlist action; the only blue fill on the page.",
+      "html": "<button class=\"ds-btn-primary\">Bekleme listesine katıl</button>",
+      "css": ".ds-btn-primary { border: 0; border-radius: 7px; background: var(--accent, #3e77d2); color: #fff; font-family: 'Familjen Grotesk', 'Helvetica Neue', Arial, sans-serif; font-size: 15px; font-weight: 600; padding: 12px 18px; cursor: pointer; transition: background 0.2s ease; } .ds-btn-primary:hover { background: #4a83de; } .ds-btn-primary:focus-visible { outline: 2px solid #5b8fe6; outline-offset: 3px; }"
+    },
+    {
+      "name": "Nav CTA Pill",
+      "kind": "button",
+      "refersTo": "nav-cta-pill",
+      "description": "White pill in the header; the one light surface in the nav.",
+      "html": "<a class=\"ds-cta-pill\" href=\"#\">Bekleme listesi</a>",
+      "css": ".ds-cta-pill { display: inline-flex; align-items: center; height: 32px; padding: 0 14px; border-radius: 99px; background: #eaeef8; color: #080809; font-family: 'Familjen Grotesk', Arial, sans-serif; font-size: 14px; font-weight: 500; text-decoration: none; transition: background 0.2s ease; } .ds-cta-pill:hover { background: #fff; } .ds-cta-pill:focus-visible { outline: 2px solid #5b8fe6; outline-offset: 3px; }"
+    },
+    {
+      "name": "Waitlist Field",
+      "kind": "input",
+      "refersTo": "waitlist-field",
+      "description": "Field well with borderless email input and the blue button nested inside.",
+      "html": "<form class=\"ds-field\" onsubmit=\"return false\"><input type=\"email\" placeholder=\"ornek@magaza.com\" aria-label=\"E-posta\"><button>Katıl</button></form>",
+      "css": ".ds-field { display: flex; gap: 8px; padding: 6px; border: 1px solid #2a2d31; border-radius: 10px; background: #1f2123; max-width: 460px; } .ds-field:focus-within { border-color: #3b4047; } .ds-field input { flex: 1; min-width: 0; border: 0; background: transparent; color: #e9edf1; font: 16px 'Familjen Grotesk', Arial, sans-serif; padding: 0 12px; } .ds-field input::placeholder { color: #6f7378; } .ds-field input:focus { outline: none; } .ds-field button { border: 0; border-radius: 7px; background: #3e77d2; color: #fff; font: 600 15px 'Familjen Grotesk', Arial, sans-serif; padding: 12px 18px; cursor: pointer; transition: background 0.2s ease; } .ds-field button:hover { background: #4a83de; }"
+    },
+    {
+      "name": "Need Chip",
+      "kind": "chip",
+      "refersTo": "need-chip",
+      "description": "Checkbox pill for the co-design waitlist; checked gets the blue border and wash.",
+      "html": "<label class=\"ds-need\"><input type=\"checkbox\" checked><span>Sipariş</span></label> <label class=\"ds-need\"><input type=\"checkbox\"><span>Stok ve fiyat</span></label>",
+      "css": ".ds-need { position: relative; display: inline-block; } .ds-need input { position: absolute; inset: 0; opacity: 0; cursor: pointer; } .ds-need span { display: inline-flex; align-items: center; height: 38px; padding: 0 16px; border: 1px solid #2a2d31; border-radius: 99px; background: #151719; color: #acadb0; font: 15px 'Familjen Grotesk', Arial, sans-serif; transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease, transform 0.25s cubic-bezier(0.16,1,0.3,1); } .ds-need input:checked + span { border-color: #3e77d2; color: #e9edf1; background: rgba(62,119,210,0.14); transform: translateY(-1px); } .ds-need input:focus-visible + span { outline: 2px solid #5b8fe6; outline-offset: 3px; }"
+    },
+    {
+      "name": "npm Chip",
+      "kind": "chip",
+      "refersTo": "npm-chip",
+      "description": "Mono install command; click copies.",
+      "html": "<button class=\"ds-npm\"><code>npm i @lonca/trendyol</code></button>",
+      "css": ".ds-npm { border: 1px solid #222528; border-radius: 6px; background: #151719; color: #9a9ea3; padding: 6px 10px; cursor: copy; } .ds-npm code { font: 13px 'JetBrains Mono', ui-monospace, Consolas, monospace; } .ds-npm:hover { color: #e9edf1; } .ds-npm:focus-visible { outline: 2px solid #5b8fe6; outline-offset: 3px; }"
+    },
+    {
+      "name": "Header Navigation",
+      "kind": "nav",
+      "description": "Translucent sticky bar ruled by hairlines; muted links, white pill CTA.",
+      "html": "<nav class=\"ds-nav\"><strong class=\"ds-nav-brand\">lonca</strong><span class=\"ds-nav-rule\"></span><ul><li><a href=\"#\">Satıcılar</a></li><li><a href=\"#\">Geliştiriciler</a></li><li><a href=\"#\">Fiyatlar</a></li></ul><span class=\"ds-nav-rule\"></span><a class=\"ds-nav-cta\" href=\"#\">Bekleme listesi</a></nav>",
+      "css": ".ds-nav { display: flex; align-items: center; gap: 24px; height: 52px; padding: 0 24px; background: color-mix(in srgb, #0a0b0c 88%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid #1c1f22; font-family: 'Familjen Grotesk', Arial, sans-serif; } .ds-nav-brand { color: #e9edf1; font-size: 18px; } .ds-nav-rule { align-self: stretch; width: 1px; background: #1c1f22; } .ds-nav ul { display: flex; gap: 20px; margin: 0; padding: 0; list-style: none; flex: 1; } .ds-nav a { color: #8f9297; font-size: 13px; text-decoration: none; } .ds-nav a:hover { color: #e9edf1; } .ds-nav .ds-nav-cta { padding: 7px 14px; border-radius: 99px; background: #eaeef8; color: #080809; font-weight: 500; } .ds-nav .ds-nav-cta:hover { background: #fff; color: #080809; }"
+    },
+    {
+      "name": "Hub Pills",
+      "kind": "custom",
+      "refersTo": "hub-pill",
+      "description": "Nodes of the hub diagram; dashed with a muted qualifier for what is coming.",
+      "html": "<span class=\"ds-pill\">Trendyol</span> <span class=\"ds-pill\">Kendi kodun <small>· bugün</small></span> <span class=\"ds-pill ds-pill-soon\">Lonca Panel <small>· yakında</small></span>",
+      "css": ".ds-pill { display: inline-flex; align-items: center; gap: 4px; height: 26px; padding: 0 10px; border: 1px solid #2f3236; border-radius: 99px; background: #101214; color: #d2d4d8; font: 12px 'Familjen Grotesk', Arial, sans-serif; white-space: nowrap; } .ds-pill small { font-size: 1em; color: #7c8085; } .ds-pill-soon { border-style: dashed; border-color: #3a3d42; }"
+    },
+    {
+      "name": "Ledger",
+      "kind": "custom",
+      "description": "Comparison table: category values struck in muted ink, Lonca's column in ink over a blue wash.",
+      "html": "<table class=\"ds-ledger\"><thead><tr><th></th><th>Yıllık lisanslı</th><th class=\"us\">Lonca</th></tr></thead><tbody><tr><th>Lisans</th><td class=\"them\"><span>Yıllık ücret</span></td><td class=\"us\">Yok</td></tr></tbody></table>",
+      "css": ".ds-ledger { width: 100%; border-collapse: collapse; font: 15px 'Familjen Grotesk', Arial, sans-serif; } .ds-ledger th, .ds-ledger td { text-align: left; padding: 14px 12px; border-bottom: 1px solid #1c1f22; } .ds-ledger thead th { font: 500 12px 'JetBrains Mono', ui-monospace, monospace; letter-spacing: 0.06em; text-transform: uppercase; color: #7c8085; } .ds-ledger thead th.us { color: #5b8fe6; } .ds-ledger tbody th { font-weight: 500; color: #acadb0; } .ds-ledger td.them { color: #7c8085; } .ds-ledger td.them span { background-image: linear-gradient(currentColor, currentColor); background-repeat: no-repeat; background-position: 0 55%; background-size: 100% 1px; } .ds-ledger td.us { color: #e9edf1; font-weight: 500; background: linear-gradient(90deg, rgba(62,119,210,0.07), transparent 70%); }"
+    },
+    {
+      "name": "Code Card",
+      "kind": "card",
+      "refersTo": "code-card",
+      "description": "Tabbed code sample on a darker-than-ground card.",
+      "html": "<div class=\"ds-code\"><div class=\"ds-tabs\"><button aria-selected=\"true\">Trendyol</button><button aria-selected=\"false\">Hepsiburada</button></div><pre>const client = new Trendyol({ sellerId });</pre></div>",
+      "css": ".ds-code { border: 1px solid #2a2d31; border-radius: 10px; background: #0d0f11; overflow: hidden; } .ds-tabs { display: flex; gap: 4px; padding: 8px; border-bottom: 1px solid #2a2d31; } .ds-tabs button { border: 0; border-radius: 6px; padding: 7px 12px; background: transparent; color: #7c8085; font: 14px 'Familjen Grotesk', Arial, sans-serif; cursor: pointer; } .ds-tabs button:hover { color: #e9edf1; } .ds-tabs button[aria-selected='true'] { background: #1c1f22; color: #e9edf1; } .ds-tabs button:focus-visible { outline: 2px solid #5b8fe6; outline-offset: 3px; } .ds-code pre { margin: 0; padding: 22px 24px; color: #e9edf1; font: 14px/1.65 'JetBrains Mono', ui-monospace, monospace; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Engine Room Blueprint",
+    "overview": "Lonca is drawn as a single dark column framed by two long hairlines, with everything inside measured and ruled like a technical drawing. The ground is almost black, the text is crisp cool grey in four steps, and structure comes from 1px lines, not from cards or shadows. One blue does the talking: the primary action, live state, and Lonca's side of a comparison. The only place light enters the page is the engine node at the centre of the hub diagram, where marketplace lines converge and order dots travel out.\n\nThe world executes the category's standard seller-SaaS frame (headline, form, product view, comparison, steps, pricing, FAQ) in developer-tool craft: Familjen Grotesk with tight display tracking, small JetBrains Mono for anything a developer would type or read as data, pill nodes, and dashed strokes for what is coming but not yet real. Density is medium: wide bands, generous vertical padding, compact rows inside them.\n\nThe landing is the source; the Starlight docs follow it by mapping the same ground, inks, hairlines, faces and accent onto Starlight's variables.",
+    "keyCharacteristics": [
+      "Near-black ground, four-step cool grey ink, two hairline greys.",
+      "One accent, Lonca blue, rationed to action, live state and \"us\".",
+      "A centred column ruled by hairlines at 8.98cqw from each edge.",
+      "Desktop geometry in container-query width, bound to the approved comp.",
+      "Flat surfaces; the engine node's glow is the single source of light.",
+      "Solid means today, dashed means soon."
+    ],
+    "rules": [
+      { "name": "The One Blue Rule", "body": "Blue appears only on the action, on live or travelling state, and on Lonca's side of a comparison. A blue that decorates a heading or ornament is wrong.", "section": "colors" },
+      { "name": "The Signal-on-Dark Rule", "body": "When blue is text or an outline on the ground, use Signal Blue; Lonca Blue is a fill.", "section": "colors" },
+      { "name": "The Typed-Text Rule", "body": "Mono is for package names, code, data labels and ordinals. Never for headlines or prose.", "section": "typography" },
+      { "name": "The Tight Display Rule", "body": "Every heading carries negative tracking (-0.01em to -0.03em); body text never does.", "section": "typography" },
+      { "name": "The Ruled Column Rule", "body": "Every section lives between the two long hairlines at 8.98cqw. Nothing breaks the column except the full-bleed separators.", "section": "layout" },
+      { "name": "The Lines-Not-Gaps Rule", "body": "Grid cells are separated by 1px hairlines, never by gutters and floating cards.", "section": "layout" },
+      { "name": "The Single Light Rule", "body": "The engine node is the only lit object. No other surface gets a glow or a drop shadow.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do express fold and hub geometry in `cqw` of their container, derived from the comp (page px / 10.24, hub px / 4.70).",
+      "Do give every below-fold size a `clamp()` with px floor and ceiling.",
+      "Do separate cells and sections with 1px Hairline or Strong Hairline rules.",
+      "Do use dashed strokes, and a Muted Ink \"soon\" qualifier, for anything not yet shipped.",
+      "Do put package names, code and data labels in JetBrains Mono.",
+      "Do keep content visible without JavaScript; motion only decorates state that is already rendered.",
+      "Do pause canvas animation off screen and draw a static frame under reduced motion."
+    ],
+    "donts": [
+      "Don't use blue for decoration; it belongs to the action, live state and Lonca's side.",
+      "Don't add drop shadows or glows outside the engine node.",
+      "Don't float content in rounded cards with gaps; rule it into the column.",
+      "Don't add surfaces lighter than Field other than the Paper pill and the engine tile.",
+      "Don't redraw, recolour beyond ink, or add effects to the Lonca marks; inline them with `currentColor`."
+    ]
+  }
+}

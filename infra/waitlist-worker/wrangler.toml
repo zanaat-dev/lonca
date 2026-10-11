@@ -1,0 +1,12 @@
+name = "lonca-waitlist"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+
+# Served at https://waitlist.zanaat.dev (custom domain on the zanaat.dev zone).
+routes = [{ pattern = "waitlist.zanaat.dev", custom_domain = true }]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "lonca-waitlist"
+# Filled in after `wrangler d1 create lonca-waitlist`.
+database_id = "REPLACE_WITH_D1_ID"
