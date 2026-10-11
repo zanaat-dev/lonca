@@ -117,6 +117,13 @@ a {
   max-width: 1200px;
   margin-inline: auto;
 }
+/* Until the cap, the page is the viewport: clip the hub glow's bleed here,
+ * because mobile browsers zoom out to fit overflow that only body clips. */
+@media (max-width: 1200px) {
+  .page {
+    overflow-x: clip;
+  }
+}
 
 /* ---------- Header (comp y 0..51) ---------- */
 .top {
@@ -233,7 +240,7 @@ a {
   background: #ffffff;
 }
 
-/* Column frame: the two long hairlines at comp x 92 and x 930. */
+/* Column frame: the two long hairlines, 8.98cqw in from each edge so the bands below continue them. */
 .column-rules {
   position: absolute;
   inset: 0 auto auto 0;
@@ -254,7 +261,7 @@ a {
   left: 8.98cqw;
 }
 .column-rules::after {
-  left: 90.82cqw;
+  right: 8.98cqw;
 }
 
 /* ---------- Fold (comp y 51..492) ---------- */
@@ -479,22 +486,34 @@ a {
   color: var(--ink-3);
 }
 
-/* ---------- Facts (comp y 492..) ---------- */
+/* ---------- Facts (comp y 492..) ----------
+ * The first band: it sits between the hero's column rules and opens with the
+ * same full-bleed hairline, so the frame runs unbroken from the fold down.
+ */
 .facts {
   position: relative;
-  margin: 0 9.77cqw;
+  margin: 0 8.98cqw;
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  border: 1px solid var(--line-2);
-  border-bottom: 0;
-  border-radius: 0.8cqw 0.8cqw 0 0;
+  border-left: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+}
+.facts::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 100vw;
+  margin-left: -50vw;
+  height: 1px;
+  background: var(--line);
 }
 .fact {
-  padding: 2.05cqw 1.66cqw 2.4cqw;
+  padding: 2.05cqw clamp(20px, 2.6cqw, 44px) 2.4cqw;
   min-width: 0;
 }
 .fact + .fact {
-  border-left: 1px solid var(--line-2);
+  border-left: 1px solid var(--line);
 }
 .fact h2 {
   margin: 0 0 1.1cqw;
@@ -1201,16 +1220,17 @@ a {
     display: none;
   }
   .facts {
-    margin: 0 16px;
+    margin: 0;
     grid-template-columns: 1fr;
-    border-radius: 10px 10px 0 0;
+    border-left: 0;
+    border-right: 0;
   }
   .fact {
-    padding: 20px 18px;
+    padding: 20px 16px;
   }
   .fact + .fact {
     border-left: 0;
-    border-top: 1px solid var(--line-2);
+    border-top: 1px solid var(--line);
   }
   .fact h2 {
     font-size: 20px;

@@ -212,7 +212,7 @@ Both faces are self-hosted from `public/fonts` as variable woff2 files (Familjen
 
 ## Layout
 
-**The comp-bound fold.** The page is a container (`container-type: inline-size`). Above the fold, every length is the approved comp's pixel value divided by 10.24 and expressed in `cqw`, and elements are absolutely placed. The first viewport therefore scales as one drawing with the window instead of reflowing: header 5.18cqw tall, fold 42.87cqw, column rules at 8.98cqw and 90.82cqw, header dividers at 31.74cqw and 70.31cqw.
+**The comp-bound fold.** The page is a container (`container-type: inline-size`). Above the fold, every length is the approved comp's pixel value divided by 10.24 and expressed in `cqw`, and elements are absolutely placed. The first viewport therefore scales as one drawing with the window instead of reflowing: header 5.18cqw tall, fold 42.87cqw, column rules 8.98cqw in from each edge, header dividers at 31.74cqw and 70.31cqw.
 
 **The 1200px cap.** The page container stops growing at 1200px (`max-width: 1200px`, centred), so the drawing scales up to 1200 and then holds its size on wider screens instead of filling a 2K or 4K window. Only the header background, the band-opening hairlines and the footer rule stay full-bleed (`::before` at `100vw`), so the frame still reaches the window edges.
 
