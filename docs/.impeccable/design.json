@@ -4,54 +4,285 @@
   "title": "Design System: Lonca",
   "extensions": {
     "colorMeta": {
-      "ground": { "role": "neutral", "displayName": "Engine Room Black", "canonical": "#0a0b0c", "tonalRamp": ["oklch(15% 0.003 248)", "oklch(25% 0.003 248)", "oklch(35% 0.003 248)", "oklch(45% 0.003 248)", "oklch(55% 0.003 248)", "oklch(65% 0.003 248)", "oklch(80% 0.003 248)", "oklch(95% 0.003 248)"] },
-      "ink": { "role": "neutral", "displayName": "Cool Paper Ink", "canonical": "#e9edf1", "tonalRamp": ["oklch(15% 0.007 248)", "oklch(25% 0.007 248)", "oklch(35% 0.007 248)", "oklch(45% 0.007 248)", "oklch(55% 0.007 248)", "oklch(65% 0.007 248)", "oklch(80% 0.007 248)", "oklch(95% 0.007 248)"] },
-      "ink-2": { "role": "neutral", "displayName": "Quiet Ink", "canonical": "#acadb0", "tonalRamp": ["oklch(15% 0.004 271)", "oklch(25% 0.004 271)", "oklch(35% 0.004 271)", "oklch(45% 0.004 271)", "oklch(55% 0.004 271)", "oklch(65% 0.004 271)", "oklch(80% 0.004 271)", "oklch(95% 0.004 271)"] },
-      "ink-3": { "role": "neutral", "displayName": "Muted Ink", "canonical": "#7c8085", "tonalRamp": ["oklch(15% 0.009 254)", "oklch(25% 0.009 254)", "oklch(35% 0.009 254)", "oklch(45% 0.009 254)", "oklch(55% 0.009 254)", "oklch(65% 0.009 254)", "oklch(80% 0.009 254)", "oklch(95% 0.009 254)"] },
-      "ink-4": { "role": "neutral", "displayName": "Fact Ink", "canonical": "#8a8e93", "tonalRamp": ["oklch(15% 0.009 254)", "oklch(25% 0.009 254)", "oklch(35% 0.009 254)", "oklch(45% 0.009 254)", "oklch(55% 0.009 254)", "oklch(65% 0.009 254)", "oklch(80% 0.009 254)", "oklch(95% 0.009 254)"] },
-      "line": { "role": "neutral", "displayName": "Hairline", "canonical": "#1c1f22", "tonalRamp": ["oklch(15% 0.007 248)", "oklch(25% 0.007 248)", "oklch(35% 0.007 248)", "oklch(45% 0.007 248)", "oklch(55% 0.007 248)", "oklch(65% 0.007 248)", "oklch(80% 0.007 248)", "oklch(95% 0.007 248)"] },
-      "line-2": { "role": "neutral", "displayName": "Strong Hairline", "canonical": "#2a2d31", "tonalRamp": ["oklch(15% 0.008 256)", "oklch(25% 0.008 256)", "oklch(35% 0.008 256)", "oklch(45% 0.008 256)", "oklch(55% 0.008 256)", "oklch(65% 0.008 256)", "oklch(80% 0.008 256)", "oklch(95% 0.008 256)"] },
-      "field": { "role": "neutral", "displayName": "Field", "canonical": "#1f2123", "tonalRamp": ["oklch(15% 0.005 248)", "oklch(25% 0.005 248)", "oklch(35% 0.005 248)", "oklch(45% 0.005 248)", "oklch(55% 0.005 248)", "oklch(65% 0.005 248)", "oklch(80% 0.005 248)", "oklch(95% 0.005 248)"] },
-      "chip": { "role": "neutral", "displayName": "Chip", "canonical": "#151719", "tonalRamp": ["oklch(15% 0.005 248)", "oklch(25% 0.005 248)", "oklch(35% 0.005 248)", "oklch(45% 0.005 248)", "oklch(55% 0.005 248)", "oklch(65% 0.005 248)", "oklch(80% 0.005 248)", "oklch(95% 0.005 248)"] },
-      "accent": { "role": "primary", "displayName": "Lonca Blue", "canonical": "#3e77d2", "tonalRamp": ["oklch(15% 0.05 259)", "oklch(25% 0.09 259)", "oklch(35% 0.12 259)", "oklch(45% 0.15 259)", "oklch(57.7% 0.152 259)", "oklch(65% 0.14 259)", "oklch(80% 0.08 259)", "oklch(95% 0.025 259)"] },
+      "ground": {
+        "role": "neutral",
+        "displayName": "Engine Room Black",
+        "canonical": "#0a0b0c",
+        "tonalRamp": [
+          "oklch(15% 0.003 248)",
+          "oklch(25% 0.003 248)",
+          "oklch(35% 0.003 248)",
+          "oklch(45% 0.003 248)",
+          "oklch(55% 0.003 248)",
+          "oklch(65% 0.003 248)",
+          "oklch(80% 0.003 248)",
+          "oklch(95% 0.003 248)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Cool Paper Ink",
+        "canonical": "#e9edf1",
+        "tonalRamp": [
+          "oklch(15% 0.007 248)",
+          "oklch(25% 0.007 248)",
+          "oklch(35% 0.007 248)",
+          "oklch(45% 0.007 248)",
+          "oklch(55% 0.007 248)",
+          "oklch(65% 0.007 248)",
+          "oklch(80% 0.007 248)",
+          "oklch(95% 0.007 248)"
+        ]
+      },
+      "ink-2": {
+        "role": "neutral",
+        "displayName": "Quiet Ink",
+        "canonical": "#acadb0",
+        "tonalRamp": [
+          "oklch(15% 0.004 271)",
+          "oklch(25% 0.004 271)",
+          "oklch(35% 0.004 271)",
+          "oklch(45% 0.004 271)",
+          "oklch(55% 0.004 271)",
+          "oklch(65% 0.004 271)",
+          "oklch(80% 0.004 271)",
+          "oklch(95% 0.004 271)"
+        ]
+      },
+      "ink-3": {
+        "role": "neutral",
+        "displayName": "Muted Ink",
+        "canonical": "#7c8085",
+        "tonalRamp": [
+          "oklch(15% 0.009 254)",
+          "oklch(25% 0.009 254)",
+          "oklch(35% 0.009 254)",
+          "oklch(45% 0.009 254)",
+          "oklch(55% 0.009 254)",
+          "oklch(65% 0.009 254)",
+          "oklch(80% 0.009 254)",
+          "oklch(95% 0.009 254)"
+        ]
+      },
+      "ink-4": {
+        "role": "neutral",
+        "displayName": "Fact Ink",
+        "canonical": "#8a8e93",
+        "tonalRamp": [
+          "oklch(15% 0.009 254)",
+          "oklch(25% 0.009 254)",
+          "oklch(35% 0.009 254)",
+          "oklch(45% 0.009 254)",
+          "oklch(55% 0.009 254)",
+          "oklch(65% 0.009 254)",
+          "oklch(80% 0.009 254)",
+          "oklch(95% 0.009 254)"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "#1c1f22",
+        "tonalRamp": [
+          "oklch(15% 0.007 248)",
+          "oklch(25% 0.007 248)",
+          "oklch(35% 0.007 248)",
+          "oklch(45% 0.007 248)",
+          "oklch(55% 0.007 248)",
+          "oklch(65% 0.007 248)",
+          "oklch(80% 0.007 248)",
+          "oklch(95% 0.007 248)"
+        ]
+      },
+      "line-2": {
+        "role": "neutral",
+        "displayName": "Strong Hairline",
+        "canonical": "#2a2d31",
+        "tonalRamp": [
+          "oklch(15% 0.008 256)",
+          "oklch(25% 0.008 256)",
+          "oklch(35% 0.008 256)",
+          "oklch(45% 0.008 256)",
+          "oklch(55% 0.008 256)",
+          "oklch(65% 0.008 256)",
+          "oklch(80% 0.008 256)",
+          "oklch(95% 0.008 256)"
+        ]
+      },
+      "field": {
+        "role": "neutral",
+        "displayName": "Field",
+        "canonical": "#1f2123",
+        "tonalRamp": [
+          "oklch(15% 0.005 248)",
+          "oklch(25% 0.005 248)",
+          "oklch(35% 0.005 248)",
+          "oklch(45% 0.005 248)",
+          "oklch(55% 0.005 248)",
+          "oklch(65% 0.005 248)",
+          "oklch(80% 0.005 248)",
+          "oklch(95% 0.005 248)"
+        ]
+      },
+      "chip": {
+        "role": "neutral",
+        "displayName": "Chip",
+        "canonical": "#151719",
+        "tonalRamp": [
+          "oklch(15% 0.005 248)",
+          "oklch(25% 0.005 248)",
+          "oklch(35% 0.005 248)",
+          "oklch(45% 0.005 248)",
+          "oklch(55% 0.005 248)",
+          "oklch(65% 0.005 248)",
+          "oklch(80% 0.005 248)",
+          "oklch(95% 0.005 248)"
+        ]
+      },
+      "accent": {
+        "role": "primary",
+        "displayName": "Lonca Blue",
+        "canonical": "#3e77d2",
+        "tonalRamp": [
+          "oklch(15% 0.05 259)",
+          "oklch(25% 0.09 259)",
+          "oklch(35% 0.12 259)",
+          "oklch(45% 0.15 259)",
+          "oklch(57.7% 0.152 259)",
+          "oklch(65% 0.14 259)",
+          "oklch(80% 0.08 259)",
+          "oklch(95% 0.025 259)"
+        ]
+      },
       "accent-hover": { "role": "primary", "displayName": "Lifted Blue", "canonical": "#4a83de" },
-      "accent-soft": { "role": "primary", "displayName": "Signal Blue", "canonical": "#5b8fe6", "tonalRamp": ["oklch(15% 0.05 260)", "oklch(25% 0.09 260)", "oklch(35% 0.12 260)", "oklch(45% 0.14 260)", "oklch(55% 0.142 260)", "oklch(65.4% 0.142 260)", "oklch(80% 0.08 260)", "oklch(95% 0.025 260)"] },
+      "accent-soft": {
+        "role": "primary",
+        "displayName": "Signal Blue",
+        "canonical": "#5b8fe6",
+        "tonalRamp": [
+          "oklch(15% 0.05 260)",
+          "oklch(25% 0.09 260)",
+          "oklch(35% 0.12 260)",
+          "oklch(45% 0.14 260)",
+          "oklch(55% 0.142 260)",
+          "oklch(65.4% 0.142 260)",
+          "oklch(80% 0.08 260)",
+          "oklch(95% 0.025 260)"
+        ]
+      },
       "accent-ink": { "role": "primary", "displayName": "Blue Ink", "canonical": "#ffffff" },
-      "paper": { "role": "neutral", "displayName": "Paper", "canonical": "#eaeef8", "tonalRamp": ["oklch(15% 0.014 268)", "oklch(25% 0.014 268)", "oklch(35% 0.014 268)", "oklch(45% 0.014 268)", "oklch(55% 0.014 268)", "oklch(65% 0.014 268)", "oklch(80% 0.014 268)", "oklch(95% 0.014 268)"] },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "canonical": "#eaeef8",
+        "tonalRamp": [
+          "oklch(15% 0.014 268)",
+          "oklch(25% 0.014 268)",
+          "oklch(35% 0.014 268)",
+          "oklch(45% 0.014 268)",
+          "oklch(55% 0.014 268)",
+          "oklch(65% 0.014 268)",
+          "oklch(80% 0.014 268)",
+          "oklch(95% 0.014 268)"
+        ]
+      },
       "state-ok": { "role": "state", "displayName": "Sent Green", "canonical": "#7fc29b" },
       "state-error": { "role": "state", "displayName": "Error Coral", "canonical": "#e58b7a" },
       "status-live": { "role": "state", "displayName": "Live Green", "canonical": "#4fae7c" }
     },
     "typographyMeta": {
-      "display": { "displayName": "Display", "purpose": "Hero headline only; second line in Muted Ink. clamp(36px, 11vw, 48px) at 999px and below." },
+      "display": {
+        "displayName": "Display",
+        "purpose": "Hero headline only; second line in Muted Ink. clamp(36px, 11vw, 48px) at 999px and below."
+      },
       "headline": { "displayName": "Headline", "purpose": "Band and closing headings." },
-      "numeral": { "displayName": "Numeral", "purpose": "Plan prices; proof figures use clamp(20px, 2cqw, 30px)." },
+      "numeral": {
+        "displayName": "Numeral",
+        "purpose": "Plan prices; proof figures use clamp(20px, 2cqw, 30px)."
+      },
       "title": { "displayName": "Title", "purpose": "Step and plan names." },
       "body": { "displayName": "Body", "purpose": "Band leads and closing line, max 62ch." },
-      "body-sm": { "displayName": "Body small", "purpose": "Dense prose: FAQ answers, plan notes, buttons." },
-      "label": { "displayName": "Mono label", "purpose": "Comparison table column heads (uppercase); proof terms at 0.04em sentence case." },
-      "code": { "displayName": "Code", "purpose": "Code card blocks; 13px for inline package names." }
+      "body-sm": {
+        "displayName": "Body small",
+        "purpose": "Dense prose: FAQ answers, plan notes, buttons."
+      },
+      "label": {
+        "displayName": "Mono label",
+        "purpose": "Comparison table column heads (uppercase); proof terms at 0.04em sentence case."
+      },
+      "code": {
+        "displayName": "Code",
+        "purpose": "Code card blocks; 13px for inline package names."
+      }
     },
     "shadows": [
-      { "name": "engine-lift", "value": "0 0 0 1px rgba(255,255,255,0.6) inset, 0 0.9cqw 3.4cqw rgba(0,0,0,0.45)", "purpose": "The hub's engine node only." },
-      { "name": "engine-glow", "value": "radial-gradient(rgba(240,243,250,0.9) 0, rgba(225,230,242,0.42) 22%, rgba(200,206,222,0.12) 50%, rgba(10,11,12,0) 100%), radius 140 hub units, canvas-drawn", "purpose": "Single light source behind the engine node." },
-      { "name": "live-halo", "value": "0 0 0 3px rgba(79,174,124,0.18)", "purpose": "Production-verified status dot." },
-      { "name": "header-glass", "value": "background: color-mix(in srgb, #0a0b0c 88%, transparent); backdrop-filter: blur(10px)", "purpose": "Sticky header." }
+      {
+        "name": "engine-lift",
+        "value": "0 0 0 1px rgba(255,255,255,0.6) inset, 0 0.9cqw 3.4cqw rgba(0,0,0,0.45)",
+        "purpose": "The hub's engine node only."
+      },
+      {
+        "name": "engine-glow",
+        "value": "radial-gradient(rgba(240,243,250,0.9) 0, rgba(225,230,242,0.42) 22%, rgba(200,206,222,0.12) 50%, rgba(10,11,12,0) 100%), radius 140 hub units, canvas-drawn",
+        "purpose": "Single light source behind the engine node."
+      },
+      {
+        "name": "live-halo",
+        "value": "0 0 0 3px rgba(79,174,124,0.18)",
+        "purpose": "Production-verified status dot."
+      },
+      {
+        "name": "header-glass",
+        "value": "background: color-mix(in srgb, #0a0b0c 88%, transparent); backdrop-filter: blur(10px)",
+        "purpose": "Sticky header."
+      }
     ],
     "motion": [
-      { "name": "ease-out-expo", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Small movement: chip lift, FAQ indicator rotation (0.25s), ledger strike draw (0.7s)." },
+      {
+        "name": "ease-out-expo",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Small movement: chip lift, FAQ indicator rotation (0.25s), ledger strike draw (0.7s)."
+      },
       { "name": "color-fade", "value": "0.2s ease", "purpose": "Hover colour and border changes." },
-      { "name": "ledger-strike", "value": "background-size 0% to 100% over 0.7s, delay calc(row * 120ms + 150ms), trigger at 35% in view", "purpose": "Strike-through of category values in the comparison." },
-      { "name": "hub-dots", "value": "2600ms cycle, inputs phased 700ms apart; panel line 1.6x slower at 28% alpha", "purpose": "Order dots travelling through the engine; paused off screen; static under reduced motion." },
-      { "name": "closing-pattern", "value": "28px cell, blue alpha 0.05 to 0.17, pulse period ~1400ms, drift 1px per 90ms", "purpose": "Closing band background; runs only when visible and motion is allowed." },
-      { "name": "reduced-motion", "value": "@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important } }", "purpose": "Global kill switch; canvases draw one static frame." }
+      {
+        "name": "ledger-strike",
+        "value": "background-size 0% to 100% over 0.7s, delay calc(row * 120ms + 150ms), trigger at 35% in view",
+        "purpose": "Strike-through of category values in the comparison."
+      },
+      {
+        "name": "hub-dots",
+        "value": "2600ms cycle, inputs phased 700ms apart; panel line 1.6x slower at 28% alpha",
+        "purpose": "Order dots travelling through the engine; paused off screen; static under reduced motion."
+      },
+      {
+        "name": "closing-pattern",
+        "value": "28px cell, blue alpha 0.05 to 0.17, pulse period ~1400ms, drift 1px per 90ms",
+        "purpose": "Closing band background; runs only when visible and motion is allowed."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important } }",
+        "purpose": "Global kill switch; canvases draw one static frame."
+      }
     ],
     "breakpoints": [
-      { "name": "narrow", "value": "999px", "purpose": "At or below: fold becomes a flow grid with 16px gutters, header 56px, column rules hidden, all three-column grids stack." }
+      {
+        "name": "narrow",
+        "value": "999px",
+        "purpose": "At or below: fold becomes a flow grid with 16px gutters, header 56px, column rules hidden, all three-column grids stack."
+      }
     ],
     "geometry": [
-      { "name": "page-cqw", "value": "comp px / 10.24, in cqw of .page", "purpose": "All fold and header lengths above 999px." },
-      { "name": "hub-cqw", "value": "comp px / 4.70, in cqw of the hub figure", "purpose": "All lengths inside the hub; canvas bleeds 60 units each side." }
+      {
+        "name": "page-cqw",
+        "value": "comp px / 10.24, in cqw of .page",
+        "purpose": "All fold and header lengths above 999px."
+      },
+      {
+        "name": "hub-cqw",
+        "value": "comp px / 4.70, in cqw of the hub figure",
+        "purpose": "All lengths inside the hub; canvas bleeds 60 units each side."
+      }
     ],
     "starlightMap": {
       "--sl-font": "Familjen Grotesk stack",
@@ -153,13 +384,41 @@
       "Solid means today, dashed means soon."
     ],
     "rules": [
-      { "name": "The One Blue Rule", "body": "Blue appears only on the action, on live or travelling state, and on Lonca's side of a comparison. A blue that decorates a heading or ornament is wrong.", "section": "colors" },
-      { "name": "The Signal-on-Dark Rule", "body": "When blue is text or an outline on the ground, use Signal Blue; Lonca Blue is a fill.", "section": "colors" },
-      { "name": "The Typed-Text Rule", "body": "Mono is for package names, code, data labels and ordinals. Never for headlines or prose.", "section": "typography" },
-      { "name": "The Tight Display Rule", "body": "Every heading carries negative tracking (-0.01em to -0.03em); body text never does.", "section": "typography" },
-      { "name": "The Ruled Column Rule", "body": "Every section lives between the two long hairlines at 8.98cqw. Nothing breaks the column except the full-bleed separators.", "section": "layout" },
-      { "name": "The Lines-Not-Gaps Rule", "body": "Grid cells are separated by 1px hairlines, never by gutters and floating cards.", "section": "layout" },
-      { "name": "The Single Light Rule", "body": "The engine node is the only lit object. No other surface gets a glow or a drop shadow.", "section": "elevation" }
+      {
+        "name": "The One Blue Rule",
+        "body": "Blue appears only on the action, on live or travelling state, and on Lonca's side of a comparison. A blue that decorates a heading or ornament is wrong.",
+        "section": "colors"
+      },
+      {
+        "name": "The Signal-on-Dark Rule",
+        "body": "When blue is text or an outline on the ground, use Signal Blue; Lonca Blue is a fill.",
+        "section": "colors"
+      },
+      {
+        "name": "The Typed-Text Rule",
+        "body": "Mono is for package names, code, data labels and ordinals. Never for headlines or prose.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tight Display Rule",
+        "body": "Every heading carries negative tracking (-0.01em to -0.03em); body text never does.",
+        "section": "typography"
+      },
+      {
+        "name": "The Ruled Column Rule",
+        "body": "Every section lives between the two long hairlines at 8.98cqw. Nothing breaks the column except the full-bleed separators.",
+        "section": "layout"
+      },
+      {
+        "name": "The Lines-Not-Gaps Rule",
+        "body": "Grid cells are separated by 1px hairlines, never by gutters and floating cards.",
+        "section": "layout"
+      },
+      {
+        "name": "The Single Light Rule",
+        "body": "The engine node is the only lit object. No other surface gets a glow or a drop shadow.",
+        "section": "elevation"
+      }
     ],
     "dos": [
       "Do express fold and hub geometry in `cqw` of their container, derived from the comp (page px / 10.24, hub px / 4.70).",

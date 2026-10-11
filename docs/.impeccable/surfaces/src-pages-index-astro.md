@@ -1,8 +1,8 @@
 ---
 version: 1
-slug: "src-pages-index-astro"
-primary_target: "src/pages/index.astro"
-related_targets: ["src/pages/en/index.astro"]
+slug: 'src-pages-index-astro'
+primary_target: 'src/pages/index.astro'
+related_targets: ['src/pages/en/index.astro']
 ---
 
 # Lonca landing (lonca.zanaat.dev `/`, `/en/`)

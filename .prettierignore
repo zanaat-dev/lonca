@@ -14,3 +14,7 @@ specs/**/*.json
 probe-snapshots/**/*.json
 # …except the hand-maintained drift overlay.
 !probe-snapshots/known-discrepancies.json
+
+# Local design-tool caches
+.impeccable/hook.cache.json
+docs/.impeccable/hook.cache.json
