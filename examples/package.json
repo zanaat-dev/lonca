@@ -1,6 +1,6 @@
 {
   "name": "@lonca/examples",
-  "version": "0.0.25",
+  "version": "0.0.26",
   "private": true,
   "description": "Smoke-test and demo scripts for Lonca SDKs (not published).",
   "type": "module",

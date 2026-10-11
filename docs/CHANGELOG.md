@@ -1,5 +1,12 @@
 # @lonca/docs
 
+## 0.0.22
+
+### Patch Changes
+
+- Updated dependencies [[`b940642`](https://github.com/zanaat-dev/lonca/commit/b94064245582debf86e36d41cdf923a84ab7b69f)]:
+  - @lonca/trendyol@1.2.2
+
 ## 0.0.21
 
 ### Patch Changes

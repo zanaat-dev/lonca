@@ -1,5 +1,11 @@
 # @lonca/trendyol
 
+## 1.2.2
+
+### Patch Changes
+
+- [#193](https://github.com/zanaat-dev/lonca/pull/193) [`b940642`](https://github.com/zanaat-dev/lonca/commit/b94064245582debf86e36d41cdf923a84ab7b69f) Thanks [@keparlak](https://github.com/keparlak)! - `ShipmentPackage.whoPays` is deprecated. The field is not in Trendyol's documentation and does not appear in production order data. It is still passed through when Trendyol sends it, and will be removed in the next major version.
+
 ## 1.2.1
 
 ### Patch Changes
