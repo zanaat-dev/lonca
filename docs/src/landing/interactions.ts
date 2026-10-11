@@ -165,10 +165,14 @@ export function mountPattern(canvas: HTMLCanvasElement) {
   };
   const draw = (t: number) => {
     ctx.clearRect(0, 0, w, h);
-    const shift = (t / 90) % cell;
+    // The grid scrolls endlessly: columns keep their identity as they move,
+    // so new ones enter from the left instead of the pattern snapping back.
+    const travel = t / 90;
+    const shift = travel % cell;
+    const col = Math.floor(travel / cell);
     for (let y = -1; y * cell < h + cell; y++) {
       for (let x = -1; x * cell < w + cell; x++) {
-        const v = hash(x, y);
+        const v = hash(x - col, y);
         if (v < 0.82) continue;
         const pulse = 0.5 + 0.5 * Math.sin(t / 1400 + v * 40);
         ctx.fillStyle = `rgba(62, 119, 210, ${0.05 + pulse * 0.12})`;
