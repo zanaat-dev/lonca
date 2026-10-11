@@ -35,3 +35,11 @@ probe-output/
 
 # Drift report written by `pnpm drift` (packages/drift); inputs are the committed probe-snapshots/ and specs/
 drift-output/
+
+# Impeccable design tooling: local review captures and third-party reference screenshots
+docs/.impeccable/refs/
+docs/.impeccable/review/
+docs/.impeccable/questions/
+docs/.impeccable/hook.cache.json
+docs/.impeccable/mocks/decision/
+docs/.impeccable/lonca-marks-ref.png
