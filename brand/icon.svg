@@ -1,0 +1,14 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    svg { color: #2A272C; }
+    @media (prefers-color-scheme: dark) { svg { color: #FAFAF9; } }
+  </style>
+  <path d="M0 15.9999H15.9941V23.9999H0V15.9999Z" fill="currentColor"/>
+  <path d="M23.9941 8L8.00004 8L8.00004 -1.65544e-05L23.9941 -1.51562e-05L23.9941 8Z" fill="currentColor"/>
+  <path d="M0 8H8.00002V16H0V8Z" fill="currentColor"/>
+  <path d="M23.9941 15.9999L15.9941 15.9999L15.9941 7.99986L23.9941 7.99986L23.9941 15.9999Z" fill="currentColor"/>
+  <path d="M0 3.99988H4.00001V7.99989H0V3.99988Z" fill="currentColor"/>
+  <path d="M0 0H1.99025V2H0V0Z" fill="currentColor"/>
+  <path d="M22.0038 21.9999H23.994V23.9999H22.0038V21.9999Z" fill="currentColor"/>
+  <path d="M23.9941 20L19.9941 20L19.9941 16L23.9941 16L23.9941 20Z" fill="currentColor"/>
+</svg>
