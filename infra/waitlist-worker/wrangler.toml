@@ -8,5 +8,5 @@ routes = [{ pattern = "waitlist.zanaat.dev", custom_domain = true }]
 [[d1_databases]]
 binding = "DB"
 database_name = "lonca-waitlist"
-# Filled in after `wrangler d1 create lonca-waitlist`.
-database_id = "REPLACE_WITH_D1_ID"
+# Created 2026-10-11.
+database_id = "c76ce1f2-cb7b-4d95-8b8c-c75a6a7f3228"

@@ -5,7 +5,7 @@ A Cloudflare Worker that stores waitlist sign-ups from the landing page
 `{ email, lang, source, needs[], volume }` from allowed origins only and keeps
 one row per email.
 
-## Deploy (not done yet)
+## Deploy (live since 2026-10-11 at https://waitlist.zanaat.dev)
 
 ```bash
 npx wrangler d1 create lonca-waitlist          # put the id into wrangler.toml
