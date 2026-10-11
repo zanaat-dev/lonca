@@ -214,6 +214,8 @@ Both faces are self-hosted from `public/fonts` as variable woff2 files (Familjen
 
 **The comp-bound fold.** The page is a container (`container-type: inline-size`). Above the fold, every length is the approved comp's pixel value divided by 10.24 and expressed in `cqw`, and elements are absolutely placed. The first viewport therefore scales as one drawing with the window instead of reflowing: header 5.18cqw tall, fold 42.87cqw, column rules at 8.98cqw and 90.82cqw, header dividers at 31.74cqw and 70.31cqw.
 
+**The 1200px cap.** The page container stops growing at 1200px (`max-width: 1200px`, centred), so the drawing scales up to 1200 and then holds its size on wider screens instead of filling a 2K or 4K window. Only the header background, the band-opening hairlines and the footer rule stay full-bleed (`::before` at `100vw`), so the frame still reaches the window edges.
+
 **The hub-relative convention.** The hub figure is its own container (45.9cqw wide, 2:1). Inside it, lengths are comp pixels divided by 4.70 in the hub's own `cqw`, so the pills, engine and canvas stay locked to each other at every size. The canvas bleeds 60 design units past the hub box on every side so the glow is never clipped.
 
 **Below the fold: fluid bands.** Each section is a band inset 8.98cqw from both edges, bordered left and right by hairlines that continue the hero's column rules, opened by a full-bleed hairline. Padding clamp(48px, 6cqw, 96px) vertical, clamp(20px, 2.6cqw, 44px) horizontal. Type uses `clamp()` with px floors and ceilings so it stays readable from 1024 to 1920. Heads cap at 46rem, prose at 62ch, forms and FAQ at 52rem.
