@@ -10,17 +10,39 @@
 [![Node](https://img.shields.io/node/v/@lonca/core.svg)](https://nodejs.org/)
 [![pnpm](https://img.shields.io/badge/maintained%20with-pnpm-cc00ff.svg)](https://pnpm.io/)
 
-Open-source SDKs and tooling for Turkish e-commerce marketplaces.
+**Typed TypeScript SDKs for Turkish e-commerce marketplaces.** Trendyol and Hepsiburada today, n11 next.
 
-> Type-safe TypeScript SDKs and integration utilities for Trendyol and Hepsiburada today, plus a curated OpenAPI spec collection for both in [`specs/`](specs/). n11, Amazon TR, Pazarama and Çiçeksepeti SDKs are planned — see [Vision](#vision).
+```bash
+npm i @lonca/trendyol @lonca/core
+```
+
+```ts
+import { createTrendyolClient } from '@lonca/trendyol';
+import { paginate } from '@lonca/core';
+
+const trendyol = createTrendyolClient({
+  sellerId: 12345,
+  apiKey: process.env.TRENDYOL_API_KEY!,
+  apiSecret: process.env.TRENDYOL_API_SECRET!,
+  env: 'prod', // or 'stage'
+  integratorName: 'SelfIntegration', // or your company name
+});
+
+// Every new order, across all pages, fully typed.
+for await (const pkg of paginate((p) => trendyol.orders.list({ ...p, status: 'Created' }))) {
+  console.log(pkg.orderNumber, pkg.status, pkg.lines.length);
+}
+```
+
+- **Full API surface.** Trendyol: 14 resources, ~70 methods. Hepsiburada: 12 resources, 95 methods. Webhook parsing included.
+- **Production-checked.** Read-only contract probes compare live responses with the SDK types and the [OpenAPI specs](specs/), so we notice when a marketplace changes its API.
+- **Batteries included.** Typed errors (`AuthError`, `RateLimitError`, …), retries, rate limiting and pagination helpers from `@lonca/core`.
+- **Stable and MIT-licensed.** All three packages are 1.x; breaking changes ship only in major versions ([policy](https://lonca.zanaat.dev/stability/)).
+
+📚 [Docs](https://lonca.zanaat.dev) · ⏱️ [Trendyol in 30 minutes](https://lonca.zanaat.dev/guides/trendyol-in-30-minutes/) · 💬 [Discussions](https://github.com/zanaat-dev/lonca/discussions) · 🎃 [Good first issues](https://github.com/zanaat-dev/lonca/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
 
 > [!IMPORTANT]
 > **Unofficial & independent.** Lonca is a community-maintained project. It is **not** an official SDK and is not affiliated with, endorsed by, or supported by Trendyol, Hepsiburada, or any other marketplace named here. All product names, logos, and trademarks are the property of their respective owners.
-
-> [!NOTE]
-> ✅ **Stable** — all three packages (`@lonca/core`, `@lonca/trendyol`, `@lonca/hepsiburada`) are `1.0`. Breaking changes ship only in major versions.
-
-See [Stability & versioning](https://lonca.zanaat.dev/stability/) for the semver policy, deprecation windows, and what counts as the public API.
 
 ## Table of contents
 
@@ -43,7 +65,7 @@ Three-stage roadmap:
 
 Next marketplaces:
 
-- **n11** — _in research._ The API survey and an unpublished, unverified skeleton live in [`sdks/n11/`](sdks/n11/RESEARCH.md). Nothing is released and n11 is not supported yet.
+- **n11** — _in progress._ Category, product and order reads (REST) and question, claim and shipping reads (SOAP) are verified against production in [`sdks/n11/`](sdks/n11/). Not published to npm yet; write operations come next.
 - **Amazon TR, Pazarama, Çiçeksepeti** — planned.
 
 ## Why?
@@ -83,6 +105,7 @@ const client = createTrendyolClient({
   apiKey: process.env.TRENDYOL_API_KEY!,
   apiSecret: process.env.TRENDYOL_API_SECRET!,
   env: 'prod', // or 'stage'
+  integratorName: 'SelfIntegration', // or your company name
 });
 
 // Iterate every product page-by-page.

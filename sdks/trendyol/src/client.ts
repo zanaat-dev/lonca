@@ -84,6 +84,7 @@ export interface TrendyolClient {
  *   apiKey: process.env.TRENDYOL_API_KEY!,
  *   apiSecret: process.env.TRENDYOL_API_SECRET!,
  *   env: 'stage',
+ *   integratorName: 'SelfIntegration',
  * });
  *
  * const page = await client.brands.list({ limit: 100 });
