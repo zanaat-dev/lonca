@@ -72,7 +72,7 @@ for (const l of page.items) {
 const trendyolHtml = await codeToHtml(trendyolCode, { lang: 'ts', theme: 'github-dark' });
 const hepsiburadaHtml = await codeToHtml(hepsiburadaCode, { lang: 'ts', theme: 'github-dark' });
 
-const pollHref = 'https://github.com/zanaat-dev/lonca/discussions/categories/polls';
+const pollHref = 'https://github.com/zanaat-dev/lonca/discussions/205';
 const issuesHref =
   'https://github.com/zanaat-dev/lonca/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22';
 const releasesHref = 'https://github.com/zanaat-dev/lonca/releases';
@@ -124,14 +124,14 @@ const guideHref = '/guides/trendyol-in-30-minutes/';
       </header>
 
       <main>
-        <section class="fold" aria-labelledby="hero-title">
+        <section class="fold" id="bekleme" aria-labelledby="hero-title">
           <h1 class="h1" id="hero-title">
             <span class="l1">{t.hero.line1}</span>
             <span class="l2">{t.hero.line2}</span>
           </h1>
           <p class="sub">{t.hero.sub}</p>
 
-          <form class="waitlist" id="bekleme" data-endpoint={waitlistEndpoint} data-lang={lang} novalidate>
+          <form class="waitlist" data-endpoint={waitlistEndpoint} data-lang={lang} novalidate>
             <label class="sr-only" for="waitlist-email">{t.hero.emailLabel}</label>
             <input
               id="waitlist-email"
@@ -387,9 +387,10 @@ const guideHref = '/guides/trendyol-in-30-minutes/';
 
     <script>
       import { mountHub } from './hub';
-      import { mountWaitlist, mountCopy, mountTabs, mountReveal, mountPattern } from './interactions';
+      import { mountWaitlist, mountWaitlistLinks, mountCopy, mountTabs, mountReveal, mountPattern } from './interactions';
       document.querySelectorAll<HTMLElement>('.hub').forEach(mountHub);
       document.querySelectorAll<HTMLFormElement>('form.waitlist, form.waitlist-full').forEach(mountWaitlist);
+      mountWaitlistLinks();
       document.querySelectorAll<HTMLButtonElement>('[data-copy]').forEach(mountCopy);
       document.querySelectorAll<HTMLElement>('.code-card').forEach(mountTabs);
       mountReveal();

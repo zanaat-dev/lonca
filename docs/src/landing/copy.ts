@@ -28,7 +28,7 @@ export const copy = {
       emailLabel: 'E-posta adresin',
       emailPlaceholder: 'E-posta adresin',
       submit: 'Bekleme listesine yazıl',
-      npm: 'npm i @lonca/trendyol',
+      npm: 'npm i @lonca/trendyol @lonca/hepsiburada',
       copied: 'Kopyalandı',
     },
     hub: {
@@ -234,7 +234,7 @@ export const copy = {
       emailLabel: 'Your email',
       emailPlaceholder: 'Your email',
       submit: 'Join the waitlist',
-      npm: 'npm i @lonca/trendyol',
+      npm: 'npm i @lonca/trendyol @lonca/hepsiburada',
       copied: 'Copied',
     },
     hub: {
