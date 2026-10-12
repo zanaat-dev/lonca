@@ -6,12 +6,20 @@
 
 - [#179](https://github.com/zanaat-dev/lonca/pull/179) [`70938e6`](https://github.com/zanaat-dev/lonca/commit/70938e652a643ac45baf3cbeb400e4ca2874447d) Thanks [@keparlak](https://github.com/keparlak)! - `createRequester` accepts a `rawBody` string that is sent exactly as given (e.g. a SOAP envelope), taking precedence over the JSON-serialised `body`. Set the matching `Content-Type` through `headers`.
 
+  <!-- tr
+  `createRequester` artık olduğu gibi gönderilen bir `rawBody` metni kabul ediyor (örneğin bir SOAP zarfı); JSON'a çevrilen `body`'nin önüne geçer. Uygun `Content-Type` başlığını `headers` ile ver.
+  -->
+
 ## 1.0.1
 
 ### Patch Changes
 
 - [#139](https://github.com/loncadev/lonca/pull/139) [`da9ff38`](https://github.com/loncadev/lonca/commit/da9ff38928b5a953bad249fe740bd263f3e5f50a) Thanks [@keparlak](https://github.com/keparlak)! - README: replace the stale "0.x — alpha" stability note with the 1.x stable
   policy wording (the package has been 1.0 since the previous release).
+
+  <!-- tr
+  README: eski "0.x — alpha" kararlılık notu, 1.x kararlı sürüm politikasıyla değiştirildi (paket bir önceki sürümden beri 1.0).
+  -->
 
 ## 1.0.0
 
@@ -27,6 +35,10 @@
   and FormData dropping a caller `Content-Type`) are part of the documented
   contract.
 
+  <!-- tr
+  İlk kararlı sürüm. Genel API 0.7.0 ile aynı; yükseltmek için kod değişikliği gerekmez. 1.0.0'dan itibaren `@lonca/core` [kararlılık politikasını](/stability/) izler: kırıcı değişiklikler yalnızca büyük sürümlerde gelir, kaldırılacak özellikler en az iki ara sürüm önceden duyurulur ve dışa açılan API yüzeyi CI'da kilitlidir. Belgelenmiş beş taşıma davranışı da sözleşmenin parçası: `safeJson`'ın ham metne düşmesi, yeniden deneme beklemesi sırasında iptal nedeninin yukarı taşınması, sıfır ya da negatif `Retry-After` değerinin yok sayılması, GET gövdelerinin atılması ve FormData'nın çağıranın verdiği `Content-Type`'ı bırakması.
+  -->
+
 ### Patch Changes
 
 - [#136](https://github.com/loncadev/lonca/pull/136) [`e09d4d5`](https://github.com/loncadev/lonca/commit/e09d4d52b89d42d7cbdde34b2c82b46193274146) Thanks [@keparlak](https://github.com/keparlak)! - Fix TypeScript type resolution for CommonJS consumers ("Masquerading as ESM"):
@@ -34,6 +46,10 @@
   `dist/index.d.ts`, `require` resolves `dist/index.d.cts`, including the SDKs'
   `./testing` subpath). Runtime behaviour is unchanged; `publint` and
   `arethetypeswrong` now verify the packages in CI.
+
+  <!-- tr
+  CommonJS kullananlar için TypeScript tip çözümlemesi düzeltildi ("Masquerading as ESM"): `exports` haritaları artık her koşul için ayrı tip bildiriyor (`import` → `dist/index.d.ts`, `require` → `dist/index.d.cts`; SDK'ların `./testing` alt yolu dahil). Çalışma zamanı davranışı değişmedi; paketler artık CI'da `publint` ve `arethetypeswrong` ile doğrulanıyor.
+  -->
 
 ## 0.7.0
 

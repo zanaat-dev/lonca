@@ -1,0 +1,105 @@
+---
+// Release notes page, Turkish at /surum-notlari/ and English at /en/changelog/.
+import Shell from '../landing/Shell.astro';
+import { copy, type Lang } from '../landing/copy';
+import { changelogFiles, loadReleases } from './releases';
+import './changelog.css';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = copy[lang];
+const c = t.changelog;
+
+const releases = loadReleases();
+const day = new Intl.DateTimeFormat(lang === 'tr' ? 'tr-TR' : 'en-GB', {
+  day: 'numeric',
+  month: 'long',
+  year: 'numeric',
+});
+const slug = (pkg: string, version: string) => `${pkg.replace('@lonca/', '')}-${version}`;
+const npmHref = (pkg: string, version: string) => `https://www.npmjs.com/package/${pkg}/v/${version}`;
+---
+
+<Shell
+  lang={lang}
+  title={c.title}
+  description={c.description}
+  path={t.nav.changelogHref}
+  alternates={{ tr: copy.tr.nav.changelogHref, en: copy.en.nav.changelogHref }}
+>
+  <main class="cl">
+    <section class="band cl-intro" aria-labelledby="cl-title">
+      <div class="band-head">
+        <h1 id="cl-title">{c.heading}</h1>
+        <p>{c.lead}</p>
+        <a class="arrow" href="/stability/">{c.stability} →</a>
+      </div>
+    </section>
+
+    <section class="band cl-list">
+      {
+        releases.map((r) => (
+          <article class="cl-release" id={slug(r.pkg, r.version)}>
+            <header class="cl-meta">
+              {r.date && <time datetime={r.date}>{day.format(new Date(`${r.date}T12:00:00Z`))}</time>}
+              <h2>
+                <a href={`#${slug(r.pkg, r.version)}`}>
+                  <code>{r.pkg}</code> <span>{r.version}</span>
+                </a>
+              </h2>
+              <p class="cl-bump" data-bump={r.entries[0]?.bump ?? 'patch'}>
+                {c.bump[r.entries[0]?.bump ?? 'patch']}
+              </p>
+              <a class="cl-npm" href={npmHref(r.pkg, r.version)} rel="noopener">
+                {c.npm} →
+              </a>
+            </header>
+            <div class="cl-notes">
+              {r.entries.map((e) => {
+                const html = lang === 'tr' && e.tr ? e.tr : e.en;
+                const untranslated = lang === 'tr' && !e.tr;
+                return (
+                  <div class="cl-entry">
+                    {untranslated && <p class="cl-untranslated">{c.untranslated}</p>}
+                    <div class="cl-body" lang={untranslated ? 'en' : undefined} set:html={html} />
+                    {e.pr && (
+                      <a class="cl-pr" href={e.pr.url} rel="noopener">
+                        #{e.pr.number}
+                      </a>
+                    )}
+                  </div>
+                );
+              })}
+              {r.deps.length > 0 && (
+                <p class="cl-deps">
+                  {c.deps}:{' '}
+                  {r.deps.map((d, i) => (
+                    <>
+                      {i > 0 && ', '}
+                      <code>{d.replace(/@(?=\d)/, ' ')}</code>
+                    </>
+                  ))}
+                </p>
+              )}
+            </div>
+          </article>
+        ))
+      }
+      <p class="fineprint cl-older">
+        {c.older}{' '}
+        {
+          changelogFiles.map((f, i) => (
+            <>
+              {i > 0 && ' · '}
+              <a href={f.href} rel="noopener">
+                <code>{f.pkg}</code>
+              </a>
+            </>
+          ))
+        }
+      </p>
+    </section>
+  </main>
+</Shell>

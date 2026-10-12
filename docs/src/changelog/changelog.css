@@ -1,0 +1,178 @@
+/*
+ * Release notes. Same ruled column as the landing: an intro band, then one
+ * band of releases separated by hairlines, meta on the left, notes on the right.
+ */
+
+.cl-intro .band-head {
+  margin-bottom: 0;
+}
+.cl-intro h1 {
+  margin: 0;
+  font-size: clamp(28px, 3.2cqw, 52px);
+  font-weight: 600;
+  line-height: 1.06;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+.cl-intro .arrow {
+  justify-self: start;
+}
+
+.cl-list {
+  padding-top: 0;
+}
+.cl-release {
+  display: grid;
+  grid-template-columns: 14rem minmax(0, 1fr);
+  gap: 16px clamp(24px, 3cqw, 48px);
+  padding: clamp(28px, 2.6cqw, 40px) 0;
+  border-bottom: 1px solid var(--line);
+  scroll-margin-top: 5.18cqw;
+}
+
+.cl-meta {
+  position: sticky;
+  top: calc(5.18cqw + 24px);
+  align-self: start;
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+}
+.cl-meta time,
+.cl-bump {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+}
+.cl-meta h2 {
+  margin: 0;
+  font-size: clamp(17px, 1.5cqw, 22px);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.cl-meta h2 code {
+  display: block;
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--ink-2);
+}
+.cl-meta h2 a:hover code {
+  color: var(--ink);
+}
+.cl-meta h2 span {
+  font-variant-numeric: tabular-nums;
+}
+.cl-bump[data-bump='major'] {
+  color: var(--ink);
+}
+.cl-npm {
+  font-size: 14px;
+  color: var(--accent-soft);
+}
+.cl-npm:hover {
+  color: var(--ink);
+}
+
+.cl-notes {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+.cl-entry {
+  min-width: 0;
+}
+.cl-untranslated {
+  margin: 0 0 6px;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+}
+.cl-body {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  max-width: 72ch;
+  overflow-wrap: anywhere;
+}
+.cl-body > :first-child {
+  margin-top: 0;
+}
+.cl-body > :last-child {
+  margin-bottom: 0;
+}
+.cl-body p,
+.cl-body ul,
+.cl-body ol {
+  margin: 0 0 10px;
+}
+.cl-body ul,
+.cl-body ol {
+  padding-left: 20px;
+}
+.cl-body li + li {
+  margin-top: 6px;
+}
+.cl-body strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+.cl-body code,
+.cl-deps code,
+.cl-older code {
+  font-family: var(--mono);
+  font-size: 0.87em;
+  padding: 1px 3px;
+  border-radius: 4px;
+  background: var(--chip);
+  color: var(--ink);
+}
+.cl-body a,
+.cl-older a {
+  color: var(--accent-soft);
+}
+.cl-body a:hover,
+.cl-older a:hover {
+  color: var(--ink);
+}
+.cl-pr {
+  display: inline-block;
+  margin-top: 8px;
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.cl-pr:hover {
+  color: var(--ink);
+}
+.cl-deps {
+  margin: 0;
+  font-size: 14px;
+  color: var(--ink-3);
+}
+.cl-older {
+  margin-top: clamp(28px, 2.6cqw, 40px);
+  line-height: 1.8;
+}
+
+@media (max-width: 999px) {
+  .cl-release {
+    grid-template-columns: 1fr;
+    scroll-margin-top: 56px;
+  }
+  .cl-meta {
+    position: static;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px 16px;
+  }
+  .cl-meta time,
+  .cl-meta h2 {
+    flex-basis: 100%;
+  }
+}

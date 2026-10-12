@@ -6,9 +6,9 @@ import { copy, type Lang } from './copy';
 import trendyolPkg from '../../../sdks/trendyol/package.json';
 import hepsiburadaPkg from '../../../sdks/hepsiburada/package.json';
 import corePkg from '../../../packages/core/package.json';
-import logomarkRaw from '../../../brand/logomark.svg?raw';
 import iconRaw from '../../../brand/icon.svg?raw';
-import './landing.css';
+import Shell from './Shell.astro';
+import { inlineSvg } from './inline-svg';
 
 interface Props {
   lang: Lang;
@@ -16,22 +16,11 @@ interface Props {
 const { lang } = Astro.props;
 const t = copy[lang];
 
-// The brand SVGs carry a <style> that sets `svg { color }` for light/dark;
-// inlined into this page it would leak onto every SVG, so drop it and let
-// the surrounding CSS colour the marks through currentColor.
-const inline = (raw: string) =>
-  raw
-    .replace(/<style>[\s\S]*?<\/style>/, '')
-    .replace(/\swidth="[^"]*"/, '')
-    .replace(/\sheight="[^"]*"/, '')
-    .replace('<svg', '<svg aria-hidden="true" focusable="false"');
-const logomark = inline(logomarkRaw);
-const icon = inline(iconRaw);
+const icon = inlineSvg(iconRaw);
 
 const docsHref = '/overview/';
 const githubHref = 'https://github.com/zanaat-dev/lonca';
 const waitlistEndpoint = import.meta.env.PUBLIC_WAITLIST_URL ?? '';
-const canonical = new URL(lang === 'tr' ? '/' : '/en/', Astro.site);
 
 const releases = [
   { name: '@lonca/trendyol', version: trendyolPkg.version },
@@ -75,54 +64,10 @@ const hepsiburadaHtml = await codeToHtml(hepsiburadaCode, { lang: 'ts', theme: '
 const pollHref = 'https://github.com/zanaat-dev/lonca/discussions/205';
 const issuesHref =
   'https://github.com/zanaat-dev/lonca/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22';
-const releasesHref = 'https://github.com/zanaat-dev/lonca/releases';
 const guideHref = '/guides/trendyol-in-30-minutes/';
 ---
 
-<!doctype html>
-<html lang={t.htmlLang}>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{t.title}</title>
-    <meta name="description" content={t.description} />
-    <link rel="canonical" href={canonical} />
-    <link rel="alternate" hreflang="tr" href={new URL('/', Astro.site)} />
-    <link rel="alternate" hreflang="en" href={new URL('/en/', Astro.site)} />
-    <link rel="icon" href="/brand/icon.svg" type="image/svg+xml" />
-    <meta name="theme-color" content="#0a0b0c" />
-    <meta property="og:title" content={t.title} />
-    <meta property="og:description" content={t.description} />
-    <meta property="og:image" content={new URL('/brand/social-preview.png', Astro.site)} />
-    <link rel="preload" href="/fonts/FamiljenGrotesk-latin.woff2" as="font" type="font/woff2" crossorigin />
-  </head>
-  <body>
-    <div class="page">
-      <div class="column-rules" aria-hidden="true"></div>
-
-      <header class="top">
-        <nav class="frame" aria-label={lang === 'tr' ? 'Ana menü' : 'Main'}>
-          <a class="brand" href={lang === 'tr' ? '/' : '/en/'} aria-label={t.nav.home} set:html={logomark} />
-          <span class="div-a" aria-hidden="true"></span>
-          <ul class="links">
-            <li><a href="#saticilar">{t.nav.sellers}</a></li>
-            <li><a href="#gelistiriciler">{t.nav.developers}</a></li>
-            <li><a href="#fiyatlar">{t.nav.pricing}</a></li>
-            <li><a href={docsHref}>{t.nav.docs}</a></li>
-          </ul>
-          <span class="div-b" aria-hidden="true"></span>
-          <a class="star" href={githubHref} rel="noopener">
-            <svg viewBox="0 0 16 16" aria-hidden="true" fill="currentColor"
-              ><path
-                d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"
-              ></path></svg
-            >
-            <span>{t.nav.star}</span>
-          </a>
-          <a class="cta-pill" href="#bekleme">{t.nav.waitlist}</a>
-        </nav>
-      </header>
-
+<Shell lang={lang} title={t.title} description={t.description} path={lang === 'tr' ? '/' : '/en/'} alternates={{ tr: '/', en: '/en/' }} home>
       <main>
         <section class="fold" id="bekleme" aria-labelledby="hero-title">
           <h1 class="h1" id="hero-title">
@@ -280,7 +225,7 @@ const guideHref = '/guides/trendyol-in-30-minutes/';
                     ))
                   }
                 </ul>
-                <a class="arrow" href={releasesHref} rel="noopener">{t.proof.releases} →</a>
+                <a class="arrow" href={t.nav.changelogHref}>{t.proof.releases} →</a>
               </dd>
             </div>
             <div class="wide">
@@ -370,21 +315,6 @@ const guideHref = '/guides/trendyol-in-30-minutes/';
         </section>
       </main>
 
-      <footer class="site-foot">
-        <div class="foot-row">
-          <span class="foot-brand" set:html={logomark} />
-          <p>{t.footer.project}</p>
-          <p class="foot-contact">{t.footer.contact}</p>
-          <ul>
-            <li><a href={docsHref}>{t.nav.docs}</a></li>
-            <li><a href={githubHref} rel="noopener">GitHub</a></li>
-            <li><a href={t.nav.langHref} hreflang={lang === 'tr' ? 'en' : 'tr'}>{t.nav.langSwitch}</a></li>
-          </ul>
-        </div>
-        <p class="foot-disclaimer">{t.footer.disclaimer}</p>
-      </footer>
-    </div>
-
     <script>
       import { mountHub } from './hub';
       import { mountWaitlist, mountWaitlistLinks, mountCopy, mountTabs, mountReveal, mountPattern } from './interactions';
@@ -396,5 +326,4 @@ const guideHref = '/guides/trendyol-in-30-minutes/';
       mountReveal();
       document.querySelectorAll<HTMLCanvasElement>('.closing-pattern').forEach(mountPattern);
     </script>
-  </body>
-</html>
+</Shell>
