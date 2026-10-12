@@ -68,6 +68,7 @@ export default defineConfig({
             { label: 'Installation', slug: 'installation' },
             { label: 'Authentication', slug: 'authentication' },
             { label: 'Stability & versioning', slug: 'stability' },
+            { label: 'Release notes', link: '/en/changelog/' },
           ],
         },
         {

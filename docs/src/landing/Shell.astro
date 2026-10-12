@@ -1,0 +1,93 @@
+---
+// Shared frame of the standalone pages (landing, release notes): head,
+// ruled column, sticky header and footer. Page content goes in the slot.
+import { copy, type Lang } from './copy';
+import { inlineSvg } from './inline-svg';
+import logomarkRaw from '../../../brand/logomark.svg?raw';
+import './landing.css';
+
+interface Props {
+  lang: Lang;
+  title: string;
+  description: string;
+  /** This page's path, e.g. `/` or `/surum-notlari/`. */
+  path: string;
+  /** The same page in each language. */
+  alternates: Record<Lang, string>;
+  /** The landing itself: header links stay in-page anchors. */
+  home?: boolean;
+}
+const { lang, title, description, path, alternates, home = false } = Astro.props;
+const t = copy[lang];
+const other: Lang = lang === 'tr' ? 'en' : 'tr';
+
+const logomark = inlineSvg(logomarkRaw);
+const homeHref = lang === 'tr' ? '/' : '/en/';
+const at = (id: string) => (home ? `#${id}` : `${homeHref}#${id}`);
+const docsHref = '/overview/';
+const githubHref = 'https://github.com/zanaat-dev/lonca';
+---
+
+<!doctype html>
+<html lang={t.htmlLang}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={new URL(path, Astro.site)} />
+    <link rel="alternate" hreflang="tr" href={new URL(alternates.tr, Astro.site)} />
+    <link rel="alternate" hreflang="en" href={new URL(alternates.en, Astro.site)} />
+    <link rel="icon" href="/brand/icon.svg" type="image/svg+xml" />
+    <meta name="theme-color" content="#0a0b0c" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={new URL('/brand/social-preview.png', Astro.site)} />
+    <link rel="preload" href="/fonts/FamiljenGrotesk-latin.woff2" as="font" type="font/woff2" crossorigin />
+  </head>
+  <body>
+    <div class="page">
+      <div class="column-rules" aria-hidden="true"></div>
+
+      <header class="top">
+        <nav class="frame" aria-label={lang === 'tr' ? 'Ana menü' : 'Main'}>
+          <a class="brand" href={homeHref} aria-label={t.nav.home} set:html={logomark} />
+          <span class="div-a" aria-hidden="true"></span>
+          <ul class="links">
+            <li><a href={at('saticilar')}>{t.nav.sellers}</a></li>
+            <li><a href={at('gelistiriciler')}>{t.nav.developers}</a></li>
+            <li><a href={at('fiyatlar')}>{t.nav.pricing}</a></li>
+            <li><a href={docsHref}>{t.nav.docs}</a></li>
+          </ul>
+          <span class="div-b" aria-hidden="true"></span>
+          <a class="star" href={githubHref} rel="noopener">
+            <svg viewBox="0 0 16 16" aria-hidden="true" fill="currentColor"
+              ><path
+                d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"
+              ></path></svg
+            >
+            <span>{t.nav.star}</span>
+          </a>
+          <a class="cta-pill" href={at('bekleme')}>{t.nav.waitlist}</a>
+        </nav>
+      </header>
+
+      <slot />
+
+      <footer class="site-foot">
+        <div class="foot-row">
+          <span class="foot-brand" set:html={logomark} />
+          <p>{t.footer.project}</p>
+          <p class="foot-contact">{t.footer.contact}</p>
+          <ul>
+            <li><a href={docsHref}>{t.nav.docs}</a></li>
+            <li><a href={t.nav.changelogHref}>{t.nav.changelog}</a></li>
+            <li><a href={githubHref} rel="noopener">GitHub</a></li>
+            <li><a href={alternates[other]} hreflang={other}>{t.nav.langSwitch}</a></li>
+          </ul>
+        </div>
+        <p class="foot-disclaimer">{t.footer.disclaimer}</p>
+      </footer>
+    </div>
+  </body>
+</html>

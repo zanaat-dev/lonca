@@ -5,6 +5,10 @@
 ### Patch Changes
 
 - [#192](https://github.com/zanaat-dev/lonca/pull/192) [`853f459`](https://github.com/zanaat-dev/lonca/commit/853f45980ecaa8645045d9f34d7add027cc2bee1) Thanks [@keparlak](https://github.com/keparlak)! - Package metadata and README links point to the project's new home: the repository moved to [github.com/zanaat-dev/lonca](https://github.com/zanaat-dev/lonca) and the docs to [lonca.zanaat.dev](https://lonca.zanaat.dev). Old GitHub URLs keep redirecting. No code changes.
+
+  <!-- tr
+  Paket bilgileri ve README bağlantıları projenin yeni adresini gösteriyor: depo [github.com/zanaat-dev/lonca](https://github.com/zanaat-dev/lonca), dokümanlar [lonca.zanaat.dev](https://lonca.zanaat.dev) adresine taşındı. Eski GitHub adresleri yönlendirmeye devam ediyor. Kodda değişiklik yok.
+  -->
 - Updated dependencies [[`70938e6`](https://github.com/zanaat-dev/lonca/commit/70938e652a643ac45baf3cbeb400e4ca2874447d)]:
   - @lonca/core@1.1.0
 
@@ -16,11 +20,21 @@
   
   Deprecated: `number`, `productSku` and `createdDate` were never sent by Hepsiburada — they are now filled from `issueNumber`, `product.sku` and `createdAt`; use those instead. `text` and `answer` have no single equivalent (read `conversations`) and stay unset unless a response carries them.
 
+  <!-- tr
+  `questions.list()` / `questions.get()` artık Hepsiburada'nın gerçekten döndürdüğü alanları veriyor (dokümandaki `IssueViewModel`, SIT'te doğrulandı): `issueNumber`, `subject`, `lastContent`, `conversations` (yanıtlar dahil soru yazışması), `product` (`sku`, `name`, `imageUrl`, `stockCode`), `customerId`, `orderNumber`, `lineItemId`, `createdAt`, `lastModifiedAt`, `expireDate` ve `didCustomerSeeTheMessage`. Yeni dışa açılan tipler: `QuestionConversation`, `QuestionProduct`, `QuestionSubject`.
+
+  Kullanımdan kaldırılanlar: `number`, `productSku` ve `createdDate` Hepsiburada tarafından hiç gönderilmiyordu; artık `issueNumber`, `product.sku` ve `createdAt`'ten dolduruluyor, bunları kullan. `text` ve `answer`'ın tek bir karşılığı yok (`conversations`'ı oku); bir yanıt taşımadıkça boş kalıyor.
+  -->
+
 ## 1.1.0
 
 ### Minor Changes
 
 - [#163](https://github.com/loncadev/lonca/pull/163) [`2e7491a`](https://github.com/loncadev/lonca/commit/2e7491a49fae1005957f2d91002c1ec50f7c2f5a) Thanks [@keparlak](https://github.com/keparlak)! - `createTrendyolClient` and `createHepsiburadaClient` accept an optional `fetch` implementation (e.g. to add a proxy agent, or to record or mock traffic). It defaults to the global `fetch`, so existing code is unaffected.
+
+  <!-- tr
+  `createTrendyolClient` ve `createHepsiburadaClient` isteğe bağlı bir `fetch` uygulaması kabul ediyor (örneğin proxy eklemek ya da trafiği kaydetmek veya taklit etmek için). Varsayılan global `fetch` olduğu için mevcut kod etkilenmez.
+  -->
 
 - [#168](https://github.com/loncadev/lonca/pull/168) [`20dea75`](https://github.com/loncadev/lonca/commit/20dea75f870f9061fb13194d1f8afbfa512bce97) Thanks [@keparlak](https://github.com/keparlak)! - Typed fields now match what Hepsiburada actually returns (checked against the portal specs and real production responses). Several fields that were typed before could never be filled in. The data was only available on `raw`.
   
@@ -30,6 +44,17 @@
   - **`categories.getAttributes()`**: `CategoryAttribute` gains `type` and `multiValue`. `externalName` and `values` are deprecated because they are never sent. Use `categories.getAttributeValues()` to get allowed values.
   
   Nothing is removed or narrowed. Deprecated fields stay in place until the next major.
+
+  <!-- tr
+  Tipli alanlar artık Hepsiburada'nın gerçekten döndürdüğüyle uyuşuyor (portal şemaları ve gerçek canlı yanıtlarla karşılaştırıldı). Önceden tipli olan bazı alanlar hiç dolamıyordu; veri yalnızca `raw` üzerinden okunabiliyordu.
+
+  - **`accounting.listTransactions()`**: `AccountingTransaction`'a `id`, `transactionType`, `transactionTypeCategory`, `status`, `sku`, `productName`, `quantity`, `merchantId`, `orderItemNumber`, `packageNumber`, `invoiceNumber`, `invoiceExplanation`, `isInvoice`, `isIncome`, `orderDate`, `invoiceDate`, `dueDate` ile para nesneleri `transactionAmount` (API'deki `amount`), `taxAmount` ve `netAmount` eklendi. Her biri `{ value, currencyCode }` nesnesi (yeni `AccountingAmount` tipi). Eski `transactionId`, `type`, `amount` ve `currency` alanları artık `id`, `transactionType`, `amount.value` ve `amount.currencyCode`'dan dolduruluyor; bunlar ve Hepsiburada'nın hiç göndermediği `transactionDate` kullanımdan kaldırıldı.
+  - **`orders.list*()` / `getByOrderNumber()`**: `Order`'a `id` (satır kimliği), `orderId`, `orderDate`, `lastStatusUpdateDate`, `dueDate`, `packageNumber`, `sku`, `merchantSku`, `barcode`, `name`, `quantity`, `cargoCompany`, `customerId`, `vat`, `vatRate` ile `{ amount, currency }` fiyatları `unitPrice` ve `totalPrice` eklendi (yeni `OrderPrice` tipi). `externalOrderNumber`, `modifiedDate` ve `total` Hepsiburada hiç göndermediği için kullanımdan kaldırıldı. `createdDate` yalnızca `getByOrderNumber()` tarafından dolduruluyor.
+  - **`catalog.listProducts()` / `listProductsByStatus()`**: `CatalogProduct`'a her uç noktanın gerçekten döndürdüğü alanlar eklendi: `listProducts()`'tan `barcode`, `hbSku`, `variantGroupId`, `price`, `tax`, `baseAttributes` / `productAttributes` / `variantTypeAttributes`, `validationResults` ve `rejectReasons`; `listProductsByStatus()`'tan `productStatus`, `taskDetails`, `matchedHbProductInfo`, `rejectReasonsMessages` ve `videoStatus` (burada `status` da artık `productStatus`'tan dolduruluyor). Yeni tipler: `CatalogProductAttribute`, `CatalogAttributePair`, `CatalogValidationResult`, `CatalogTaskDetail` ve `CatalogMatchedHbProduct`. İki uç nokta da göndermediği için şu 15 alan kullanımdan kaldırıldı: `id`, `createdAt`, `createdBy`, `modifiedAt`, `modifiedBy`, `preMatchedSku`, `siblingSku`, `listingStatus`, `listingFailureReason`, `validationStatus`, `productType`, `uploadDate`, `productQuality`, `categoryScore` ve `fields`.
+  - **`categories.getAttributes()`**: `CategoryAttribute`'a `type` ve `multiValue` eklendi. `externalName` ve `values` hiç gönderilmediği için kullanımdan kaldırıldı. İzin verilen değerler için `categories.getAttributeValues()` kullan.
+
+  Hiçbir şey kaldırılmadı ya da daraltılmadı. Kullanımdan kaldırılan alanlar bir sonraki büyük sürüme kadar yerinde kalıyor.
+  -->
 
 ## 1.0.0
 
@@ -47,6 +72,12 @@
   per-service host routing — `mpfinance`, `asktoseller`, `diskonto`, `mpop`, and
   `supplier-api` all resolve and answer route-level JSON on their dedicated
   production hostnames.
+
+  <!-- tr
+  İlk kararlı sürüm. Genel API bir önceki ara sürümle aynı; yükseltmek için kod değişikliği gerekmez. 1.0.0'dan itibaren `@lonca/hepsiburada` [kararlılık politikasını](/stability/) izler: kırıcı değişiklikler yalnızca büyük sürümlerde gelir, kaldırılacak özellikler en az iki ara sürüm önceden duyurulur ve dışa açılan API yüzeyi CI'da kilitlidir.
+
+  Canlı API'ye karşı salt okuma ile doğrulandı (mağaza hesabı, 30 Ağustos 2026): on iki sözleşme testinin hepsi 200 dönüyor; `catalog.listProductsByStatus` de dahil (0.13.0 öncesindeki çıplak 500 gerilemesi canlıda düzelmiş durumda) ve servis başına host yönlendirmesi de doğru: `mpfinance`, `asktoseller`, `diskonto`, `mpop` ve `supplier-api` kendi canlı host adlarında çözülüyor ve rota düzeyinde JSON dönüyor.
+  -->
 
 ### Patch Changes
 

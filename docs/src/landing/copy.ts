@@ -18,8 +18,9 @@ export const copy = {
       star: 'Star',
       waitlist: 'Bekleme listesi',
       langSwitch: 'EN',
-      langHref: '/en/',
       home: 'Lonca ana sayfa',
+      changelog: 'Sürüm notları',
+      changelogHref: '/surum-notlari/',
     },
     hero: {
       line1: 'Lisanssız entegrasyon.',
@@ -204,6 +205,19 @@ export const copy = {
       title: 'Yıllık lisans devri kapanıyor.',
       sub: 'Listeye ilk sen yazıl; panel açılınca ilk haberi sen al.',
     },
+    changelog: {
+      title: 'Sürüm notları · Lonca',
+      description:
+        '@lonca paketlerinin 1.0 sürümünden bu yana yayımlanan her sürümü ve değişiklikleri.',
+      heading: 'Sürüm notları',
+      lead: '@lonca paketlerinin 1.0’dan bu yana her sürümü, en yenisi üstte. Paketler semantik sürümlemeyi izler: kırıcı değişiklik yalnızca büyük sürümde gelir.',
+      bump: { major: 'Büyük sürüm', minor: 'Ara sürüm', patch: 'Yama' },
+      deps: 'Bağımlılık güncellendi',
+      untranslated: 'Bu notun Türkçesi henüz yok.',
+      stability: 'Sürümleme politikası',
+      older: '0.x sürümlerinin notları paketlerin CHANGELOG dosyalarında:',
+      npm: 'npm’de gör',
+    },
     footer: {
       project: 'Lonca, bir Zanaat projesi.',
       contact: 'hello@zanaat.dev',
@@ -224,8 +238,9 @@ export const copy = {
       star: 'Star',
       waitlist: 'Waitlist',
       langSwitch: 'TR',
-      langHref: '/',
       home: 'Lonca home',
+      changelog: 'Release notes',
+      changelogHref: '/en/changelog/',
     },
     hero: {
       line1: 'Integration, unlicensed.',
@@ -409,6 +424,18 @@ export const copy = {
     closing: {
       title: 'The yearly licence era is ending.',
       sub: 'Join the list first and hear first when the panel opens.',
+    },
+    changelog: {
+      title: 'Release notes · Lonca',
+      description: 'Every release of the @lonca packages since 1.0, with what changed.',
+      heading: 'Release notes',
+      lead: 'Every release of the @lonca packages since 1.0, newest first. The packages follow semantic versioning: breaking changes only ship in a major version.',
+      bump: { major: 'Major', minor: 'Minor', patch: 'Patch' },
+      deps: 'Dependency updated',
+      untranslated: '',
+      stability: 'Versioning policy',
+      older: 'Notes for the 0.x releases live in each package’s CHANGELOG:',
+      npm: 'View on npm',
     },
     footer: {
       project: 'Lonca, a Zanaat project.',

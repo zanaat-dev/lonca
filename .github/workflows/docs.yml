@@ -20,6 +20,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          # The release notes page dates each version from the commit that added it.
+          fetch-depth: 0
 
       - name: Read Node version
         id: node-version
