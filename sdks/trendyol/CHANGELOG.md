@@ -6,11 +6,19 @@
 
 - [#193](https://github.com/zanaat-dev/lonca/pull/193) [`b940642`](https://github.com/zanaat-dev/lonca/commit/b94064245582debf86e36d41cdf923a84ab7b69f) Thanks [@keparlak](https://github.com/keparlak)! - `ShipmentPackage.whoPays` is deprecated. The field is not in Trendyol's documentation and does not appear in production order data. It is still passed through when Trendyol sends it, and will be removed in the next major version.
 
+  <!-- tr
+  `ShipmentPackage.whoPays` kullanımdan kaldırıldı (deprecated). Alan Trendyol'un dokümanında yok ve canlı sipariş verisinde görünmüyor. Trendyol gönderirse yine aktarılıyor; bir sonraki büyük sürümde kaldırılacak.
+  -->
+
 ## 1.2.1
 
 ### Patch Changes
 
 - [#192](https://github.com/zanaat-dev/lonca/pull/192) [`853f459`](https://github.com/zanaat-dev/lonca/commit/853f45980ecaa8645045d9f34d7add027cc2bee1) Thanks [@keparlak](https://github.com/keparlak)! - Package metadata and README links point to the project's new home: the repository moved to [github.com/zanaat-dev/lonca](https://github.com/zanaat-dev/lonca) and the docs to [lonca.zanaat.dev](https://lonca.zanaat.dev). Old GitHub URLs keep redirecting. No code changes.
+
+  <!-- tr
+  Paket bilgileri ve README bağlantıları projenin yeni adresini gösteriyor: depo [github.com/zanaat-dev/lonca](https://github.com/zanaat-dev/lonca), dokümanlar [lonca.zanaat.dev](https://lonca.zanaat.dev) adresine taşındı. Eski GitHub adresleri yönlendirmeye devam ediyor. Kodda değişiklik yok.
+  -->
 - Updated dependencies [[`70938e6`](https://github.com/zanaat-dev/lonca/commit/70938e652a643ac45baf3cbeb400e4ca2874447d)]:
   - @lonca/core@1.1.0
 
@@ -26,22 +34,47 @@
   - `suppliers.getAddresses()` now upper-cases `addressType` before matching, so the documented `Shipment` / `Invoice` / `Returning` values map to `SHIPMENT` / `INVOICE` / `RETURNING`. Before, mixed-case values fell back to `SHIPMENT`.
   - `CategoryAttribute.values` is deprecated and always `[]`: `getAttributes` has no inline value list (no `attributeValues` in the docs or on prod). Use `categories.getAttributeValues(categoryId, attributeId)`.
 
+  <!-- tr
+  Konumlar, tedarikçi adresleri ve kategori özellikleri için Trendyol'un gerçekten gönderdiği alanlar eşlendi; doküman ve canlı ortam kaydıyla (10 Ekim 2026) karşılaştırıldı. SDK'nın önceden okuduğu ama ne dokümanda ne canlıda bulunan alanlar genel tiplerde kalıyor, artık `@deprecated` işaretli (hiçbir tip kaldırılmadı ya da daraltılmadı).
+
+  - `Neighborhood.postCode` (yeni): mahallenin posta kodu; canlıdaki mahalle satırlarında var (dokümanda yok). `Neighborhood.code` kullanımdan kaldırıldı (mahalle satırlarında kod yok, hep `id`'ye eşit); `Neighborhood.districtCode` da kaldırıldı (hep `undefined`).
+  - `District.cityCode` kullanımdan kaldırıldı: ilçe satırlarında il bilgisi yok, bu yüzden hep `undefined`'dı. `District.code` yine sunucudaki `code` alanını okuyor.
+  - `SupplierAddress`'e `fullAddress`, `country`, `cityCode` ve `districtId` eklendi (dokümanda var, canlıda geliyor). `SupplierAddress.name` ve `fullName` kullanımdan kaldırıldı (Trendyol ikisini de göndermiyor; `fullAddress` kullan).
+  - `suppliers.getAddresses()` artık eşleştirmeden önce `addressType`'ı büyük harfe çeviriyor; dokümandaki `Shipment` / `Invoice` / `Returning` değerleri `SHIPMENT` / `INVOICE` / `RETURNING` olarak eşleniyor. Önceden karışık harfli değerler `SHIPMENT`'a düşüyordu.
+  - `CategoryAttribute.values` kullanımdan kaldırıldı ve hep `[]`: `getAttributes` satır içi değer listesi döndürmüyor (ne dokümanda ne canlıda `attributeValues` var). `categories.getAttributeValues(categoryId, attributeId)` kullan.
+  -->
+
 ## 1.1.0
 
 ### Minor Changes
 
 - [#163](https://github.com/loncadev/lonca/pull/163) [`2e7491a`](https://github.com/loncadev/lonca/commit/2e7491a49fae1005957f2d91002c1ec50f7c2f5a) Thanks [@keparlak](https://github.com/keparlak)! - `createTrendyolClient` and `createHepsiburadaClient` accept an optional `fetch` implementation (e.g. to add a proxy agent, or to record or mock traffic). It defaults to the global `fetch`, so existing code is unaffected.
 
+  <!-- tr
+  `createTrendyolClient` ve `createHepsiburadaClient` isteğe bağlı bir `fetch` uygulaması kabul ediyor (örneğin proxy eklemek ya da trafiği kaydetmek veya taklit etmek için). Varsayılan global `fetch` olduğu için mevcut kod etkilenmez.
+  -->
+
 - [#167](https://github.com/loncadev/lonca/pull/167) [`4fcb527`](https://github.com/loncadev/lonca/commit/4fcb52703df0586462da41ae46c51c66e9a4a3e0) Thanks [@keparlak](https://github.com/keparlak)! - Fix `brands.list` pagination: `paginate((p) => client.brands.list(p))` used to stop after the first page, because the SDK waited for a `totalPages` field that Trendyol never sends. When the response has no page count, a full page now sets `nextCursor` (a short page is the last one); a `totalPages` value is still honoured if present.
   
   - `Brand` gains an optional `luxe` flag (Trendyol's luxury-brand marker, present on prod brand rows), on both `brands.list` and `brands.search`.
   - `City.countryCode` is now filled with the country of the lookup (`'TR'`, `'AZ'`, or the `getCitiesByCountry` argument). Trendyol's city rows have no country field, so it was always `undefined` before.
+
+  <!-- tr
+  `brands.list` sayfalaması düzeltildi: `paginate((p) => client.brands.list(p))` ilk sayfadan sonra duruyordu, çünkü SDK Trendyol'un hiç göndermediği bir `totalPages` alanını bekliyordu. Yanıtta sayfa sayısı yoksa artık dolu bir sayfa `nextCursor` ayarlıyor (eksik sayfa sonuncusu sayılıyor); `totalPages` gelirse hâlâ dikkate alınıyor.
+
+  - `Brand`'e isteğe bağlı `luxe` bayrağı eklendi (Trendyol'un lüks marka işareti, canlıdaki marka satırlarında var); hem `brands.list` hem `brands.search` için.
+  - `City.countryCode` artık sorgulanan ülkeyle doluyor (`'TR'`, `'AZ'` ya da `getCitiesByCountry`'ye verilen değer). Trendyol'un il satırlarında ülke alanı yok, bu yüzden önceden hep `undefined`'dı.
+  -->
 
 ## 1.0.1
 
 ### Patch Changes
 
 - [#158](https://github.com/loncadev/lonca/pull/158) [`875a4aa`](https://github.com/loncadev/lonca/commit/875a4aacdee80ed6a420a35da0241728a1cfe9f2) Thanks [@keparlak](https://github.com/keparlak)! - `videos.list()` now reads rows from the documented `{ meta, data: [...] }` response envelope; previously it returned `[]` for that shape. `SellerIntegrationStatus` now lists the documented values `IN_PROGRESS | SUCCESS | FAILED` (it remains an open union, so other strings still type-check).
+
+  <!-- tr
+  `videos.list()` artık satırları dokümandaki `{ meta, data: [...] }` yanıt zarfından okuyor; önceden bu yapıda `[]` dönüyordu. `SellerIntegrationStatus` artık dokümandaki `IN_PROGRESS | SUCCESS | FAILED` değerlerini listeliyor (açık birleşim olarak kalıyor; başka metinler de tip kontrolünden geçer).
+  -->
 
 ## 1.0.0
 
@@ -63,6 +96,14 @@
   `/integration/sellers/{sellerId}/webhooks` path is not routed on production
   (the gateway answers a host-level 556); the documented path answers 200.
   Verified live on production for `webhooks.list()`.
+
+  <!-- tr
+  İlk kararlı sürüm. Genel API bir önceki ara sürümle aynı; yükseltmek için kod değişikliği gerekmez. 1.0.0'dan itibaren `@lonca/trendyol` [kararlılık politikasını](/stability/) izler: kırıcı değişiklikler yalnızca büyük sürümlerde gelir, kaldırılacak özellikler en az iki ara sürüm önceden duyurulur ve dışa açılan API yüzeyi CI'da kilitlidir.
+
+  Canlı API'ye karşı salt okuma ile doğrulandı (satıcı hesabı, 30 Ağustos 2026): dokuz sözleşme testinin dokuzu da (ürünler, siparişler, kategoriler, markalar, konumlar, sorular, iadeler, finans mutabakatları ve webhook'lar) 200 dönüyor ve yanıt yapıları kayıtlı örneklerle uyuşuyor.
+
+  Bir davranış düzeltmesi de bu sürümde: `webhooks.*` artık Trendyol'un dokümandaki `/integration/webhook/sellers/{sellerId}/webhooks` yolunu çağırıyor. Önceki `/integration/sellers/{sellerId}/webhooks` yolu canlıda yönlendirilmiyor (ağ geçidi host düzeyinde 556 dönüyor); dokümandaki yol 200 dönüyor. `webhooks.list()` için canlıda doğrulandı.
+  -->
 
 ### Patch Changes
 

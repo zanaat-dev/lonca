@@ -73,7 +73,7 @@ each published package, which guards the `exports` map and type resolution.
    ```bash
    pnpm changeset
    ```
-   Pick how each affected package should be bumped (patch / minor / major) and write a short summary. Docs, refactors, and chores do not need a changeset.
+   Pick how each affected package should be bumped (patch / minor / major) and write a short summary. Docs, refactors, and chores do not need a changeset. The summary also appears on the [release notes page](https://lonca.zanaat.dev/en/changelog/); a Turkish version is welcome but optional (see [.changeset/README.md](.changeset/README.md)).
 4. Make sure `pnpm typecheck && pnpm lint && pnpm test && pnpm format:check` pass locally.
 5. Open the PR and fill in the template.
 
