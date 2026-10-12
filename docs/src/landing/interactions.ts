@@ -99,8 +99,13 @@ export function mountCopy(el: HTMLButtonElement) {
     try {
       await navigator.clipboard.writeText(text);
       if (code) {
+        // Hold the chip's width so the shorter confirmation does not shrink it.
+        el.style.minWidth = `${el.offsetWidth}px`;
         code.textContent = done;
-        setTimeout(() => (code.textContent = text), 1400);
+        setTimeout(() => {
+          code.textContent = text;
+          el.style.minWidth = '';
+        }, 1400);
       }
     } catch {
       if (!code) return;

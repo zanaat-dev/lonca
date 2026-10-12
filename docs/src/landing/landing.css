@@ -380,12 +380,12 @@ a {
   position: absolute;
   left: 9.96cqw;
   top: 33.2cqw;
-  width: 13.77cqw;
   height: 2.15cqw;
   display: inline-flex;
   align-items: center;
   justify-content: flex-start;
-  padding: 0 0 0 0.55cqw;
+  padding: 0 0.55cqw;
+  white-space: nowrap;
   border: 1px solid #1c1f22;
   border-radius: 0.4cqw;
   background: #1a1d20;
