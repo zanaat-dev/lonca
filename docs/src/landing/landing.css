@@ -78,6 +78,15 @@ html {
   background: var(--ground);
   scrollbar-color: var(--line-2) var(--ground);
 }
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+/* Anchored sections stop below the sticky header instead of under it. */
+main section[id] {
+  scroll-margin-top: 5.18cqw;
+}
 body {
   margin: 0;
   background: var(--ground);
@@ -387,6 +396,12 @@ a {
 }
 .npm:hover {
   color: var(--ink);
+}
+/* The comp leaves no room for the form note; once it speaks, the chip steps down. */
+@media (min-width: 1000px) {
+  .waitlist-note:not(:empty) + .npm {
+    top: 35cqw;
+  }
 }
 
 /* ---------- Hub (comp box x470 y140 w470 h235). Inside the hub, lengths are comp px / 4.70 in the hub's own cqw. ---------- */
@@ -1110,6 +1125,9 @@ a {
 @media (max-width: 999px) {
   .top {
     height: 56px;
+  }
+  main section[id] {
+    scroll-margin-top: 56px;
   }
   .brand {
     left: 16px;

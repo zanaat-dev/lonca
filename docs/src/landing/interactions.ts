@@ -75,6 +75,22 @@ export function mountWaitlist(form: HTMLFormElement) {
   });
 }
 
+// "#bekleme" links (header pill, closing band) bring back the hero and put the
+// cursor in the email field, so the click lands on something to do. The jump
+// is done here because a fragment navigation would take the focus back.
+export function mountWaitlistLinks() {
+  const hero = document.getElementById('bekleme');
+  const input = document.querySelector<HTMLInputElement>('form.waitlist input[type="email"]');
+  if (!hero || !input) return;
+  document.querySelectorAll<HTMLAnchorElement>('a[href="#bekleme"]').forEach((a) => {
+    a.addEventListener('click', (e) => {
+      e.preventDefault();
+      hero.scrollIntoView();
+      input.focus({ preventScroll: true });
+    });
+  });
+}
+
 export function mountCopy(el: HTMLButtonElement) {
   const text = el.dataset.copy ?? '';
   const done = el.dataset.copied ?? 'Copied';
