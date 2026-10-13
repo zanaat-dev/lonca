@@ -1,5 +1,12 @@
 # @lonca/probe
 
+## 0.0.11
+
+### Patch Changes
+
+- Updated dependencies [[`d6a9340`](https://github.com/zanaat-dev/lonca/commit/d6a93409d6f6ae021a373dbe37c3c93094b9b865)]:
+  - @lonca/n11@0.1.0
+
 ## 0.0.10
 
 ### Patch Changes
