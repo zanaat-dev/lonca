@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   AuthError,
   LoncaError,
+  NotFoundError,
   RateLimitError,
   ServerError,
   TokenBucketRateLimiter,
@@ -123,12 +124,26 @@ describe('N11Transport.soap', () => {
   });
 });
 
+describe('N11Transport.soap idempotency', () => {
+  it('does not retry a write on a 5xx', async () => {
+    const fetchMock = vi.fn().mockResolvedValue(fault('SOAP-ENV:Server', 'down', 503));
+    await expect(
+      makeTransport(fetchMock).soap({ service: 's', operation: 'SaveX', idempotent: false }),
+    ).rejects.toBeInstanceOf(ServerError);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('mapSoapFailure', () => {
   it.each([
     [{ errorCode: 'SELLER_API.authenticationFailed' }, AuthError],
     [{ errorCategory: 'AUTHENTICATION' }, AuthError],
     [{ errorCode: 'maxCallLimit.reached' }, RateLimitError],
     [{ errorCode: 'validation.date' }, ValidationError],
+    [{ errorCode: 'SELLER_API.productQuestion.notFound' }, NotFoundError],
+    [{ errorCode: 'SELLER_API.order.not.found' }, NotFoundError],
+    [{ errorCode: 'systemError' }, ServerError],
+    [{ errorCode: 'SELLER_API.claimReturn.invalidRequestForApprove' }, ValidationError],
     [{}, ValidationError],
   ])('maps %j', (info, ErrorClass) => {
     const error = mapSoapFailure('GetX', { status: 'failure', ...info });

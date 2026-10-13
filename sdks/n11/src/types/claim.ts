@@ -134,3 +134,36 @@ export interface N11ReasonType {
   id: string;
   value: string;
 }
+
+/** Input for `claims.denyReturn` (`ClaimReturnDeny`). */
+export interface DenyN11ReturnParams {
+  claimReturnId: string | number;
+  /** From `claims.getReturnDenyReasons()`. */
+  denyReasonId: string | number;
+  /** Explanation shown with the denial (required by n11). */
+  note: string;
+  /**
+   * Leave unset when the reason is "Ürün Mağazaya Ulaşmadı". `CAMPAIGN`: n11
+   * issues a campaign code for sending the item back. `CUSTOM`: you ship it
+   * yourself and send `trackingNumber`.
+   */
+  returnShipmentType?: 'CAMPAIGN' | 'CUSTOM';
+  shipmentCompanyId?: string | number;
+  trackingNumber?: string;
+  deliveryReceiptNumber?: string;
+  /** Up to three evidence image URLs. */
+  imageUrls?: readonly string[];
+  videoUrl?: string;
+  /** Deny part of the claimed quantity (WSDL field; not described in the docs). */
+  splitQuantity?: number;
+}
+
+/** Input for `claims.postponeReturn` (`ClaimReturnPending`). */
+export interface PostponeN11ReturnParams {
+  claimReturnId: string | number;
+  /** From `claims.getReturnPendingReasons()`. */
+  pendingReasonId: string | number;
+  /** How many days to postpone. */
+  days: number;
+  note: string;
+}

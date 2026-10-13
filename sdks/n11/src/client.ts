@@ -1,4 +1,5 @@
 import type { Logger } from '@lonca/core';
+import { CatalogResource } from './resources/catalog.js';
 import { CategoriesResource } from './resources/categories.js';
 import { ClaimsResource } from './resources/claims.js';
 import { InventoryResource } from './resources/inventory.js';
@@ -34,14 +35,16 @@ export interface CreateN11ClientOptions {
 }
 
 export interface N11Client {
+  /** n11 catalogue search (SOAP), for listing against existing catalogue products. */
+  catalog: CatalogResource;
   categories: CategoriesResource;
-  /** Return and cancel claims (SOAP, read-only). */
+  /** Return and cancel claims (SOAP). */
   claims: ClaimsResource;
   /** Price and stock updates (async tasks). */
   inventory: InventoryResource;
   orders: OrdersResource;
   products: ProductsResource;
-  /** Product questions (SOAP, read-only). */
+  /** Product questions (SOAP). */
   questions: QuestionsResource;
   /** Cargo companies (SOAP). */
   shipping: ShippingResource;
@@ -80,6 +83,7 @@ export function createN11Client(opts: CreateN11ClientOptions): N11Client {
     fetch: opts.fetch,
   });
   return {
+    catalog: new CatalogResource(transport),
     categories: new CategoriesResource(transport),
     claims: new ClaimsResource(transport),
     inventory: new InventoryResource(transport),

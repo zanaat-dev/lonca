@@ -2,17 +2,26 @@ import {
   moneyFromMajor,
   TokenBucketRateLimiter,
   TRY,
+  ValidationError,
   type CursorPage,
   type Money,
 } from '@lonca/core';
 import type { N11Transport } from '../transport.js';
 import type {
+  CancelN11OrderItemParams,
   ListN11OrdersParams,
   N11Address,
+  N11CollectionRequestLine,
+  N11LaborCost,
+  N11LineResult,
   N11OrderLine,
   N11PackageHistory,
   N11ShipmentPackage,
+  N11SplitResult,
+  SendN11InvoiceLinkParams,
+  SplitN11PackageByQuantityParams,
 } from '../types/order.js';
+import { asText } from '../soap/xml.js';
 
 /** Page size used when `limit` is omitted. */
 const DEFAULT_PAGE_SIZE = 50;
@@ -255,6 +264,223 @@ export class OrdersResource {
     }
     return result;
   }
+
+  /**
+   * Approve order lines (`PUT /rest/order/v1/update`, status `Picking`). Only
+   * lines in `Created` can be approved. n11 processes the valid lines and
+   * reports the rest per line; a line id it does not know is left out of the
+   * result entirely (observed on the test store), so compare the result with
+   * what you sent.
+   */
+  async approve(lineIds: readonly (string | number)[]): Promise<N11LineResult[]> {
+    requireItems('orders.approve', lineIds);
+    const data = await this.transport.request<LineResultsWire | undefined>({
+      method: 'PUT',
+      path: '/rest/order/v1/update',
+      body: { lines: lineIds.map((id) => ({ lineId: Number(id) })), status: 'Picking' },
+    });
+    return lineResults(data);
+  }
+
+  /**
+   * Split a `Picking` package into new packages
+   * (`POST /rest/delivery/v1/splitCombinePackage`): each group of line ids
+   * becomes one package, and lines you leave out form another. The original
+   * package becomes `Unpacked`; the new ones are `Picking` with their own id
+   * and campaign code.
+   */
+  async splitPackage(groups: readonly (readonly (string | number)[])[]): Promise<N11SplitResult> {
+    requireItems('orders.splitPackage', groups);
+    const data = await this.transport.request<SplitResultWire | undefined>({
+      method: 'POST',
+      path: '/rest/delivery/v1/splitCombinePackage',
+      body: { splitGroups: groups.map((ids) => ({ orderLineIds: ids.map(Number) })) },
+    });
+    return splitResult(data);
+  }
+
+  /**
+   * Split a `Picking` package by quantity, optionally cancelling quantities at
+   * the same time (`POST /rest/delivery/v1/splitPackageByQuantity`). Lines of
+   * one order only. n11 authorises this service per store, on request.
+   */
+  async splitPackageByQuantity(params: SplitN11PackageByQuantityParams): Promise<N11SplitResult> {
+    requireItems('orders.splitPackageByQuantity', params.packages);
+    const body: Record<string, unknown> = {
+      splitPackages: params.packages.map((lines) => ({
+        packageDetails: lines.map((l) => ({
+          orderLineId: Number(l.lineId),
+          quantities: l.quantity,
+        })),
+      })),
+    };
+    if (params.cancel?.length) {
+      body.cancelledItems = params.cancel.map((c) => ({
+        cancelReasonId: c.reasonId,
+        orderLineId: Number(c.lineId),
+        quantity: c.quantity,
+      }));
+    }
+    const data = await this.transport.request<SplitResultWire | undefined>({
+      method: 'POST',
+      path: '/rest/delivery/v1/splitPackageByQuantity',
+      body,
+    });
+    return splitResult(data);
+  }
+
+  /**
+   * Ask a logistics company (Horoz, Ceva, Borusan) to collect a `Picking`
+   * package (`PUT /rest/delivery/v1/collectionRequest`). Send every line of
+   * the package. Returns n11's `{ code, message }`.
+   */
+  async createCollectionRequest(
+    lines: readonly N11CollectionRequestLine[],
+  ): Promise<{ code?: number; message?: string }> {
+    requireItems('orders.createCollectionRequest', lines);
+    const data = await this.transport.request<{ code?: number; message?: string } | undefined>({
+      method: 'PUT',
+      path: '/rest/delivery/v1/collectionRequest',
+      body: {
+        collectionRequestDetails: lines.map((l) => ({
+          id: l.packageId,
+          orderLineId: Number(l.lineId),
+          boxQuantity: l.boxQuantity,
+          desi: l.desi,
+          shipmentCompany: l.shipmentCompany,
+        })),
+      },
+    });
+    const result: { code?: number; message?: string } = {};
+    if (data?.code !== undefined) result.code = data.code;
+    if (data?.message !== undefined) result.message = data.message;
+    return result;
+  }
+
+  /**
+   * Add labour costs to order lines (`PUT /rest/order/v1/labor-costs`), for
+   * the jewellery categories n11 lists. Results are per line, like
+   * {@link approve}.
+   */
+  async updateLaborCosts(costs: readonly N11LaborCost[]): Promise<N11LineResult[]> {
+    requireItems('orders.updateLaborCosts', costs);
+    const data = await this.transport.request<LineResultsWire | undefined>({
+      method: 'PUT',
+      path: '/rest/order/v1/labor-costs',
+      body: {
+        laborCostDetails: costs.map((c) => ({
+          orderLineId: Number(c.lineId),
+          totalLaborCostExcludingVAT: c.amountExcludingVat,
+          laborVatRate: c.vatRate ?? null,
+        })),
+      },
+    });
+    return lineResults(data);
+  }
+
+  /**
+   * Cancel part of an approved order line (SOAP `ClaimCancelPartial`). Lines
+   * still `Created` cannot be cancelled this way (the seller rejects them in
+   * Seller Office). A line in the wrong state fails with
+   * `SELLER_API.claimCancel.invalidRequestForPartial` (`ValidationError`).
+   */
+  async cancelItem(params: CancelN11OrderItemParams): Promise<void> {
+    await this.transport.soap({
+      service: 'claimCancelService',
+      operation: 'ClaimCancelPartial',
+      fields: {
+        orderItemId: String(params.lineId),
+        cancelQuantity: params.quantity,
+        cancelReasonTypeId: String(params.reasonId),
+        cancelReasonDescription: params.description,
+      },
+      idempotent: false,
+    });
+  }
+
+  /**
+   * Attach an invoice link to an order (SOAP `SaveLinkSellerInvoice`). An
+   * unknown order number fails with `SELLER_API.order.not.found`
+   * (`NotFoundError`).
+   *
+   * @throws {ValidationError} when `url` is not HTTPS or is longer than 2048
+   *   characters (checked before sending).
+   */
+  async sendInvoiceLink(params: SendN11InvoiceLinkParams): Promise<{ url?: string }> {
+    if (!params.url.startsWith('https://') || params.url.length > 2048) {
+      throw new ValidationError({
+        message: 'orders.sendInvoiceLink: url must be an https:// link of at most 2048 characters',
+      });
+    }
+    const invoiceDate =
+      params.invoiceDate instanceof Date ? params.invoiceDate.getTime() : params.invoiceDate;
+    const response = await this.transport.soap({
+      service: 'sellerInvoiceService',
+      operation: 'SaveLinkSellerInvoice',
+      fields: {
+        url: params.url,
+        orderNumber: params.orderNumber,
+        invoiceDateTime: invoiceDate,
+        invoiceNumber: params.invoiceNumber,
+      },
+      idempotent: false,
+    });
+    const url = asText(response.url);
+    return url ? { url } : {};
+  }
+}
+
+interface LineResultsWire {
+  content?: {
+    lineId?: number | string;
+    status?: string;
+    reasons?: string | null;
+    details?: Record<string, unknown> | null;
+  }[];
+}
+
+interface SplitResultWire {
+  code?: number;
+  message?: string;
+  splitPackageOrderItems?: {
+    orderNumber?: string | number;
+    packageId?: string | number;
+    orderLineId?: string | number;
+    stockCode?: string;
+    quantity?: number;
+  }[];
+}
+
+function requireItems(method: string, items: readonly unknown[]): void {
+  if (items.length === 0) {
+    throw new ValidationError({ message: `${method}: at least one item is required` });
+  }
+}
+
+function lineResults(data: LineResultsWire | undefined): N11LineResult[] {
+  return (data?.content ?? []).map((row) => {
+    const result: N11LineResult = { lineId: String(row.lineId ?? ''), status: row.status ?? '' };
+    if (row.reasons) result.reason = row.reasons;
+    if (row.details) result.details = row.details;
+    return result;
+  });
+}
+
+function splitResult(data: SplitResultWire | undefined): N11SplitResult {
+  const result: N11SplitResult = {
+    items: (data?.splitPackageOrderItems ?? []).map((item) => {
+      const out: N11SplitResult['items'][number] = {};
+      if (item.orderNumber !== undefined) out.orderNumber = String(item.orderNumber);
+      if (item.packageId !== undefined) out.packageId = String(item.packageId);
+      if (item.orderLineId !== undefined) out.lineId = String(item.orderLineId);
+      if (item.stockCode !== undefined) out.stockCode = item.stockCode;
+      if (item.quantity !== undefined) out.quantity = item.quantity;
+      return out;
+    }),
+  };
+  if (data?.code !== undefined) result.code = data.code;
+  if (data?.message !== undefined) result.message = data.message;
+  return result;
 }
 
 function parsePageCursor(cursor: string | undefined): number {

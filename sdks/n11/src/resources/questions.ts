@@ -1,4 +1,9 @@
-import { NotFoundError, TokenBucketRateLimiter, type CursorPage } from '@lonca/core';
+import {
+  NotFoundError,
+  TokenBucketRateLimiter,
+  ValidationError,
+  type CursorPage,
+} from '@lonca/core';
 import type { N11Transport } from '../transport.js';
 import { asArray, asObject, type XmlNode, type XmlObject } from '../soap/xml.js';
 import { assign, nextPage, pageCursor, paging, soapDate, text } from '../soap/values.js';
@@ -7,6 +12,8 @@ import type { ListN11QuestionsParams, N11Question, N11QuestionDetail } from '../
 const SERVICE = 'productService';
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
+/** Documented answer length limit. */
+const MAX_ANSWER_LENGTH = 2048;
 
 function images(node: XmlNode | undefined): string[] {
   return asArray(asObject(node).image).filter(
@@ -53,8 +60,8 @@ function normalizeDetail(id: string, q: XmlObject): N11QuestionDetail {
  * Product questions (SOAP `ProductService`).
  *
  * Source: developer.n11.com → "Ürün Soru-Cevap Servisi" and
- * `api.n11.com/ws/productService.wsdl`. Read-only; verified against prod on
- * 2026-10-10. Answering (`SaveProductAnswer`) is not implemented.
+ * `api.n11.com/ws/productService.wsdl`. Reads verified against prod on
+ * 2026-10-10; `answer` on n11's test store on 2026-10-13.
  *
  * Rate limit: n11 allows listing questions **once per minute**; the default
  * limiter enforces that for this client. Inject a shared limiter when several
@@ -118,5 +125,28 @@ export class QuestionsResource {
       throw new NotFoundError({ message: 'n11 question not found', status: 200 });
     }
     return normalizeDetail(id, question);
+  }
+
+  /**
+   * Answer a question (`SaveProductAnswer`). A question can be answered once;
+   * it then becomes `CLOSED`. A second answer fails with
+   * `SELLER_API.productQuestion.alreadyAnswered` (`ValidationError`), an
+   * unknown id with `SELLER_API.productQuestion.notFound` (`NotFoundError`).
+   *
+   * @throws {ValidationError} when `answer` is empty or longer than 2048
+   *   characters (checked before sending).
+   */
+  async answer(questionId: string | number, answer: string): Promise<void> {
+    if (answer.trim().length === 0 || answer.length > MAX_ANSWER_LENGTH) {
+      throw new ValidationError({
+        message: `questions.answer: answer must be 1 to ${MAX_ANSWER_LENGTH} characters`,
+      });
+    }
+    await this.transport.soap({
+      service: SERVICE,
+      operation: 'SaveProductAnswer',
+      fields: { productQuestionId: String(questionId), answer },
+      idempotent: false,
+    });
   }
 }
