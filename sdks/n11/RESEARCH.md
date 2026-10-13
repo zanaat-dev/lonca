@@ -89,15 +89,22 @@ questions, returns, invoice links and catalogue search, until n11 moves those to
   allowed to do it (https://docs.helorobo.com/en/helorobo/article/n11-integration).
 - **Environments.** The only base URL in the docs is `https://api.n11.com`, with path families
   `/cdn/…` (categories), `/ms/…` (products), `/rest/…` (orders) and `/ws/…` (SOAP). The portal
-  documents **no sandbox or test environment** and no test-order service. **(unverified)** The
-  skeleton's `env` therefore only accepts `'prod'`.
+  documents **no sandbox or test environment** and no test-order service. The skeleton's `env`
+  therefore only accepts `'prod'`. n11 support confirmed this on 2026-10-13: their test
+  environment is closed to outside parties. Instead they hand integrators a **test store on
+  prod** (Seller Office login plus its own `appKey`/`appSecret`, kept out of the repo). To test
+  orders, create a product whose title and image clearly mark it as a test product (or use one
+  of the store's existing test products), give it a low price, and place a real order.
 - **Integrator identification.** Product write tasks take a required body field `integrator`:
   "use the same name in all your requests"
   ([product create](https://developer.n11.com/documentation/n11-marketplace-entegrasyonu/urun-yukleme/),
   [price/stock](https://developer.n11.com/documentation/n11-marketplace-entegrasyonu/urun-fiyat-stok-guncelleme/)).
   n11 documents **no** `User-Agent` convention, unlike Trendyol and Hepsiburada, and no
   correlation-id header. The skeleton sends neither. It stores `integratorName` on the transport so
-  write resources can fill `integrator`.
+  write resources can fill `integrator`. n11 support (2026-10-13): send the integrator's company
+  name; there is no registration and nothing to match in Seller Office. Product services that
+  require the field expect one common value, with no variation in letter case or `I`/`ı`/`İ`/`i`,
+  because n11 logs by it. They named no `User-Agent` or IP allowlist requirement.
 
 ## 4. Rate limits and batch limits (documented)
 
@@ -111,8 +118,18 @@ questions, returns, invoice links and catalogue search, until n11 moves those to
 | `SearchCatalog`: ≤ 10 values per multi-value parameter                                                              | [catalogue](https://developer.n11.com/documentation/n11-marketplace-entegrasyonu/hizli-urun-yukleme/)                                     |
 | Legacy SOAP: an over-limit call returns `errorCode` `maxCallLimit.reached`                                          | legacy .docx manual (section 1)                                                                                                           |
 
-Nothing else is documented: no other per-endpoint limits, and no word on whether limits produce
-HTTP 429 or a `Retry-After` header. **(unverified)**
+Nothing else is documented. n11 support added on 2026-10-13 that limits work differently from a
+plain requests-per-minute quota:
+
+- **CreateProduct:** a fixed **10,000 products per hour per store**.
+- **UpdateProductPriceAndStock:** a limit that varies with the number of products (no figure
+  given).
+- **Bursts:** a client that keeps sending requests milliseconds apart is taken for an attack. n11
+  raises an alarm and first suspends the **IP** temporarily, then restricts it.
+
+They described no 429 or `Retry-After`. What a suspended IP receives is still unknown, so the SDKs
+must pace themselves rather than wait for a 429: a default limiter on every bulk path (paging,
+product writes) is the safe design.
 
 ## 5. Pagination
 
@@ -155,11 +172,11 @@ HTTP 429 or a `Retry-After` header. **(unverified)**
 | Returns (claims)              | SOAP `ReturnService` ([doc](https://developer.n11.com/documentation/iade-entgrasyonu/iade-talepleri-servisi/))                                                                                                                                                                                                           | `claims.*`                                        | `claims.*`                                        | Statuses: `REQUESTED`, `CANCELLED`, `DENIED`, `PENDING`, `PENDED`, `APPROVED`. Dates are `dd/mm/yyyy` strings.                                                                                                                           |
 | Partial cancel                | SOAP `ClaimCancelPartial` ([doc](https://developer.n11.com/documentation/iade-entgrasyonu/parcali-iptal-talebi/))                                                                                                                                                                                                        | `orders.cancelPackageItem`                        | `orders.cancelLineItem`                           |                                                                                                                                                                                                                                          |
 | Questions                     | SOAP `GetProductQuestionList/Detail`, `SaveProductAnswer` ([doc](https://developer.n11.com/documentation/n11-marketplace-entegrasyonu/urun-soru-cevap-servisi/))                                                                                                                                                         | `questions.*`                                     | `questions.*`                                     | One answer per question, 1 to 2048 characters. Listing is limited to once per minute.                                                                                                                                                    |
-| Settlements / finance         | **Not on the new portal.** The legacy SOAP `SettlementService` (`GetSettlementList/Detail`) appears in the 2020 .docx                                                                                                                                                                                                    | `finance.*`                                       | `accounting.*`                                    | **(unverified)** It may no longer be live. Order lines do carry `commissionRate`, `sellerCampaignCommissionRate`, `netMarketingFeeRate` and `netMarketplaceFeeRate`.                                                                     |
+| Settlements / finance         | **Not on the new portal.** The legacy SOAP `SettlementService` (`GetSettlementList/Detail`) appears in the 2020 .docx; n11 support (2026-10-13) says finance still runs over SOAP                                                                                                                                        | `finance.*`                                       | `accounting.*`                                    | **(unverified)** It may no longer be live. Order lines do carry `commissionRate`, `sellerCampaignCommissionRate`, `netMarketingFeeRate` and `netMarketplaceFeeRate`.                                                                     |
 | Shipment companies            | Order docs refer to a `GetShipmentCompanies` method ([order listing](https://developer.n11.com/documentation/n11-siparis-entegrasyonu/siparis-listeleme-servisi/)), but the new portal has no page for it. The legacy SOAP `ShipmentCompanyService` is in the .docx                                                      | — (`orders.changeCargoProvider` only)             | `shipping.getCargoFirms`                          | **(unverified)**                                                                                                                                                                                                                         |
 | Cargo labels                  | Not documented                                                                                                                                                                                                                                                                                                           | `labels.*`                                        | `orders.getPackageLabel`                          | `cargoTrackingNumber` is the n11 "campaign code" the seller hands to the carrier.                                                                                                                                                        |
 | Webhooks                      | Not documented                                                                                                                                                                                                                                                                                                           | `webhooks.*`                                      | —                                                 | Polling only.                                                                                                                                                                                                                            |
-| Test orders                   | Not documented                                                                                                                                                                                                                                                                                                           | `testOrders.*`                                    | `testOrders.*`                                    | There is no sandbox either (section 3).                                                                                                                                                                                                  |
+| Test orders                   | Not documented; n11 support (2026-10-13): a real low-priced order on a test product in their prod test store                                                                                                                                                                                                             | `testOrders.*`                                    | `testOrders.*`                                    | There is no sandbox either (section 3).                                                                                                                                                                                                  |
 | n11 warehouse (n11depom)      | `sender` filter `SELLER`/`N11`/`ALL` on product query, order listing and returns ([doc](https://developer.n11.com/documentation/n11depom/n11depom/))                                                                                                                                                                     | —                                                 | —                                                 |                                                                                                                                                                                                                                          |
 
 The CONTRIBUTING minimum of orders, products and inventory is reachable over REST alone.
@@ -271,6 +288,10 @@ must not retry faults that are not transient.
   down on request. Asking `sellerintegration@n11.com` for
   permission first would be cheap insurance.
 
+- **WSDLs: answered (2026-10-13).** Asked whether `api.n11.com/ws/*.wsdl` may be kept and
+  redistributed in this MIT repo as a schema reference, n11 support replied that using our own
+  types is the healthier choice. Read that as a no: the WSDLs stay out of the repo, and the SOAP
+  layer keeps its hand-written types.
 - **Done for REST (2026-10-11):** the second option.
   [`specs/n11/`](../../specs/n11/README.md) has one document per portal section with REST
   operations (`product.json`: 8 operations, `order.json`: 6), compiled by hand from the pages
@@ -279,7 +300,7 @@ must not retry faults that are not transient.
   would be added as `x-lonca-observed` from `probe-snapshots/n11.json` (none with the
   2026-10-10 baseline; two docs-vs-prod `null`s are marked `x-lonca-observed-types`). The licence
   note names
-  "n11.com", as the portal footer does, not a legal entity. The WSDLs are still not fetched or
+  "n11.com", as the portal footer does, not a legal entity. The WSDLs are not fetched or
   redistributed (question 11 in section 11).
 
 ## 10. What the skeleton covers
@@ -335,11 +356,16 @@ InternalServerException` naming `MissingRequestHeaderException` is an `AuthError
 
 Checked on prod on 2026-10-10 with a seller's own keys, **read-only GETs only** (no write, no
 SOAP call: SOAP requests are `POST`s and were not sent). Answers are marked **Answered**,
-**Mostly answered** or **Partly answered**; the rest stay open.
+**Mostly answered** or **Partly answered**; the rest stay open. On 2026-10-11 the open ones were
+sent to n11 seller integration support by e-mail; their reply of 2026-10-13 is marked
+**n11 (2026-10-13)**.
 
 1. **Sandbox.** Is there a test environment or test seller? If not, can n11 create test orders for
-   an integrator account? Without one, every write is a production write. _(Still open: only n11
-   can answer, via `sellerintegration@n11.com`.)_
+   an integrator account? Without one, every write is a production write.
+   **Answered, n11 (2026-10-13):** the test environment is closed to outside parties. n11 gave us a
+   test store on prod (credentials kept out of the repo). Test orders are real orders: a product
+   marked as a test product in its title and image (or an existing test product of the store),
+   at a low price. Every write is still a production write, only on a store meant for it.
 2. **Error envelope.** What status codes and JSON bodies do REST failures use (bad key, missing
    secret, validation)? Is 401 used, or 403, or 200 with an error body?
    **Answered:** it differs per path family.
@@ -357,7 +383,11 @@ SOAP call: SOAP requests are `POST`s and were not sent). Answers are marked **An
 3. **Rate limits.** What are the limits outside `shipmentPackages` and the question list? Is a 429
    returned, with `Retry-After`? Are the limits per key or per IP?
    **Partly answered:** no response carries a rate-limit or `Retry-After` header; no 429 was seen
-   (limits were not pushed on purpose).
+   (limits were not pushed on purpose). **n11 (2026-10-13):** CreateProduct is a fixed 10,000
+   products/hour per store; UpdateProductPriceAndStock varies with the product count; requests
+   arriving milliseconds apart trigger attack detection, a temporary IP suspension and then a
+   restriction (section 4). No 429 was mentioned. Still unknown: other endpoints' limits and the
+   response a suspended IP gets.
 4. **Header names.** Do the `cdn` category endpoints really reject requests without `appSecret` now?
    Does any endpoint care about header-name case?
    **Answered:** `/cdn/categories` still answers 200 with `appkey` alone (403 with no headers);
@@ -369,7 +399,9 @@ SOAP call: SOAP requests are `POST`s and were not sent). Answers are marked **An
    **Mostly answered:** ids, prices, `quantity`, `vatRate` and `commissionRate` are JSON numbers;
    `barcode` and `maxPurchaseQuantity` can be `null`; `rejectInfo` is absent on active products
    (its shape is still unknown); a page past the end is `200` with an empty `content`. A single
-   `categoryIds` value filters (multi-value encoding untested: the sample had one category).
+   `categoryIds` value filters. **n11 (2026-10-13):** several ids go comma-separated in one
+   value (what the SDK sends); more than 1000 ids answer `500`, so `products.list` rejects them
+   with a `ValidationError` before sending.
    The 250-row sample had only `status: Active`, `saleStatus: On_Sale`, `sender: SELLER` and
    `currencyType: TL`.
 6. **Orders.** Confirm the meaning of "GMT+3 epoch ms" for `startDate`/`endDate`, the 15-day
@@ -379,28 +411,45 @@ SOAP call: SOAP requests are `POST`s and were not sent). Answers are marked **An
    `startDate`, 15 days from it; a 40-day range answered like the last 15 days, so the window is
    clamped silently. `size` over 100 is silently clamped to 100. The envelope is `{ pageCount,
 totalPages, page, size, content }`, where `pageCount` equals the number of rows in the page.
-   Timestamps are epoch ms. `orderByField` and the GMT+3 meaning are still unchecked.
+   Timestamps are epoch ms. **n11 (2026-10-13):** `orderByField` is a boolean: `true` applies the
+   dates to the package's last update, `false` or absent to its creation (the SDK now types it
+   `boolean`). The dates are "the epoch ms of a Turkish time", which is how we put the question.
+   Whether n11 means a true epoch (what `Date.getTime()` gives) or a wall-clock time shifted by
+   three hours is still worth one read-only check against an order with a known creation time.
 7. **SOAP lifetime.** Are SOAP `OrderList`/`DetailedOrderList` and `CategoryService` still up, and
    is there a sunset date? Are questions and returns moving to REST?
    **Partly answered:** `ProductService` (questions), `ReturnService`, `ClaimCancelService` and
    `ShipmentCompanyService` answer on prod (2026-10-10). The order and category SOAP services were
-   not called. No sunset date is known.
+   not called. No sunset date is known. **n11 (2026-10-13):** no dates yet for moving these
+   services to REST or for shutting SOAP down. Cancel requests were retired long ago: only the
+   partial cancel (`ClaimCancelPartial`) is still active in the cancel-claim service. Response
+   types are to be redesigned after the REST move, which will take time; build on the current
+   ones.
 8. **Finance.** Is the legacy `SettlementService` still live, or is there a REST replacement for
    settlements and commission invoices?
+   **Answered, n11 (2026-10-13):** finance still runs over SOAP; there is no REST replacement.
 9. **Shipment companies, cargo labels, city lists.** Are they still SOAP-only
    (`ShipmentCompanyService`, `CityService`), and is there any label service?
-   **Partly answered:** `GetShipmentCompanies` works over SOAP. Cities and labels are still
-   unchecked.
+   **Partly answered:** `GetShipmentCompanies` works over SOAP. **n11 (2026-10-13):** cities
+   and the rest stay on SOAP. For cargo labels they asked which step we mean; open until we
+   reply (we mean a printable shipping label or barcode for a package, like Trendyol's
+   `getCommonLabel` or Hepsiburada's package label).
 10. **Integrator identity.** Does n11 register integrators by name? Should `integrator` match
     anything configured in Seller Office? Is a `User-Agent` or IP allowlist ever required (both TY and HB
     needed a meaningful `User-Agent`)?
+    **Answered, n11 (2026-10-13):** the integrator's company name, no registration. Product
+    services that require `integrator` expect one common value (no case or `I`/`ı` variation);
+    n11 logs by it. No `User-Agent` or IP requirement was named.
 11. **WSDLs.** May we fetch and redistribute `api.n11.com/ws/*.wsdl` in `specs/n11/`? Should we ask
     `sellerintegration@n11.com`?
-    _(Still open. `specs/n11/` (2026-10-11) covers the REST pages only, compiled by hand from the
-    portal; SOAP stays out of `specs/` until this is answered, so `pnpm drift` keeps reporting the
-    four SOAP probe exchanges as unmatched.)_
+    **Answered, n11 (2026-10-13):** "using your own types would be healthier." The WSDLs stay
+    out of the repo. `specs/n11/` covers the REST pages only, so `pnpm drift` keeps reporting the
+    four SOAP probe exchanges as unmatched.
 12. **Credential scope.** Can one key pair access everything (products, orders, returns), or are
     there per-service permissions?
+    **Answered, n11 (2026-10-13):** the only per-store authorisation n11 named is the
+    quantity-based package split (`splitPackageByQuantity`); n11 grants it on the seller's
+    request.
 
 ## 12. Next steps (proposed)
 

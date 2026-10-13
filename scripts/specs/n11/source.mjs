@@ -290,8 +290,11 @@ const productDocument = {
             in: 'query',
             description:
               'Kategori ID ile listeleme (tablodaki tip: "long list"). Lonca: the page does not ' +
-              'say how several values are encoded (comma-separated or repeated parameter).',
-            schema: { type: 'array', items: { type: 'integer', format: 'int64' } },
+              'say how several values are encoded; n11 support (2026-10-13): comma-separated in ' +
+              'one value, and more than 1000 ids answer 500.',
+            style: 'form',
+            explode: false,
+            schema: { type: 'array', maxItems: 1000, items: { type: 'integer', format: 'int64' } },
           },
           {
             name: 'page',
@@ -905,7 +908,7 @@ const orderDocument = {
               'true girildiğinde paketin lastModifiedDate alanına göre sorgulama yapılır; ' +
               'kaldırıldığında ya da false olduğunda tarih aralığı sipariş oluşturma tarihi olarak ' +
               "baz alınır (tablodaki tip: string). Lonca: the page's example URL spells it " +
-              '"orderbyField".',
+              '"orderbyField"; n11 support (2026-10-13) confirmed the true/false meaning.',
             schema: { type: 'string', enum: ['true', 'false'] },
           },
           {

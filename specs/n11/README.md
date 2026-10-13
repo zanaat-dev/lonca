@@ -26,9 +26,9 @@ from the [n11 developer portal](https://developer.n11.com/documentation/) (Turki
   down promptly. The scripts, this README and `manifest.json` are Lonca's own work (MIT).
 - **SOAP is out of scope.** The SOAP services (`https://api.n11.com/ws/*`: product questions,
   catalogue search, invoice links, returns, partial cancel, shipment companies) are not
-  OpenAPI material, and whether their WSDLs may be redistributed is still an open question with
-  n11 (`sdks/n11/RESEARCH.md`, section 11, question 11). They are neither described nor
-  redistributed here.
+  OpenAPI material. Asked whether the WSDLs may be redistributed, n11 replied (2026-10-13) that
+  writing our own types is the healthier choice (`sdks/n11/RESEARCH.md`, section 11, question
+  11), so they are neither described nor redistributed here.
 
 ### Why the hand-maintained input is a `.mjs` module
 
