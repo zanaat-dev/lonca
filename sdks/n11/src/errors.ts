@@ -28,6 +28,10 @@ import {
  * - `/cdn/…` (categories) — a wrong key is `403 text/plain` ("Authentication
  *   failed"); an unknown or non-leaf category is `400 { errorCode:
  *   "invalidInput", errorMessage }`.
+ * - `/ms/product/tasks/…` (product writes) — a malformed task (no
+ *   `integrator`, empty `skus`, an unknown enum value, broken JSON) is `500 {
+ *   errorCode: "TASK_ERR_…", errorMessage }` (n11's test store, 2026-10-13).
+ *   Also a client error: mapped to `ValidationError`.
  *
  * Otherwise the usual status mapping applies:
  *
@@ -107,6 +111,7 @@ function classifyBody(body: unknown): 'auth' | 'validation' | undefined {
   if (typeof b.errorCode === 'string' && b.errorCode.endsWith('authenticationFailed')) {
     return 'auth';
   }
+  if (typeof b.errorCode === 'string' && b.errorCode.startsWith('TASK_ERR_')) return 'validation';
   if (b['@type'] !== 'InternalServerException' || typeof b.message !== 'string') return undefined;
   if (b.message === 'MissingRequestHeaderException') return 'auth';
   if (CLIENT_EXCEPTIONS.has(b.message)) return 'validation';

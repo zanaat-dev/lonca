@@ -1,6 +1,7 @@
 import type { Logger } from '@lonca/core';
 import { CategoriesResource } from './resources/categories.js';
 import { ClaimsResource } from './resources/claims.js';
+import { InventoryResource } from './resources/inventory.js';
 import { OrdersResource } from './resources/orders.js';
 import { ProductsResource } from './resources/products.js';
 import { QuestionsResource } from './resources/questions.js';
@@ -36,6 +37,8 @@ export interface N11Client {
   categories: CategoriesResource;
   /** Return and cancel claims (SOAP, read-only). */
   claims: ClaimsResource;
+  /** Price and stock updates (async tasks). */
+  inventory: InventoryResource;
   orders: OrdersResource;
   products: ProductsResource;
   /** Product questions (SOAP, read-only). */
@@ -49,10 +52,11 @@ export interface N11Client {
 /**
  * Create an n11 client.
  *
- * **Research skeleton** — private and unpublished. The read resources
- * (`categories`, `orders.list`, `products.list`) are verified against prod;
- * the SOAP reads (`questions`, `claims`, `shipping`) are not yet;
- * see `sdks/n11/RESEARCH.md`.
+ * **Unreleased** — private and unpublished. The reads (`categories`,
+ * `orders.list`, `products.list` and the SOAP `questions`, `claims`,
+ * `shipping`) are verified on prod; the product writes (`products.create` /
+ * `update` / `delete`, `inventory.update`) on n11's test store. See
+ * `sdks/n11/RESEARCH.md`.
  *
  * @example
  * ```ts
@@ -78,6 +82,7 @@ export function createN11Client(opts: CreateN11ClientOptions): N11Client {
   return {
     categories: new CategoriesResource(transport),
     claims: new ClaimsResource(transport),
+    inventory: new InventoryResource(transport),
     orders: new OrdersResource(transport),
     products: new ProductsResource(transport),
     questions: new QuestionsResource(transport),

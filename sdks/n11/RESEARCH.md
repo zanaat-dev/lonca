@@ -191,6 +191,36 @@ The CONTRIBUTING minimum of orders, products and inventory is reachable over RES
   SOAP responses carry `result.status: "failure"`. **(inferred)** Resources have to turn these into
   typed results or errors themselves, because the HTTP-status mapping in `errors.ts` never sees
   them.
+- **Product tasks on the wire (n11's test store, 2026-10-13).** Every product write was exercised
+  on the test store with the store's own keys:
+  - **Request-level errors are HTTP 500** with `{ errorCode: "TASK_ERR_…", errorMessage }`: a
+    missing `integrator` or an empty `skus` (`TASK_ERR_008`, bean-validation text), a body without
+    `payload` (`TASK_ERR_000` "Undefined error."), broken JSON or an unknown enum value
+    (`TASK_ERR_006`, Jackson text). `mapHttpError` maps every `TASK_ERR_*` to `ValidationError`.
+  - **Per-SKU errors come back with HTTP 200** in task details (`status: FAIL`, Turkish
+    `reasons`): an unknown stock code, more than 2 decimals, `listPrice` below `salePrice`, a lone
+    `salePrice` ("list price boş olamaz"), an update with nothing to change, an invalid category,
+    a create without images and attributes, an image n11 cannot fetch ("All Images are invalid"),
+    and a price over the category's cap ("fahiş fiyat … Maximum 42,000 TL").
+  - **Placeholder row.** While a task is `IN_QUEUE`, task details already hold one row with no
+    `itemCode`, `status: FAIL` and the reason "N sku işlenmeye alındı.". It is not a result; the
+    SDK drops it. Real rows appear one by one as SKUs finish.
+  - **Timing.** Price/stock, update and delete tasks finished in 1 to 5 seconds. Create tasks took
+    from a few seconds to about 15 minutes, and one with an `http://` image took about 20 minutes
+    to fail. `waitForTask` defaults to 2 minutes; creates need a longer `timeoutMs`.
+  - **Task timestamps** are `dd-MM-yyyy hh:mm:ss` on a 12-hour clock with no AM/PM (a task created
+    at 22:58 Turkish time reads `10:58:24`), so the SDK passes them through unparsed.
+  - **Unknown task id:** `200 {}` (the SDK throws `NotFoundError`).
+  - **Same stock code twice in one task:** both rows are applied in order; the last one wins.
+  - **Update status enum** (from the Jackson error): `Active`, `CatalogRejected`, `InApproval`,
+    `Suspended`, `InCatalogApproval`, `Unlisted`; only `Active` / `Suspended` are documented as
+    inputs. The "nothing to update" message lists one undocumented field,
+    `exportListableByActorActionCode`.
+  - **Create side effects:** n11 re-capitalises the title ("Lonca SDK" → "Lonca Sdk"), stores the
+    image on its own CDN with `order` 0, and can attach a catalogue (`catalogId`) and clear
+    `productMainId`. A product with a custom brand value opened as `InCatalogApproval`.
+  - **Task results echo the SKU** under `sku`, with fields per task type (for a create:
+    `n11ProductId`, `groupId`, `status`, prices, images; for price/stock: prices and `stock`).
 - **Order status vocabulary.** n11 publishes the SOAP-to-REST status mapping
   ([page](https://developer.n11.com/documentation/bilgilendirme/soap-restapi-siparis-servisi-karsilastirmasi/)).
   REST package statuses map onto `@lonca/core` `order-status` almost one to one
@@ -265,8 +295,8 @@ must not retry faults that are not transient.
     default limiter.
   - `claims.listReturns` / `listCancels` and the deny / pending reason lists.
   - `shipping.getShipmentCompanies`.
-- **Not built:** writes (`SaveProductAnswer`, claim approve / deny / pend, `ClaimCancelPartial`,
-  `SaveLinkSellerInvoice`) and `SearchCatalog`.
+- **Not built yet:** SOAP writes (`SaveProductAnswer`, claim approve / deny / pend,
+  `ClaimCancelPartial`, `SaveLinkSellerInvoice`) and `SearchCatalog`.
 
 ## 9. Licence and redistribution
 
@@ -349,6 +379,12 @@ InternalServerException` naming `MissingRequestHeaderException` is an `AuthError
     WSDL.
   - **Date formats.** Claim dates are `DD/MM/YYYY`; question-detail dates are `YYYY-MM-DD`.
   - Every response carries `result.status`, including the question responses, whose WSDL omits it.
+- **Product writes** (verified on n11's test store, 2026-10-13; see section 7):
+  `products.create` / `update` / `delete` and `inventory.update` queue a task and return
+  `{ taskId, type, status, reasons }`; `products.getTask` reads every page of task details and
+  drops the placeholder row; `products.waitForTask` and `inventory.updateAndWait` (chunks of 1000)
+  poll until `PROCESSED` / `REJECT`. Batch size, price decimals, the sale/list price pair,
+  `listPrice ≥ salePrice` and empty updates are checked before sending.
 - **Contract probes.** `scripts/probe/probes/n11.mts` runs the four reads above against prod
   (`pnpm probe:prod -- --only n11`); the shape baseline is `probe-snapshots/n11.json`.
 

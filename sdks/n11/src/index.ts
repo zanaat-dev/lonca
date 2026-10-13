@@ -6,6 +6,7 @@ export { mapHttpError } from './errors.js';
 export { n11Capabilities, type N11Capabilities } from './capabilities.js';
 export { CategoriesResource } from './resources/categories.js';
 export { ClaimsResource } from './resources/claims.js';
+export { InventoryResource } from './resources/inventory.js';
 export { OrdersResource } from './resources/orders.js';
 export { ProductsResource } from './resources/products.js';
 export { QuestionsResource } from './resources/questions.js';
@@ -49,3 +50,18 @@ export type {
   N11QuestionDetail,
   N11QuestionStatus,
 } from './types/question.js';
+export type {
+  N11CurrencyType,
+  N11PriceStockUpdate,
+  N11ProductAttributeInput,
+  N11ProductCreateItem,
+  N11ProductTask,
+  N11ProductUpdateItem,
+  N11TaskDetails,
+  N11TaskItemResult,
+  N11TaskItemStatus,
+  N11TaskPollOptions,
+  N11TaskStatus,
+  N11TaskType,
+  N11VatRate,
+} from './types/task.js';
