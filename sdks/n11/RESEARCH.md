@@ -414,8 +414,11 @@ totalPages, page, size, content }`, where `pageCount` equals the number of rows 
    Timestamps are epoch ms. **n11 (2026-10-13):** `orderByField` is a boolean: `true` applies the
    dates to the package's last update, `false` or absent to its creation (the SDK now types it
    `boolean`). The dates are "the epoch ms of a Turkish time", which is how we put the question.
-   Whether n11 means a true epoch (what `Date.getTime()` gives) or a wall-clock time shifted by
-   three hours is still worth one read-only check against an order with a known creation time.
+   **Checked on n11's test store (2026-10-13):** for two cancelled packages, a 4-minute window
+   around the `Created` history timestamp returned the package and the same window shifted by
+   ±3 hours did not; with `orderByField: true` the same held around `lastModifiedDate`. So the
+   query dates use the same epoch as the response timestamps (a plain `Date.getTime()`, as the
+   SDK sends), and `orderByField: true` does switch to the update date.
 7. **SOAP lifetime.** Are SOAP `OrderList`/`DetailedOrderList` and `CategoryService` still up, and
    is there a sunset date? Are questions and returns moving to REST?
    **Partly answered:** `ProductService` (questions), `ReturnService`, `ClaimCancelService` and
