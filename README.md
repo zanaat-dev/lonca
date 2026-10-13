@@ -10,7 +10,7 @@
 [![Node](https://img.shields.io/node/v/@lonca/core.svg)](https://nodejs.org/)
 [![pnpm](https://img.shields.io/badge/maintained%20with-pnpm-cc00ff.svg)](https://pnpm.io/)
 
-**Typed TypeScript SDKs for Turkish e-commerce marketplaces.** Trendyol and Hepsiburada today, n11 next.
+**Typed TypeScript SDKs for Turkish e-commerce marketplaces.** Trendyol, Hepsiburada and n11.
 
 ```bash
 npm i @lonca/trendyol @lonca/core
@@ -63,9 +63,10 @@ Three-stage roadmap:
 2. **API Drift Detection** — A monitoring layer that proactively detects breaking changes in marketplace APIs. v1 runs locally: the contract probes record the raw wire shapes of live read calls and [`pnpm drift`](packages/drift/) compares them with the documented schemas in [`specs/`](specs/); [`pnpm drift:types`](packages/drift/README.md#sdk-types-vs-specs) checks the SDKs' own TypeScript response types against the same schemas on every CI run (warn-only)
 3. **Unified Marketplace API Gateway** — A Plaid-style abstraction that puts every marketplace behind a single API
 
-Next marketplaces:
+Marketplaces:
 
-- **n11** — _in progress._ Category, product and order reads (REST) and question, claim and shipping reads (SOAP) are verified against production in [`sdks/n11/`](sdks/n11/). Not published to npm yet; write operations come next.
+- **Trendyol, Hepsiburada** — 1.x, full documented surface.
+- **n11** — 0.x ([`sdks/n11/`](sdks/n11/)): REST and SOAP in one client. Reads are verified on production, product writes on the test store n11 provides to integrators.
 - **Amazon TR, Pazarama, Çiçeksepeti** — planned.
 
 ## Why?
@@ -81,6 +82,7 @@ Lonca aims to fill this gap with a community-maintained open standard.
 | `@lonca/core`        | Shared types, error hierarchy, retry / logger / rate-limiter                        | [![npm](https://img.shields.io/npm/v/@lonca/core.svg)](https://www.npmjs.com/package/@lonca/core)               |
 | `@lonca/trendyol`    | Trendyol Marketplace SDK — full surface (14 resources, ~70 methods, webhook helper) | [![npm](https://img.shields.io/npm/v/@lonca/trendyol.svg)](https://www.npmjs.com/package/@lonca/trendyol)       |
 | `@lonca/hepsiburada` | Hepsiburada Marketplace SDK — full dev-portal coverage (12 resources, 95 methods)   | [![npm](https://img.shields.io/npm/v/@lonca/hepsiburada.svg)](https://www.npmjs.com/package/@lonca/hepsiburada) |
+| `@lonca/n11`         | n11 Marketplace SDK — REST and SOAP in one client (8 resources, 31 methods), 0.x    | [![npm](https://img.shields.io/npm/v/@lonca/n11.svg)](https://www.npmjs.com/package/@lonca/n11)                 |
 
 📄 **OpenAPI specs**: [`specs/`](specs/) — curated per-service OpenAPI 3.0 documents for Hepsiburada (7 files, 67 operations) and Trendyol ([`specs/trendyol/`](specs/trendyol/): 13 files, 95 operations, covering every endpoint `@lonca/trendyol` calls). Both are captured from the marketplaces' developer portals and redistributed under the marketplaces' copyright. See [`specs/README.md`](specs/README.md).
 

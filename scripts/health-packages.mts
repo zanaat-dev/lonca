@@ -28,6 +28,7 @@ const packages: PublishedPackage[] = [
   { name: '@lonca/core', dir: 'packages/core' },
   { name: '@lonca/trendyol', dir: 'sdks/trendyol' },
   { name: '@lonca/hepsiburada', dir: 'sdks/hepsiburada' },
+  { name: '@lonca/n11', dir: 'sdks/n11' },
 ];
 
 const repoRoot = process.cwd();

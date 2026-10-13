@@ -1,8 +1,9 @@
 # n11 seller API: research notes
 
-Roadmap item 5.1, third marketplace. Status: **research**. Nothing in `sdks/n11/` is published or
-supported, and nothing here has been checked against the live API. No n11 account exists yet, and
-no n11 API endpoint was called while writing this.
+Roadmap item 5.1, third marketplace. Status: **0.x release** (2026-10-13). Sections 1–9 were
+written from the docs alone on 2026-10-10, before any n11 account existed; the live findings that
+followed (a seller's prod keys for reads, then n11's test store for writes) are recorded in sections
+7, 10 and 11, which take precedence over earlier inferences.
 
 - **Captured:** 2026-10-10, from n11's public developer portal.
 - **Notation:** every factual claim links to the page it came from. Claims marked **(inferred)**
@@ -338,12 +339,17 @@ must not retry faults that are not transient.
   "n11.com", as the portal footer does, not a legal entity. The WSDLs are not fetched or
   redistributed (question 11 in section 11).
 
-## 10. What the skeleton covers
+## 10. What the SDK covers
 
-- **Package.** `sdks/n11/` is `@lonca/n11`, `"private": true`, version `0.0.0`. Changesets never
-  publishes private packages. It is not listed in `scripts/health-packages.mts`,
-  `scripts/api-surface.mts` or the docs TypeDoc entry points, all of which use explicit lists, so
-  publish-only checks ignore it.
+- **Package.** `sdks/n11/` is `@lonca/n11`, publishable from `0.1.0` (changeset
+  `n11-first-release`), with a `./testing` entry (`createFakeN11Client`). It is listed in
+  `scripts/health-packages.mts`, `scripts/api-surface.mts` (snapshots `etc/n11-*.d.ts.snapshot`)
+  and the docs TypeDoc entry points; the user guide is `docs/src/content/docs/guides/n11.md`.
+- **Harmonisation:** `normalizeStatus` / `statusMap` map the seven package statuses onto
+  `@lonca/core`'s `NormalizedOrderStatus` (`Unpacked` → `picking`, `UnSupplied` → `cancelled`);
+  `n11Capabilities` satisfies `MarketplaceCapabilities`; resource and method names follow
+  `@lonca/trendyol` where n11 has the same operation (`inventory.update` / `updateAndWait`,
+  `products.create` / `update` / `delete`).
 - **`createN11Client({ appKey, appSecret, env: 'prod', integratorName, logger?, timeoutMs?, fetch? })`.**
 - **`N11Transport`.** Built on `@lonca/core` `createRequester`. It sends the `appkey` and
   `appsecret` headers and JSON content headers, and uses the base URL `https://api.n11.com`. It
@@ -526,8 +532,13 @@ totalPages, page, size, content }`, where `pageCount` equals the number of rows 
    (`scripts/specs/n11/source.mjs` + `scripts/specs/build-n11.mjs`, no fetch script because the
    portal has nothing machine-readable to fetch). The 4 REST probe exchanges now match it in
    `pnpm drift` (0 breaking). A WSDL capture waits for question 11.
-3. Fill in REST resources (categories, products writes and task details, inventory, orders) and
-   reach the CONTRIBUTING minimum.
-4. Add the SOAP layer (section 8) for questions, returns and invoice links.
-5. Harmonise with the TY/HB SDKs (order-status mapping, capabilities, `testing` fake client). Then
-   publish as `0.x` with a changeset.
+3. ~~Fill in REST resources (categories, products writes and task details, inventory, orders) and
+   reach the CONTRIBUTING minimum.~~ Done on 2026-10-13 (section 10).
+4. ~~Add the SOAP layer (section 8) for questions, returns and invoice links.~~ Done on
+   2026-10-13, plus partial cancel and catalogue search.
+5. ~~Harmonise with the TY/HB SDKs (order-status mapping, capabilities, `testing` fake client).
+   Then publish as `0.x` with a changeset.~~ Done on 2026-10-13; the first npm publish of a new
+   scoped package has to be done by hand (see the release notes in the PR).
+6. Still open: verify order writes and return decisions on a real order (needs an order in
+   `Created` / `Picking` on the test store), cargo labels (waiting for n11's answer), and a
+   settlements resource over SOAP if users ask for it.

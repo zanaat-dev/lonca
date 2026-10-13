@@ -1,14 +1,23 @@
 {
   "name": "@lonca/n11",
   "version": "0.0.0",
-  "private": true,
-  "description": "Research skeleton of a TypeScript SDK for the n11 marketplace API (private, unpublished; reads verified on prod)",
+  "description": "Type-safe TypeScript SDK for the n11 Marketplace API (REST and SOAP)",
   "license": "MIT",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/zanaat-dev/lonca.git",
     "directory": "sdks/n11"
   },
+  "homepage": "https://github.com/zanaat-dev/lonca/tree/main/sdks/n11#readme",
+  "bugs": "https://github.com/zanaat-dev/lonca/issues",
+  "keywords": [
+    "n11",
+    "marketplace",
+    "e-commerce",
+    "turkey",
+    "sdk",
+    "api"
+  ],
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
@@ -24,9 +33,27 @@
         "default": "./dist/index.cjs"
       }
     },
+    "./testing": {
+      "import": {
+        "types": "./dist/testing.d.ts",
+        "default": "./dist/testing.js"
+      },
+      "require": {
+        "types": "./dist/testing.d.cts",
+        "default": "./dist/testing.cjs"
+      }
+    },
     "./package.json": "./package.json"
   },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "sideEffects": false,
+  "publishConfig": {
+    "access": "public"
+  },
   "engines": {
     "node": ">=22"
   },

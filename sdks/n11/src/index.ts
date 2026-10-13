@@ -1,9 +1,14 @@
-// Research skeleton — private, unpublished; read resources verified on prod. See RESEARCH.md.
+/**
+ * Type-safe client for the n11 marketplace API (REST and SOAP).
+ *
+ * @module @lonca/n11
+ */
 export { createN11Client, type CreateN11ClientOptions, type N11Client } from './client.js';
 export { N11Transport, type N11Environment, type SoapCallOptions } from './transport.js';
 export { mapSoapFailure, mapSoapHttpError, type SoapResultInfo } from './soap/errors.js';
 export { mapHttpError } from './errors.js';
 export { n11Capabilities, type N11Capabilities } from './capabilities.js';
+export { statusMap, normalizeStatus } from './status.js';
 export {
   CatalogResource,
   type N11CatalogProduct,
@@ -25,6 +30,7 @@ export type {
 } from './types/category.js';
 export type {
   CancelN11OrderItemParams,
+  KnownN11PackageStatus,
   ListN11OrdersParams,
   N11Address,
   N11CollectionRequestLine,

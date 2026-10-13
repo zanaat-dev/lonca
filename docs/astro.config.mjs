@@ -39,6 +39,7 @@ export default defineConfig({
             '../packages/core/src/index.ts',
             '../sdks/trendyol/src/index.ts',
             '../sdks/hepsiburada/src/index.ts',
+            '../sdks/n11/src/index.ts',
           ],
           tsconfig: '../tsconfig.base.json',
           typeDoc: {
@@ -77,6 +78,7 @@ export default defineConfig({
             { label: 'Trendyol in 30 minutes', slug: 'guides/trendyol-in-30-minutes' },
             { label: 'Trendyol', slug: 'guides/trendyol' },
             { label: 'Hepsiburada', slug: 'guides/hepsiburada' },
+            { label: 'n11', slug: 'guides/n11' },
             { label: 'Webhook events', slug: 'guides/webhook-events' },
           ],
         },

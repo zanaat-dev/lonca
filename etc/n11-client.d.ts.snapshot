@@ -1,0 +1,1289 @@
+import { BaseRequestOptions, CursorPage, CursorPaginationParams, Logger, Money, TokenBucketRateLimiter } from '@lonca/core';
+
+/**
+ * Minimal XML support for n11's SOAP services: an envelope serialiser and a
+ * parser for the responses.
+ *
+ * n11's SOAP responses only use elements and text (no mixed content, and the
+ * attributes that matter are namespace declarations and `xsi:nil`), so a small
+ * hand-written parser is enough and keeps the SDK free of an XML dependency.
+ * DTDs (`<!DOCTYPE`) and processing instructions other than the XML
+ * declaration are rejected, so there is no entity expansion and no XXE.
+ */
+/** A parsed element: text for leaf elements, an object of children otherwise. */
+type XmlNode = string | null | XmlObject | XmlNode[];
+interface XmlObject {
+    [name: string]: XmlNode;
+}
+/** A field value for {@link toXml}: text, a number, a boolean, a nested object, or a list. */
+type XmlInput = string | number | boolean | undefined | null | {
+    [name: string]: XmlInput;
+} | XmlInput[];
+
+/**
+ * n11 base URLs.
+ *
+ * Every REST page of the developer portal (developer.n11.com/documentation) uses
+ * `https://api.n11.com`, under three path families: `/cdn/...` (categories),
+ * `/ms/...` (products) and `/rest/...` (orders). The legacy SOAP services live
+ * under `/ws/...` on the same host. The portal documents **no sandbox / test
+ * environment**, so only `prod` exists for now (open question — see RESEARCH.md).
+ */
+declare const BASE_URLS: {
+    readonly prod: "https://api.n11.com";
+};
+type N11Environment = keyof typeof BASE_URLS;
+interface TransportConfig {
+    /** n11 API key, created in the n11 Seller Office (so.n11.com). Sent as the `appkey` header. */
+    appKey: string;
+    /** n11 API secret. Sent as the `appsecret` header. */
+    appSecret: string;
+    /** Which n11 environment to target. Only `'prod'` is documented. */
+    env: N11Environment;
+    /**
+     * Integrator name, for the `integrator` field of product write tasks. It is
+     * free text (the integrator's company name) with no registration; n11 logs by
+     * it and expects the same value in every product request, including letter
+     * case and `I`/`ı`/`İ`/`i` (n11 support, 2026-10-13). Kept on the transport so
+     * write resources can read it; no header carries it.
+     */
+    integratorName: string;
+    /** Optional structured logger (`@lonca/core` `Logger`). Defaults to no-op. */
+    logger?: Logger;
+    /** Request timeout in ms. Default: 30_000. */
+    timeoutMs?: number;
+    /** Override the underlying `fetch` (tests inject a mock). */
+    fetch?: typeof fetch;
+}
+interface RequestOptions extends BaseRequestOptions {
+    method: 'GET' | 'POST' | 'PUT' | 'DELETE';
+    /** Path beginning with `/` (e.g. `/ms/product-query`). */
+    path: string;
+    /**
+     * Query parameters. `undefined` values are skipped; array values are joined
+     * with commas, the encoding n11 expects for multi-value filters such as
+     * `categoryIds` (confirmed by n11, 2026-10-13).
+     */
+    query?: Record<string, string | number | boolean | readonly (string | number)[] | undefined>;
+}
+/** Options for {@link N11Transport.soap}. */
+interface SoapCallOptions {
+    /** Service path segment under `/ws/`, e.g. `productService`. */
+    service: string;
+    /** Operation name, e.g. `GetProductQuestionList` (the request element is `<Operation>Request`). */
+    operation: string;
+    /** Request fields after `auth`, in schema order. */
+    fields?: {
+        [name: string]: XmlInput;
+    };
+    /**
+     * Whether the call may be retried on a 5xx / network failure. Default `true`
+     * (reads); every write passes `false` so a lost response is never replayed.
+     */
+    idempotent?: boolean;
+    signal?: AbortSignal;
+    rateLimiter?: TokenBucketRateLimiter;
+}
+/**
+ * REST transport for n11's JSON services.
+ *
+ * Auth is two plain headers, `appkey` and `appsecret` — every REST page says
+ * "Authorization: no auth; add appKey and appSecret to Headers". The SOAP
+ * services (questions, returns, invoice links, catalog search) carry the same
+ * key pair inside the envelope's `auth` element instead; they are not wired yet.
+ */
+declare class N11Transport {
+    private readonly config;
+    private readonly baseUrl;
+    private readonly requester;
+    private readonly soapRequester;
+    constructor(config: TransportConfig);
+    /** Integrator name for the `integrator` field of product write tasks. */
+    get integratorName(): string;
+    request<T>(opts: RequestOptions): Promise<T>;
+    /**
+     * Call one of n11's SOAP services (questions, returns, cancels, shipment
+     * companies, …) and return the `<Operation>Response` element, parsed.
+     *
+     * The key pair travels in the envelope (`auth.appKey` / `auth.appSecret`),
+     * not in headers. Calls are idempotent (retried on 5xx / network failures)
+     * unless `opts.idempotent` is `false`, as it is for writes. A `result.status`
+     * of `failure` — n11 reports those with HTTP 200 — is thrown as a
+     * `LoncaError` (see `mapSoapFailure`).
+     */
+    soap(opts: SoapCallOptions): Promise<XmlObject>;
+    private buildUrl;
+    private buildHeaders;
+}
+
+/** One n11 catalogue product from `catalog.search`. */
+interface N11CatalogProduct {
+    catalogId: string;
+    title?: string;
+    categoryId?: string;
+    categoryName?: string;
+    /** GTIN / barcode (`usc`). */
+    barcode?: string;
+}
+/** Filters for `catalog.search`. */
+interface SearchN11CatalogParams {
+    /** Up to 10 catalogue ids. When given, every other filter is ignored by n11. */
+    catalogIds?: readonly (string | number)[];
+    /** Up to 10 GTINs / barcodes. When given (and no `catalogIds`), other filters are ignored. */
+    barcodes?: readonly string[];
+    /** Up to 10 titles of at least 10 characters each; needs `categoryId`. */
+    titles?: readonly string[];
+    /** One category id; needs `titles` or `brandName`. */
+    categoryId?: string | number;
+    /** One brand name. */
+    brandName?: string;
+    /** 0-based page. */
+    page?: number;
+}
+/** Result of `catalog.search`. */
+interface N11CatalogSearchResult {
+    items: N11CatalogProduct[];
+    /** n11's `warning`, when it sends one. */
+    warning?: string;
+}
+/**
+ * n11 catalogue search (SOAP `CatalogService` → `SearchCatalog`), the first
+ * step of "fast" product upload: a `catalogId` or `barcode` from here can be
+ * sent to `products.create`.
+ *
+ * Source: developer.n11.com → "Katalog Servisi ve Hızlı Ürün Yükleme" and the
+ * WSDL. Verified on n11's test store on 2026-10-13 (title + category search
+ * returns matches; an unknown barcode returns none).
+ */
+declare class CatalogResource {
+    private readonly transport;
+    constructor(transport: N11Transport);
+    /**
+     * Search the catalogue. n11's rules, checked before sending: at most 10
+     * values per list, titles of at least 10 characters, a title search needs
+     * `categoryId`, and a `categoryId` needs `titles` or `brandName`.
+     */
+    search(params: SearchN11CatalogParams): Promise<N11CatalogSearchResult>;
+}
+
+/**
+ * One node of the n11 category tree (`GET /cdn/categories`).
+ *
+ * The whole tree comes back in one call; a leaf has `subCategories: null` on
+ * the wire (observed on prod, 2026-10-10), normalised here to an empty array
+ * plus `leaf: true`. Products must use a leaf id.
+ */
+interface N11Category {
+    id: string;
+    /** Absent on the root categories (`parentId: null` on the wire). */
+    parentId?: string;
+    name: string;
+    /** `true` when n11 sends no sub-categories — the only ids products may use. */
+    leaf: boolean;
+    subCategories: N11Category[];
+    /** Untouched raw node, without its `subCategories` (those are normalised above). */
+    raw: Record<string, unknown>;
+}
+/** A selectable value of a category attribute (`attributeValues[]`). */
+interface N11AttributeValue {
+    id: string;
+    value: string;
+}
+/** One attribute of a leaf category (`categoryAttributes[]`). */
+interface N11CategoryAttribute {
+    /** `attributeId` on the wire. */
+    id: string;
+    /** `attributeName` on the wire. */
+    name: string;
+    isMandatory: boolean;
+    /** The attribute splits a product into variants (colour, size, …). */
+    isVariant: boolean;
+    /** Shown as a filter on n11's listing pages. */
+    isSlicer: boolean;
+    /** A free-text value is accepted besides `values`. */
+    isCustomValue: boolean;
+    isN11Grouping: boolean;
+    /** Display order (`attributeOrder`). */
+    order?: number;
+    /** Allowed values; empty for free-text attributes. */
+    values: N11AttributeValue[];
+    /** Untouched raw attribute. */
+    raw: Record<string, unknown>;
+}
+/** Response of `GET /cdn/category/{id}/attribute`: the category plus its attributes. */
+interface N11CategoryAttributes {
+    categoryId: string;
+    name: string;
+    attributes: N11CategoryAttribute[];
+}
+
+/**
+ * n11 category reads (`/cdn/…`).
+ *
+ * Sources: developer.n11.com → "Kategori Ağacı Listeleme" and "Kategori
+ * Özellikleri Listeleme". Response shapes verified against prod on 2026-10-10.
+ * The pages say only `appKey` is needed; prod still answers with the key alone,
+ * but the transport sends both headers as the 2025 changelog requires.
+ */
+declare class CategoriesResource {
+    private readonly transport;
+    constructor(transport: N11Transport);
+    /** The full category tree, in one call (`GET /cdn/categories`). */
+    list(): Promise<N11Category[]>;
+    /**
+     * Attributes of a **leaf** category, with their allowed values
+     * (`GET /cdn/category/{id}/attribute`). An unknown or non-leaf id answers
+     * `400 invalidInput` ("category … not found"), surfaced as `ValidationError`.
+     */
+    getAttributes(categoryId: string | number): Promise<N11CategoryAttributes>;
+}
+
+/** Return-claim status. n11 lists `REQUESTED` when none (or an unknown one) is sent. */
+type N11ReturnStatus = 'REQUESTED' | 'APPROVAL_WAITING' | 'CANCELLED' | 'DENIED' | 'PENDING' | 'PENDED' | 'APPROVED' | 'MANUAL_REFUND' | 'ALL' | (string & {});
+/** Cancel-claim status. */
+type N11CancelStatus = 'REQUESTED' | 'RETRACTED' | 'COMPLETED' | 'DENIED' | 'REJECT' | 'MANUAL_REFUND' | 'ALL' | (string & {});
+/** Who performed the last action on a claim. */
+type N11ClaimExecuter = 'BUYER' | 'SELLER' | 'OPERATOR' | 'SYSTEM' | 'SHIPMENT' | (string & {});
+/** What `searchQuery` matches against. */
+type N11ClaimSearchType = 'BUYEREMAIL' | 'RECIPIENTS' | 'BUYERNAME' | 'ORDERID' | 'PRODUCTID' | (string & {});
+interface ClaimSearchParams extends CursorPaginationParams {
+    executer?: N11ClaimExecuter;
+    /** Required when `searchQuery` is set. */
+    searchInfoType?: N11ClaimSearchType;
+    searchQuery?: string;
+    /** Window start; a `Date` is sent as its Turkish calendar day (`DD/MM/YYYY`). */
+    startDate?: Date | string;
+    endDate?: Date | string;
+}
+/** Filters for {@link ClaimsResource.listReturns}. n11 pages returns 20 at a time. */
+interface ListN11ReturnsParams extends ClaimSearchParams {
+    status?: N11ReturnStatus;
+    /** `SELLER` (default server-side), `N11` (n11depom) or `ALL`. */
+    sender?: 'SELLER' | 'N11' | 'ALL';
+}
+/** Filters for {@link ClaimsResource.listCancels}. */
+interface ListN11CancelsParams extends ClaimSearchParams {
+    status?: N11CancelStatus;
+    /** Which date the window applies to (`searchDate.searchDateType`). */
+    searchDateType?: string;
+}
+/** One return claim (`claimReturnList.claimReturn`). Dates are `DD/MM/YYYY` strings. */
+interface N11ReturnClaim {
+    id: string;
+    status: N11ReturnStatus;
+    executer?: N11ClaimExecuter;
+    sender?: string;
+    reasonType?: string;
+    reasonDescription?: string;
+    orderNumber?: string;
+    shipmentMethod?: string;
+    bundleName?: string;
+    sellerCampaignNumber?: string;
+    campaignNumber?: string;
+    requestDate?: string;
+    pendingRequestDate?: string;
+    pendedDate?: string;
+    cancelledDate?: string;
+    deniedDate?: string;
+    approvedDate?: string;
+    paymentDate?: string;
+    sellerShipmentCompany?: string;
+    sellerTrackingNumber?: string;
+    shipmentCompany?: string;
+    trackingNumber?: string;
+    deliveryFeeType?: string;
+    productId?: string;
+    skuId?: string;
+    productName?: string;
+    attributesNames?: string;
+    quantity?: number;
+    unitPrice?: Money;
+    finalPrice?: Money;
+    buyerName?: string;
+    buyerEmail?: string;
+    buyerPhone?: string;
+    approvalRemainingTime?: string;
+    /** Untouched parsed element. */
+    raw: Record<string, unknown>;
+}
+/**
+ * One cancel claim (`claimCancelList.claimCancel`). Dates are `DD/MM/YYYY` strings. The buyer,
+ * payment-date, shipment-company and delivery-fee fields are not in the WSDL but are sent on prod.
+ */
+interface N11CancelClaim {
+    id: string;
+    status: N11CancelStatus;
+    executer?: N11ClaimExecuter;
+    reasonType?: string;
+    reasonDescription?: string;
+    denyReasonType?: string;
+    orderNumber?: string;
+    shipmentMethod?: string;
+    bundleName?: string;
+    requestDate?: string;
+    deniedDate?: string;
+    completedDate?: string;
+    paymentDate?: string;
+    shipmentCompany?: string;
+    deliveryFeeType?: string;
+    buyerName?: string;
+    buyerEmail?: string;
+    buyerPhone?: string;
+    productId?: string;
+    skuId?: string;
+    productName?: string;
+    quantity?: number;
+    unitPrice?: Money;
+    finalPrice?: Money;
+    /** Untouched parsed element. */
+    raw: Record<string, unknown>;
+}
+/** An entry of a reason-type list (deny / pending reasons). */
+interface N11ReasonType {
+    id: string;
+    value: string;
+}
+/** Input for `claims.denyReturn` (`ClaimReturnDeny`). */
+interface DenyN11ReturnParams {
+    claimReturnId: string | number;
+    /** From `claims.getReturnDenyReasons()`. */
+    denyReasonId: string | number;
+    /** Explanation shown with the denial (required by n11). */
+    note: string;
+    /**
+     * Leave unset when the reason is "Ürün Mağazaya Ulaşmadı". `CAMPAIGN`: n11
+     * issues a campaign code for sending the item back. `CUSTOM`: you ship it
+     * yourself and send `trackingNumber`.
+     */
+    returnShipmentType?: 'CAMPAIGN' | 'CUSTOM';
+    shipmentCompanyId?: string | number;
+    trackingNumber?: string;
+    deliveryReceiptNumber?: string;
+    /** Up to three evidence image URLs. */
+    imageUrls?: readonly string[];
+    videoUrl?: string;
+    /** Deny part of the claimed quantity (WSDL field; not described in the docs). */
+    splitQuantity?: number;
+}
+/** Input for `claims.postponeReturn` (`ClaimReturnPending`). */
+interface PostponeN11ReturnParams {
+    claimReturnId: string | number;
+    /** From `claims.getReturnPendingReasons()`. */
+    pendingReasonId: string | number;
+    /** How many days to postpone. */
+    days: number;
+    note: string;
+}
+
+/**
+ * Return and cancel claims (SOAP `ReturnService` / `ClaimCancelService`).
+ *
+ * Source: developer.n11.com → "İade Talepleri Servisi" / "Parçalı İptal
+ * Talebi" and the two WSDLs. The lists and reason types were verified against
+ * prod on 2026-10-10 (list dates are `DD/MM/YYYY` strings). n11 fixes the page
+ * size (20 per page); `limit` is ignored.
+ *
+ * The return writes (`approveReturn`, `denyReturn`, `postponeReturn`) use the
+ * WSDL's element names; on n11's test store (2026-10-13) a claim that is
+ * already approved answered each with an "uygun durumda değildir" failure
+ * (`ValidationError`), which confirms the request shape, but no claim in a
+ * writable state was available to see a success. Partial cancel is
+ * `orders.cancelItem`.
+ */
+declare class ClaimsResource {
+    private readonly transport;
+    constructor(transport: N11Transport);
+    /** Return claims (`ClaimReturnList`). n11 lists `REQUESTED` claims when no status is given. */
+    listReturns(params?: ListN11ReturnsParams): Promise<CursorPage<N11ReturnClaim>>;
+    /**
+     * Cancel claims (`ClaimCancelList`). Buyer cancel requests were retired long
+     * ago, says n11 (2026-10-13), and of the cancel-claim service only the
+     * partial cancel (`ClaimCancelPartial`) is still active, so this list may
+     * hold old claims only. It still answers on prod (2026-10-10).
+     */
+    listCancels(params?: ListN11CancelsParams): Promise<CursorPage<N11CancelClaim>>;
+    /** Reasons a seller may give when denying a return (`ClaimReturnDenyReasonTypes`). */
+    getReturnDenyReasons(): Promise<N11ReasonType[]>;
+    /** Reasons a seller may give when postponing a return (`ClaimReturnPendingReasonTypes`). */
+    getReturnPendingReasons(): Promise<N11ReasonType[]>;
+    /**
+     * Approve a return (`ClaimReturnApprove`). `splitQuantity` (a WSDL field the
+     * docs do not describe) approves part of the claimed quantity.
+     */
+    approveReturn(claimReturnId: string | number, opts?: {
+        splitQuantity?: number;
+    }): Promise<void>;
+    /**
+     * Deny a return (`ClaimReturnDeny`). `denyReasonId` comes from
+     * {@link getReturnDenyReasons}. n11's rules for the shipment fields: leave
+     * `returnShipmentType` empty when the reason is "Ürün Mağazaya Ulaşmadı";
+     * otherwise `CAMPAIGN` (leave carrier, tracking and receipt empty; n11
+     * issues a campaign code) or `CUSTOM` (send `trackingNumber` once the item
+     * is shipped back).
+     */
+    denyReturn(params: DenyN11ReturnParams): Promise<void>;
+    /**
+     * Postpone a return decision (`ClaimReturnPending`). `pendingReasonId` comes
+     * from {@link getReturnPendingReasons}.
+     */
+    postponeReturn(params: PostponeN11ReturnParams): Promise<void>;
+    /** Reasons a seller may give when denying a cancel claim (`ClaimCancelDenyReasonType`). */
+    getCancelDenyReasons(): Promise<N11ReasonType[]>;
+}
+
+/**
+ * Product write tasks (`POST /ms/product/tasks/*`) and their results
+ * (`POST /ms/product/task-details/page-query`).
+ *
+ * Every product write is asynchronous: n11 queues a task and answers with its
+ * id; the per-SKU outcome is read later from task details. Shapes verified on
+ * n11's test store on 2026-10-13.
+ */
+/** Which task service created the task. `SKU_UPDATE` is the price/stock service. */
+type N11TaskType = 'PRODUCT_CREATE' | 'PRODUCT_UPDATE' | 'SKU_UPDATE' | 'PRODUCT_DELETE' | (string & {});
+/**
+ * Task state. `IN_QUEUE`: still running. `PROCESSED`: every SKU has a final
+ * result. `REJECT`: the task was not processed at all.
+ */
+type N11TaskStatus = 'IN_QUEUE' | 'PROCESSED' | 'REJECT' | (string & {});
+/** Per-SKU outcome inside a task. */
+type N11TaskItemStatus = 'SUCCESS' | 'FAIL' | (string & {});
+/** What a task service answers when a task is queued. */
+interface N11ProductTask {
+    /** Task id; pass it to `products.getTask` / `products.waitForTask`. */
+    taskId: string;
+    type: N11TaskType;
+    /** `IN_QUEUE` on success (a `REJECT` answer is thrown as `ValidationError`). */
+    status: N11TaskStatus;
+    /** n11's messages, e.g. `"3 sku işlenmeye alındı."`. */
+    reasons: string[];
+}
+/** The result for one SKU of a task. */
+interface N11TaskItemResult {
+    /** The SKU's `stockCode` (n11's `itemCode`). */
+    stockCode: string;
+    status: N11TaskItemStatus;
+    /** n11's messages: `"Başarıyla tamamlandı."` on success, the failure reason otherwise. */
+    reasons: string[];
+    /** n11 product code, present on successful create and update results. */
+    n11ProductId?: string;
+    /** The untouched row, including n11's echo of the SKU (`sku`). */
+    raw: Record<string, unknown>;
+}
+/** Task details: the task state plus one result per SKU that has finished. */
+interface N11TaskDetails {
+    taskId: string;
+    status: N11TaskStatus;
+    /**
+     * Finished SKUs. While the task is `IN_QUEUE`, n11 also returns a placeholder
+     * row without a stock code (status `FAIL`, reason `"N sku işlenmeye
+     * alındı."`); the SDK drops it, so this list only holds real results.
+     */
+    items: N11TaskItemResult[];
+    successCount: number;
+    failCount: number;
+    /**
+     * n11's timestamps as sent (`dd-MM-yyyy hh:mm:ss`). They are a 12-hour clock
+     * with no AM/PM marker (a task created at 22:58 Turkish time reads
+     * `10:58:24`), so the SDK does not convert them.
+     */
+    createdDate?: string;
+    modifiedDate?: string;
+}
+/** Options for {@link N11TaskDetails} polling (`products.waitForTask`, `inventory.updateAndWait`). */
+interface N11TaskPollOptions {
+    /** Delay between polls, in ms. Default: `2000`. */
+    pollIntervalMs?: number;
+    /**
+     * Total time to wait before throwing `TimeoutError`, in ms. Default:
+     * `120000`. A create task whose image n11 has to fetch can stay `IN_QUEUE`
+     * for many minutes.
+     */
+    timeoutMs?: number;
+    /** Abort the wait early. */
+    signal?: AbortSignal;
+}
+/** Currencies the task services accept. USD and EUR prices follow the central bank rate. */
+type N11CurrencyType = 'TL' | 'USD' | 'EUR';
+/** VAT rates n11 accepts. */
+type N11VatRate = 0 | 1 | 10 | 20;
+/** One attribute value on a create or update. */
+interface N11ProductAttributeInput {
+    /** Attribute id from `categories.getAttributes` (`1` is the brand, "Marka"). */
+    id: string | number;
+    /** A value id from the attribute's list. Omit when sending `customValue`. */
+    valueId?: string | number | null;
+    /** A free value, allowed when the attribute has `isCustomValue: true`. */
+    customValue?: string | null;
+}
+/** One SKU for `products.create` (`POST /ms/product/tasks/product-create`). */
+interface N11ProductCreateItem {
+    /** Your unique code for the SKU (max 255 characters); every later update uses it. */
+    stockCode: string;
+    /** Product name. n11 re-capitalises it (observed). */
+    title: string;
+    /** HTML description. */
+    description: string;
+    /** A leaf category id from `categories.list`. */
+    categoryId: string | number;
+    /** Shared by every variant of one model; variants need variant attributes too. */
+    productMainId: string;
+    /** Days needed to hand the item to the carrier. */
+    preparingDay: number;
+    /** Name of a shipment template from Seller Office (Hesabım → Teslimat Bilgilerim). */
+    shipmentTemplate: string;
+    /** Stock, at most 999,999. */
+    quantity: number;
+    /** Sale price in major units, at most 2 decimals. */
+    salePrice: number;
+    /** List price ("PSF") in major units, at most 2 decimals, not below `salePrice`. */
+    listPrice: number;
+    /** Default: `'TL'`. */
+    currencyType?: N11CurrencyType;
+    vatRate: N11VatRate;
+    /** HTTPS image URLs, at most 10 MB each. */
+    images: {
+        url: string;
+        order: number;
+    }[];
+    /** Attribute values; every `isMandatory` attribute of the category is required. */
+    attributes: N11ProductAttributeInput[];
+    /** Per-buyer purchase limit. */
+    maxPurchaseQuantity?: number;
+    /** n11 catalogue id, to list against an existing catalogue product. */
+    catalogId?: string | number | null;
+    /** National barcode; a catalogue match opens the product as "awaiting seller approval". */
+    barcode?: string;
+}
+/**
+ * One SKU for `products.update` (`POST /ms/product/tasks/product-update`).
+ * Send `stockCode` plus at least one other field; fields you leave out are not
+ * changed. Title, brand and other base attributes can only be changed by n11.
+ */
+interface N11ProductUpdateItem {
+    stockCode: string;
+    /** `'Active'` to sell, `'Suspended'` to take the product off sale. */
+    status?: 'Active' | 'Suspended';
+    preparingDay?: number;
+    shipmentTemplate?: string;
+    productMainId?: string;
+    /** `true` removes the `productMainId`. */
+    deleteProductMainId?: boolean;
+    maxPurchaseQuantity?: number;
+    /** `true` removes the purchase limit. */
+    deleteMaxPurchaseQuantity?: boolean;
+    description?: string;
+    vatRate?: N11VatRate;
+    /** Product-safety and nutrition attributes only (each needs `id`, `valueId`, `customValue`). */
+    attributes?: N11ProductAttributeInput[];
+}
+/**
+ * One SKU for `inventory.update` (`POST /ms/product/tasks/price-stock-update`).
+ * Send a stock, a price pair, or both. A price change needs `salePrice` and
+ * `listPrice` together (n11 fails a lone `salePrice` with "list price boş
+ * olamaz").
+ */
+interface N11PriceStockUpdate {
+    stockCode: string;
+    quantity?: number;
+    /** Major units, at most 2 decimals. */
+    salePrice?: number;
+    /** Major units, at most 2 decimals, not below `salePrice`. */
+    listPrice?: number;
+    currencyType?: N11CurrencyType;
+}
+
+/**
+ * n11 price and stock updates (`POST /ms/product/tasks/price-stock-update`).
+ *
+ * Source: developer.n11.com → "Ürün Fiyat-Stok Güncelleme"; behaviour checked
+ * on n11's test store on 2026-10-13: a stock-only update works, a price change
+ * needs `salePrice` and `listPrice` together, more than 2 decimals or a
+ * `listPrice` below `salePrice` fails the SKU, an unknown stock code fails the
+ * SKU, and a stock code sent twice in one task is applied twice in order.
+ *
+ * Rate limit: n11 publishes no figure for this service (it "varies with the
+ * number of products") and suspends IPs that send requests milliseconds apart.
+ * {@link updateAndWait} submits chunks one after another and waits for each,
+ * which keeps a large sync well spaced; inject a limiter to share a budget.
+ */
+declare class InventoryResource {
+    private readonly transport;
+    private readonly limiter?;
+    constructor(transport: N11Transport, limiter?: TokenBucketRateLimiter | undefined);
+    /**
+     * Queue one price/stock task of at most 1000 SKUs. Returns the task; read
+     * per-SKU outcomes with `products.getTask(taskId)`.
+     *
+     * @throws {ValidationError} for an empty or oversized batch, an item with
+     *   neither stock nor prices, a lone `salePrice` or `listPrice`, a price with
+     *   more than 2 decimals, or `listPrice` below `salePrice` (all checked
+     *   before sending).
+     */
+    update(items: readonly N11PriceStockUpdate[]): Promise<N11ProductTask>;
+    /**
+     * Split `items` into tasks of at most 1000 SKUs, submit them one by one and
+     * wait for each to finish. Returns one {@link N11TaskDetails} per task; read
+     * `failCount` / `items[]` for per-SKU outcomes.
+     *
+     * @throws {ValidationError} when `items` is empty or an item is invalid (the
+     *   whole list is checked before the first task is sent).
+     * @throws {TimeoutError} when a task does not finish within `opts.timeoutMs`.
+     */
+    updateAndWait(items: readonly N11PriceStockUpdate[], opts?: N11TaskPollOptions): Promise<N11TaskDetails[]>;
+}
+
+/**
+ * Shipment-package status (`shipmentPackageStatus`). Every value below is
+ * accepted by the `status` filter on prod; an unknown filter value answers 200
+ * with an empty page rather than an error.
+ */
+type N11PackageStatus = KnownN11PackageStatus | (string & {});
+/**
+ * The closed set of documented package statuses, mapped exhaustively by
+ * `statusMap` / `normalizeStatus`.
+ */
+type KnownN11PackageStatus = 'Created' | 'Picking' | 'Shipped' | 'Cancelled' | 'Delivered' | 'Unpacked' | 'UnSupplied';
+/** A billing or shipping address on a package. */
+interface N11Address {
+    fullName?: string;
+    address?: string;
+    city?: string;
+    district?: string;
+    neighborhood?: string;
+    postalCode?: string;
+    gsm?: string;
+    /** Turkish identity number; may be empty since 2025-10-15 (n11 changelog). */
+    tcId?: string;
+    /** Billing only. */
+    taxId?: string;
+    /** Billing only. */
+    taxHouse?: string;
+    /** Billing only (`invoiceType` on the wire). */
+    invoiceType?: number;
+    /** Billing only. */
+    countryCode?: string;
+}
+/** One order line in a package (`lines[]`). */
+interface N11OrderLine {
+    /** `orderLineId` — the id order-line updates (approve, cancel, labour cost) take. */
+    lineId: string;
+    productId?: string;
+    productName?: string;
+    stockCode?: string;
+    barcode?: string;
+    quantity: number;
+    /** Unit price. */
+    price?: Money;
+    dueAmount?: Money;
+    /** `(price × quantity) − (sellerDiscount + sellerCouponDiscount)` per n11's docs. */
+    sellerInvoiceAmount?: Money;
+    sellerDiscount?: Money;
+    sellerCouponDiscount?: Money;
+    /** Discount funded by n11. */
+    mallDiscount?: Money;
+    /** Line status label (`orderItemLineItemStatusName`). */
+    status?: string;
+    vatRate?: number;
+    commissionRate?: number;
+    /** Variant attributes such as colour and size. */
+    variantAttributes: {
+        name: string;
+        value: string;
+    }[];
+    /** Untouched raw line (fees, campaign rates, … not modelled yet). */
+    raw: Record<string, unknown>;
+}
+/** One entry of `packageHistories[]`. */
+interface N11PackageHistory {
+    status: string;
+    /** ISO-8601, from the wire's epoch-millisecond `createdDate`. */
+    createdAt?: string;
+}
+/**
+ * One shipment package from `GET /rest/delivery/v1/shipmentPackages`.
+ *
+ * n11 lists orders per package, like Trendyol's shipment packages. Ids are
+ * strings; amounts are {@link Money} in Turkish lira (the endpoint sends no
+ * currency); epoch-millisecond timestamps become ISO-8601 strings.
+ */
+interface N11ShipmentPackage {
+    /** Package id (`id`). */
+    id: string;
+    orderNumber: string;
+    status: N11PackageStatus;
+    customerId?: string;
+    customerFullName?: string;
+    customerEmail?: string;
+    /** Buyer's identity number (`tcIdentityNumber`). */
+    tcIdentityNumber?: string;
+    taxId?: string;
+    taxOffice?: string;
+    billingAddress?: N11Address;
+    /** For pick-up-point orders this is the point's address (n11 changelog 2026-08-03). */
+    shippingAddress?: N11Address;
+    /** `KTN`, `EASYPOINT`, `PUP`, … for pick-up-point orders; absent for home delivery. */
+    deliveryAddressType?: string;
+    shipmentCompanyId?: string;
+    cargoProviderName?: string;
+    cargoTrackingNumber?: string;
+    cargoTrackingLink?: string;
+    cargoSenderNumber?: string;
+    shipmentMethod?: number;
+    totalAmount?: Money;
+    totalDiscountAmount?: Money;
+    isReturned?: boolean;
+    /** ISO-8601. */
+    lastModifiedAt?: string;
+    /** ISO-8601. */
+    agreedDeliveryAt?: string;
+    lines: N11OrderLine[];
+    histories: N11PackageHistory[];
+    /** Untouched raw package (`micro`, `invoiceLink`, `etgbNo`, … not modelled yet). */
+    raw: Record<string, unknown>;
+}
+/** Filters for {@link OrdersResource.list}. */
+interface ListN11OrdersParams extends CursorPaginationParams {
+    /** One status per request. */
+    status?: N11PackageStatus;
+    /**
+     * Window start (a `Date` or epoch ms). n11 caps the window at 15 days: with
+     * `startDate` alone it returns 15 days from that point; with no dates, the
+     * last ~15 days (observed on prod). Which date the window applies to is set
+     * by `orderByField`.
+     */
+    startDate?: Date | number;
+    /** Window end (a `Date` or epoch ms). */
+    endDate?: Date | number;
+    orderNumber?: string;
+    /**
+     * Which package date `startDate` / `endDate` filter on. `true`: the last
+     * update (`lastModifiedDate`). `false` or omitted: the creation date. The
+     * name is n11's; it is a boolean on the wire (confirmed by n11, 2026-10-13).
+     */
+    orderByField?: boolean;
+    orderByDirection?: 'ASC' | 'DESC';
+}
+/** One line's outcome from `orders.approve` / `orders.updateLaborCosts` (HTTP 200, per line). */
+interface N11LineResult {
+    lineId: string;
+    /** `SUCCESS` or `FAIL`. */
+    status: 'SUCCESS' | 'FAIL' | (string & {});
+    /** n11's message, e.g. "Sipariş onaylamak için uygun statüde değildir." */
+    reason?: string;
+    /** For labour costs: what n11 stored and computed (`amountExcludingVAT`). */
+    details?: Record<string, unknown>;
+}
+/** A package created by `orders.splitPackage` / `orders.splitPackageByQuantity`. */
+interface N11SplitPackageItem {
+    orderNumber?: string;
+    /** New package id. */
+    packageId?: string;
+    /** Line id in the new package (`splitPackageByQuantity` creates new line ids). */
+    lineId?: string;
+    stockCode?: string;
+    quantity?: number;
+}
+/** Result of a package split. */
+interface N11SplitResult {
+    code?: number;
+    message?: string;
+    items: N11SplitPackageItem[];
+}
+/** Input for `orders.splitPackageByQuantity`. */
+interface SplitN11PackageByQuantityParams {
+    /** One entry per new package: the lines and quantities it should hold. */
+    packages: {
+        lineId: string | number;
+        quantity: number;
+    }[][];
+    /**
+     * Lines to cancel while splitting (n11 does not allow a cancel alone).
+     * `reasonId`: 61 out of stock, 62 defective, 63 wrong price, 64 force
+     * majeure, 65 other. A cancelled package becomes `UnSupplied`.
+     */
+    cancel?: {
+        lineId: string | number;
+        quantity: number;
+        reasonId: 61 | 62 | 63 | 64 | 65;
+    }[];
+}
+/** One line of `orders.createCollectionRequest`. */
+interface N11CollectionRequestLine {
+    /** Package id / campaign code (`cargoTrackingNumber`). */
+    packageId: string;
+    lineId: string | number;
+    boxQuantity: number;
+    /** Total desi (volumetric weight). */
+    desi: number;
+    /** `HLZ` Horoz Lojistik, `CEVA` Ceva Lojistik, `BL` Ceva Tedarik Zinciri (Borusan). */
+    shipmentCompany: 'HLZ' | 'CEVA' | 'BL';
+}
+/** One line of `orders.updateLaborCosts`. */
+interface N11LaborCost {
+    lineId: string | number;
+    /** Labour cost excluding VAT, in major units. */
+    amountExcludingVat: number;
+    /** Default 20. */
+    vatRate?: 0 | 1 | 10 | 20;
+}
+/** Input for `orders.cancelItem` (SOAP `ClaimCancelPartial`). */
+interface CancelN11OrderItemParams {
+    /** The order line id (`orderItemId`). */
+    lineId: string | number;
+    quantity: number;
+    /** From `claims.getCancelDenyReasons()` (61 "Stokta Kalmayan Ürün", …). */
+    reasonId: string | number;
+    description?: string;
+}
+/** Input for `orders.sendInvoiceLink` (SOAP `SaveLinkSellerInvoice`). */
+interface SendN11InvoiceLinkParams {
+    orderNumber: string;
+    /** HTTPS link to a PDF, PNG or JPEG, at most 2048 characters. */
+    url: string;
+    /** Required for micro-export (e-İhracat) orders. */
+    invoiceNumber?: string;
+    /** Required for micro-export orders; sent as epoch ms. */
+    invoiceDate?: Date | number;
+}
+
+/**
+ * n11 order reads (`GET https://api.n11.com/rest/delivery/v1/shipmentPackages`).
+ *
+ * Source: developer.n11.com → "Sipariş Listeleme Servisi" (at most 1000
+ * requests/minute, `size` at most 100, a 15-day date window, nothing before
+ * November 2024). Response shape verified against prod on 2026-10-10.
+ *
+ * Rate limit: the documented 1000 requests/minute is applied by default; pass
+ * a limiter to share one bucket across clients using the same key.
+ */
+declare class OrdersResource {
+    private readonly transport;
+    private readonly limiter;
+    constructor(transport: N11Transport, limiter?: TokenBucketRateLimiter);
+    /**
+     * List shipment packages, one page at a time. The 0-based page index is the
+     * `CursorPage` cursor, so `paginate()` from `@lonca/core` drives it.
+     */
+    list(params?: ListN11OrdersParams): Promise<CursorPage<N11ShipmentPackage>>;
+    /**
+     * Approve order lines (`PUT /rest/order/v1/update`, status `Picking`). Only
+     * lines in `Created` can be approved. n11 processes the valid lines and
+     * reports the rest per line; a line id it does not know is left out of the
+     * result entirely (observed on the test store), so compare the result with
+     * what you sent.
+     */
+    approve(lineIds: readonly (string | number)[]): Promise<N11LineResult[]>;
+    /**
+     * Split a `Picking` package into new packages
+     * (`POST /rest/delivery/v1/splitCombinePackage`): each group of line ids
+     * becomes one package, and lines you leave out form another. The original
+     * package becomes `Unpacked`; the new ones are `Picking` with their own id
+     * and campaign code.
+     */
+    splitPackage(groups: readonly (readonly (string | number)[])[]): Promise<N11SplitResult>;
+    /**
+     * Split a `Picking` package by quantity, optionally cancelling quantities at
+     * the same time (`POST /rest/delivery/v1/splitPackageByQuantity`). Lines of
+     * one order only. n11 authorises this service per store, on request.
+     */
+    splitPackageByQuantity(params: SplitN11PackageByQuantityParams): Promise<N11SplitResult>;
+    /**
+     * Ask a logistics company (Horoz, Ceva, Borusan) to collect a `Picking`
+     * package (`PUT /rest/delivery/v1/collectionRequest`). Send every line of
+     * the package. Returns n11's `{ code, message }`.
+     */
+    createCollectionRequest(lines: readonly N11CollectionRequestLine[]): Promise<{
+        code?: number;
+        message?: string;
+    }>;
+    /**
+     * Add labour costs to order lines (`PUT /rest/order/v1/labor-costs`), for
+     * the jewellery categories n11 lists. Results are per line, like
+     * {@link approve}.
+     */
+    updateLaborCosts(costs: readonly N11LaborCost[]): Promise<N11LineResult[]>;
+    /**
+     * Cancel part of an approved order line (SOAP `ClaimCancelPartial`). Lines
+     * still `Created` cannot be cancelled this way (the seller rejects them in
+     * Seller Office). A line in the wrong state fails with
+     * `SELLER_API.claimCancel.invalidRequestForPartial` (`ValidationError`).
+     */
+    cancelItem(params: CancelN11OrderItemParams): Promise<void>;
+    /**
+     * Attach an invoice link to an order (SOAP `SaveLinkSellerInvoice`). An
+     * unknown order number fails with `SELLER_API.order.not.found`
+     * (`NotFoundError`).
+     *
+     * @throws {ValidationError} when `url` is not HTTPS or is longer than 2048
+     *   characters (checked before sending).
+     */
+    sendInvoiceLink(params: SendN11InvoiceLinkParams): Promise<{
+        url?: string;
+    }>;
+}
+
+/**
+ * Product approval status, as documented for the `productStatus` filter of
+ * `GET /ms/product-query`. The response's `status` field is assumed to use the
+ * same vocabulary (the documented example returns `"Active"`); unknown values
+ * pass through as plain strings.
+ */
+type N11ProductStatus = 'Active' | 'InCatalogApproval' | 'Suspended' | 'CatalogRejected' | 'Prohibited' | 'Unlisted' | 'InApproval' | (string & {});
+/** Sale status (`saleStatus`): on sale or out of stock. */
+type N11SaleStatus = 'On_Sale' | 'Out_Of_Stock' | (string & {});
+/** Who ships the item: the seller, or n11's own warehouse (n11depom). */
+type N11Sender = 'SELLER' | 'N11' | (string & {});
+/** One attribute on a listed product (`attributes[]`). */
+interface N11ProductAttribute {
+    attributeId: string;
+    attributeName?: string;
+    attributeValue?: string;
+}
+/**
+ * One seller product (SKU) from `GET /ms/product-query`.
+ *
+ * IDs are strings (Lonca convention; n11 also warns that numeric IDs grow in
+ * width over time). Prices are {@link Money} in minor units; n11's `TL`
+ * currency code is normalised to ISO 4217 `TRY`.
+ */
+interface N11Product {
+    /** n11 product code (`n11ProductId`). */
+    id: string;
+    /** Seller stock code — the key every write service uses. */
+    stockCode: string;
+    title: string;
+    /** HTML description. */
+    description?: string;
+    categoryId: string;
+    /** Model / group code that ties variants together. */
+    productMainId?: string;
+    status: N11ProductStatus;
+    saleStatus?: N11SaleStatus;
+    /** Days needed before handing the parcel to the carrier. */
+    preparingDay?: number;
+    /** Name of the shipment template defined in Seller Office. */
+    shipmentTemplate?: string;
+    maxPurchaseQuantity?: number;
+    catalogId?: string;
+    barcode?: string;
+    /** Catalogue group id. */
+    groupId?: string;
+    salePrice?: Money;
+    listPrice?: Money;
+    quantity?: number;
+    /** VAT rate in percent (documented values: 0, 1, 10, 20). */
+    vatRate?: number;
+    /** Commission rate in percent. */
+    commissionRate?: number;
+    sender?: N11Sender;
+    attributes: N11ProductAttribute[];
+    images: string[];
+    /** Untouched raw row — read fields not modelled yet (`customTextOptions`, `rejectInfo`, …). */
+    raw: Record<string, unknown>;
+}
+/** Filters for {@link ProductsResource.list}; every field is optional. */
+interface ListN11ProductsParams extends CursorPaginationParams {
+    /** n11 product code. */
+    id?: string;
+    /** Group (model) code. */
+    productMainId?: string;
+    /** Seller stock code — one value per request. */
+    stockCode?: string;
+    saleStatus?: 'On_Sale' | 'Out_Of_Stock';
+    productStatus?: N11ProductStatus;
+    brandName?: string;
+    /**
+     * Sent comma-separated as one `categoryIds` value. At most 1000 ids: n11
+     * answers a longer list with a `500`, so the SDK rejects it before sending.
+     */
+    categoryIds?: readonly (string | number)[];
+    /** Defaults to `SELLER` server-side. `ALL` includes n11depom stock. */
+    sender?: 'SELLER' | 'N11' | 'ALL';
+}
+
+/**
+ * n11 seller-product reads (`GET https://api.n11.com/ms/product-query`).
+ *
+ * Source: https://developer.n11.com/documentation/n11-marketplace-entegrasyonu/satici-urun-sorgulama/
+ * — the request filters, the 0-based `page` / `size` (default 20, max 250)
+ * pagination and the response fields below all come from that page, and were
+ * checked against prod on 2026-10-10: `size` over 250 is rejected (`500
+ * ConstraintViolationException`, mapped to `ValidationError`), a page past the
+ * end answers an empty `content`, and a single `categoryIds` value filters.
+ * n11 confirmed (2026-10-13) that several `categoryIds` go comma-separated in
+ * one value, at most 1000 of them.
+ *
+ * Rate limit: no per-endpoint limit is documented, so no limiter is applied by
+ * default. n11 has no 429: a client that keeps sending requests milliseconds
+ * apart is treated as an attack and its IP is suspended, then restricted.
+ * Inject a limiter through the constructor when paging through a large catalogue.
+ */
+declare class ProductsResource {
+    private readonly transport;
+    private readonly limiter?;
+    constructor(transport: N11Transport, limiter?: TokenBucketRateLimiter | undefined);
+    /**
+     * List the seller's products, one page at a time.
+     *
+     * n11 paginates by 0-based page index; the SDK exposes it as the opaque
+     * `cursor` of `@lonca/core`'s `CursorPage` (like `@lonca/trendyol`), so
+     * `paginate()` drives it. Following the portal's advice, a page is the last
+     * one when it comes back empty or when `page + 1 >= totalPages`.
+     *
+     * @example
+     * ```ts
+     * import { paginate } from '@lonca/core';
+     * for await (const product of paginate((p) => client.products.list({ ...p, saleStatus: 'On_Sale' }))) {
+     *   console.log(product.stockCode, product.quantity);
+     * }
+     * ```
+     */
+    list(params?: ListN11ProductsParams): Promise<CursorPage<N11Product>>;
+    /**
+     * Upload new products (`POST /ms/product/tasks/product-create`), at most
+     * 1000 SKUs per call. Returns the queued task; read the per-SKU outcome with
+     * {@link getTask} or {@link waitForTask}. Create tasks can take from seconds
+     * to about 15 minutes (observed), so give `waitForTask` a longer `timeoutMs`.
+     * Common per-SKU failures: a price above the category's cap ("fahiş fiyat",
+     * e.g. "Maximum 42,000 TL"), a missing mandatory attribute, an invalid
+     * category, or an image n11 cannot fetch.
+     *
+     * @throws {ValidationError} for an empty or oversized batch, a price with
+     *   more than 2 decimals, or `listPrice` below `salePrice` (all checked
+     *   before sending), and for a task n11 rejects.
+     */
+    create(items: readonly N11ProductCreateItem[]): Promise<N11ProductTask>;
+    /**
+     * Update products (`POST /ms/product/tasks/product-update`), at most 1000
+     * SKUs per call: status (`Active` / `Suspended`), preparing day, shipment
+     * template, model code, purchase limit, description, VAT and product-safety
+     * attributes. Title, brand and other base attributes can only be changed by
+     * n11. Prices and stock go through `inventory.update`.
+     *
+     * @throws {ValidationError} for an empty or oversized batch, or an item with
+     *   nothing but a `stockCode` (n11 would fail it).
+     */
+    update(items: readonly N11ProductUpdateItem[]): Promise<N11ProductTask>;
+    /**
+     * Delete products by stock code (`POST /ms/product/tasks/product-delete`),
+     * at most 1000 per call. An unknown stock code fails per SKU, not the call.
+     */
+    delete(stockCodes: readonly string[]): Promise<N11ProductTask>;
+    /**
+     * Read a task's state and per-SKU results
+     * (`POST /ms/product/task-details/page-query`). Works for every task type,
+     * including `inventory.update` tasks.
+     *
+     * @throws {NotFoundError} for an unknown task id.
+     */
+    getTask(taskId: string): Promise<N11TaskDetails>;
+    /**
+     * Poll {@link getTask} until the task is `PROCESSED` or `REJECT`.
+     *
+     * @throws {TimeoutError} when it is still running after `opts.timeoutMs`.
+     */
+    waitForTask(taskId: string, opts?: N11TaskPollOptions): Promise<N11TaskDetails>;
+}
+
+/** Question status filter. n11 defaults to `OPEN` when none is sent. */
+type N11QuestionStatus = 'OPEN' | 'CLOSED' | (string & {});
+/** Filters for {@link QuestionsResource.list}. */
+interface ListN11QuestionsParams extends CursorPaginationParams {
+    /**
+     * Window start — **required** by n11. A `Date` is sent as its Turkish
+     * calendar day (`DD/MM/YYYY`); a string is sent as given.
+     */
+    startDate: Date | string;
+    /** Window end — **required** by n11. */
+    endDate: Date | string;
+    /** Defaults to `OPEN` server-side. */
+    status?: N11QuestionStatus;
+    /** n11 product code. */
+    productId?: string | number;
+    buyerEmail?: string;
+    subject?: string;
+}
+/** One row of `GetProductQuestionList`. */
+interface N11Question {
+    id: string;
+    productId?: string;
+    productTitle?: string;
+    subject?: string;
+    question?: string;
+    /** Present once answered. */
+    answer?: string;
+    images: string[];
+    /** Untouched parsed element. */
+    raw: Record<string, unknown>;
+}
+/** `GetProductQuestionDetail`: the question plus buyer and status fields. */
+interface N11QuestionDetail {
+    /** The id that was asked for (the response does not repeat it). */
+    id: string;
+    productId?: string;
+    productTitle?: string;
+    subject?: string;
+    question?: string;
+    answer?: string;
+    /** Buyer's name. */
+    fullName?: string;
+    /** Buyer's e-mail. */
+    email?: string;
+    productStatus?: string;
+    status?: string;
+    /** `YYYY-MM-DD` (unlike the list filters, which take `DD/MM/YYYY`). */
+    questionDate?: string;
+    /** `YYYY-MM-DD`. */
+    answeredDate?: string;
+    /** Whether the seller's answer is shown publicly. */
+    sellerExpose?: string;
+    /** Whether the buyer shared the question publicly ("Özel / Genel"). */
+    buyerExpose?: string;
+    images: string[];
+    /** Untouched parsed element. */
+    raw: Record<string, unknown>;
+}
+
+/**
+ * Product questions (SOAP `ProductService`).
+ *
+ * Source: developer.n11.com → "Ürün Soru-Cevap Servisi" and
+ * `api.n11.com/ws/productService.wsdl`. Reads verified against prod on
+ * 2026-10-10; `answer` on n11's test store on 2026-10-13.
+ *
+ * Rate limit: n11 allows listing questions **once per minute**; the default
+ * limiter enforces that for this client. Inject a shared limiter when several
+ * clients use the same key.
+ */
+declare class QuestionsResource {
+    private readonly transport;
+    private readonly listLimiter;
+    constructor(transport: N11Transport, listLimiter?: TokenBucketRateLimiter);
+    /**
+     * List questions asked in a date window (`GetProductQuestionList`). n11
+     * requires `startDate`, `endDate` and paging; `status` defaults to `OPEN`.
+     */
+    list(params: ListN11QuestionsParams): Promise<CursorPage<N11Question>>;
+    /**
+     * One question with the buyer's details (`GetProductQuestionDetail`). n11
+     * answers an unknown id with `result: success` and no question; that is
+     * thrown as `NotFoundError`.
+     */
+    get(questionId: string | number): Promise<N11QuestionDetail>;
+    /**
+     * Answer a question (`SaveProductAnswer`). A question can be answered once;
+     * it then becomes `CLOSED`. A second answer fails with
+     * `SELLER_API.productQuestion.alreadyAnswered` (`ValidationError`), an
+     * unknown id with `SELLER_API.productQuestion.notFound` (`NotFoundError`).
+     *
+     * @throws {ValidationError} when `answer` is empty or longer than 2048
+     *   characters (checked before sending).
+     */
+    answer(questionId: string | number, answer: string): Promise<void>;
+}
+
+/** A cargo company n11 works with (`ShipmentCompanyData`). */
+interface N11ShipmentCompany {
+    id: string;
+    name: string;
+    shortName?: string;
+}
+/**
+ * Shipping reference data (SOAP `ShipmentCompanyService`).
+ *
+ * Source: `api.n11.com/ws/ShipmentCompanyService.wsdl` (the new portal has no
+ * page for it; the order docs refer to `GetShipmentCompanies`). Verified
+ * against prod on 2026-10-10.
+ */
+declare class ShippingResource {
+    private readonly transport;
+    constructor(transport: N11Transport);
+    /** Cargo companies (`GetShipmentCompanies`); their ids match `shipmentCompanyId` on packages. */
+    getShipmentCompanies(): Promise<N11ShipmentCompany[]>;
+}
+
+/**
+ * Static feature-capability flags for n11, derived from the developer portal;
+ * `stockOnlyBatch` and `listingUpdatedAt` were confirmed on n11's test store
+ * (2026-10-13). Same contract as the Trendyol and
+ * Hepsiburada SDKs, so a missing or renamed flag is a compile error.
+ */
+declare const n11Capabilities: {
+    /** No time-bounded / scheduled pricing is documented. */
+    readonly scheduledPricing: false;
+    /**
+     * `POST /ms/product/tasks/price-stock-update` accepts `quantity` without
+     * prices ("fields you do not send are not updated"; a stock-only task
+     * succeeded on the test store).
+     */
+    readonly stockOnlyBatch: true;
+    /** `GET /ms/product-query` rows carry no last-update timestamp. */
+    readonly listingUpdatedAt: false;
+};
+/** Shape of {@link n11Capabilities}. */
+type N11Capabilities = typeof n11Capabilities;
+
+interface CreateN11ClientOptions {
+    /** n11 API key, created in the n11 Seller Office (so.n11.com). */
+    appKey: string;
+    /** n11 API secret. */
+    appSecret: string;
+    /**
+     * Which n11 environment to target. Only `'prod'` is documented — n11 publishes
+     * no sandbox. Required anyway, for parity with the other Lonca SDKs.
+     */
+    env: N11Environment;
+    /**
+     * Integrator name, sent by product write services in the `integrator` field:
+     * your company name, with no registration at n11. n11 logs by it, so keep it
+     * identical in every request, down to letter case and `I`/`ı`/`İ`/`i`.
+     */
+    integratorName: string;
+    /** Optional structured logger (`@lonca/core` `Logger`). Defaults to no-op. */
+    logger?: Logger;
+    /** Request timeout in ms. Default: 30_000. */
+    timeoutMs?: number;
+    /** Custom `fetch` implementation. Defaults to the global `fetch`. */
+    fetch?: typeof fetch;
+}
+interface N11Client {
+    /** n11 catalogue search (SOAP), for listing against existing catalogue products. */
+    catalog: CatalogResource;
+    categories: CategoriesResource;
+    /** Return and cancel claims (SOAP). */
+    claims: ClaimsResource;
+    /** Price and stock updates (async tasks). */
+    inventory: InventoryResource;
+    orders: OrdersResource;
+    products: ProductsResource;
+    /** Product questions (SOAP). */
+    questions: QuestionsResource;
+    /** Cargo companies (SOAP). */
+    shipping: ShippingResource;
+    /** Static feature-capability flags for feature detection. */
+    capabilities: N11Capabilities;
+}
+/**
+ * Create an n11 client.
+ *
+ * **Unreleased** — private and unpublished. The reads (`categories`,
+ * `orders.list`, `products.list` and the SOAP `questions`, `claims`,
+ * `shipping`) are verified on prod; the product writes (`products.create` /
+ * `update` / `delete`, `inventory.update`) on n11's test store. See
+ * `sdks/n11/RESEARCH.md`.
+ *
+ * @example
+ * ```ts
+ * const client = createN11Client({
+ *   appKey: process.env.N11_APP_KEY!,
+ *   appSecret: process.env.N11_APP_SECRET!,
+ *   env: 'prod',
+ *   integratorName: 'MyCompany',
+ * });
+ * const page = await client.products.list({ limit: 100 });
+ * ```
+ */
+declare function createN11Client(opts: CreateN11ClientOptions): N11Client;
+
+export { type CancelN11OrderItemParams, CatalogResource, CategoriesResource, ClaimsResource, createN11Client, type CreateN11ClientOptions, type DenyN11ReturnParams, InventoryResource, type KnownN11PackageStatus, type ListN11CancelsParams, type ListN11OrdersParams, type ListN11ProductsParams, type ListN11QuestionsParams, type ListN11ReturnsParams, type N11Address, type N11AttributeValue, type N11CancelClaim, type N11CancelStatus, n11Capabilities, type N11Capabilities, type N11CatalogProduct, type N11CatalogSearchResult, type N11Category, type N11CategoryAttribute, type N11CategoryAttributes, type N11ClaimExecuter, type N11ClaimSearchType, type N11Client, type N11CollectionRequestLine, type N11CurrencyType, type N11Environment, type N11LaborCost, type N11LineResult, type N11OrderLine, type N11PackageHistory, type N11PackageStatus, type N11PriceStockUpdate, type N11Product, type N11ProductAttribute, type N11ProductAttributeInput, type N11ProductCreateItem, type N11ProductStatus, type N11ProductTask, type N11ProductUpdateItem, type N11Question, type N11QuestionDetail, type N11QuestionStatus, type N11ReasonType, type N11ReturnClaim, type N11ReturnStatus, type N11SaleStatus, type N11Sender, type N11ShipmentCompany, type N11ShipmentPackage, type N11SplitPackageItem, type N11SplitResult, type N11TaskDetails, type N11TaskItemResult, type N11TaskItemStatus, type N11TaskPollOptions, type N11TaskStatus, type N11TaskType, N11Transport, type N11VatRate, OrdersResource, type PostponeN11ReturnParams, ProductsResource, QuestionsResource, type SearchN11CatalogParams, type SendN11InvoiceLinkParams, ShippingResource, type SoapCallOptions, type SplitN11PackageByQuantityParams };
