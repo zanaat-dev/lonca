@@ -14,6 +14,7 @@ import { Marked } from 'marked';
 import coreLog from '../../../packages/core/CHANGELOG.md?raw';
 import trendyolLog from '../../../sdks/trendyol/CHANGELOG.md?raw';
 import hepsiburadaLog from '../../../sdks/hepsiburada/CHANGELOG.md?raw';
+import n11Log from '../../../sdks/n11/CHANGELOG.md?raw';
 
 export type Bump = 'major' | 'minor' | 'patch';
 
@@ -39,6 +40,7 @@ export interface Release {
 const SOURCES = [
   { pkg: '@lonca/trendyol', file: 'sdks/trendyol/CHANGELOG.md', text: trendyolLog },
   { pkg: '@lonca/hepsiburada', file: 'sdks/hepsiburada/CHANGELOG.md', text: hepsiburadaLog },
+  { pkg: '@lonca/n11', file: 'sdks/n11/CHANGELOG.md', text: n11Log },
   { pkg: '@lonca/core', file: 'packages/core/CHANGELOG.md', text: coreLog },
 ];
 

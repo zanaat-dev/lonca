@@ -5,6 +5,7 @@ import { codeToHtml } from 'shiki';
 import { copy, type Lang } from './copy';
 import trendyolPkg from '../../../sdks/trendyol/package.json';
 import hepsiburadaPkg from '../../../sdks/hepsiburada/package.json';
+import n11Pkg from '../../../sdks/n11/package.json';
 import corePkg from '../../../packages/core/package.json';
 import iconRaw from '../../../brand/icon.svg?raw';
 import Shell from './Shell.astro';
@@ -25,6 +26,7 @@ const waitlistEndpoint = import.meta.env.PUBLIC_WAITLIST_URL ?? '';
 const releases = [
   { name: '@lonca/trendyol', version: trendyolPkg.version },
   { name: '@lonca/hepsiburada', version: hepsiburadaPkg.version },
+  { name: '@lonca/n11', version: n11Pkg.version },
   { name: '@lonca/core', version: corePkg.version },
 ];
 
@@ -99,7 +101,7 @@ const guideHref = '/guides/trendyol-in-30-minutes/';
             <canvas aria-hidden="true"></canvas>
             <span class="pill trendyol">{t.hub.trendyol}</span>
             <span class="pill hepsiburada">{t.hub.hepsiburada}</span>
-            <span class="pill n11">{t.hub.n11} <small>({t.hub.soon})</small></span>
+            <span class="pill n11">{t.hub.n11}</span>
             <span class="engine" set:html={icon} />
             <p class="engine-label">{t.hub.engine} <span>· {t.hub.engineSub}</span></p>
             <span class="pill code">{t.hub.code} <small>· {t.hub.today}</small></span>
@@ -234,7 +236,7 @@ const guideHref = '/guides/trendyol-in-30-minutes/';
                 <ul class="status">
                   <li><i class="dot on" aria-hidden="true"></i>Trendyol · {t.proof.verified}</li>
                   <li><i class="dot on" aria-hidden="true"></i>Hepsiburada · {t.proof.verified}</li>
-                  <li><i class="dot half" aria-hidden="true"></i>n11 · {t.proof.building}</li>
+                  <li><i class="dot half" aria-hidden="true"></i>n11 · {t.proof.beta}</li>
                 </ul>
                 <a class="arrow" href={pollHref} rel="noopener">{t.proof.vote} →</a>
               </dd>
