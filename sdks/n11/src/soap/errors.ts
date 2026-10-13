@@ -2,6 +2,7 @@ import {
   AuthError,
   LoncaError,
   type LoncaErrorIssue,
+  NotFoundError,
   RateLimitError,
   ServerError,
   ValidationError,
@@ -37,7 +38,12 @@ function issuesOf(info: SoapResultInfo): LoncaErrorIssue[] {
  *   on prod 2026-10-10);
  * - `maxCallLimit` / a "limit" code (the legacy manual's over-limit code, and
  *   the question list's once-a-minute rule) → `RateLimitError`;
- * - anything else → `ValidationError` (not retried).
+ * - a "not found" code (`SELLER_API.productQuestion.notFound`,
+ *   `SELLER_API.order.not.found`, seen on the test store 2026-10-13) →
+ *   `NotFoundError`;
+ * - `systemError` ("Sistemde bir hata oluştu.") → `ServerError`;
+ * - anything else → `ValidationError` (not retried). Writes on an id in the
+ *   wrong state answer codes like `SELLER_API.claimReturn.invalidRequestForApprove`.
  */
 export function mapSoapFailure(operation: string, info: SoapResultInfo, status = 200): LoncaError {
   const code = `${info.errorCode ?? ''} ${info.errorCategory ?? ''}`.toLowerCase();
@@ -58,6 +64,17 @@ export function mapSoapFailure(operation: string, info: SoapResultInfo, status =
       data,
       issues,
     });
+  }
+  if (/not\.?found/.test(code)) {
+    return new NotFoundError({
+      message: `n11 resource not found (${operation})`,
+      status,
+      data,
+      issues,
+    });
+  }
+  if (code.includes('systemerror')) {
+    return new ServerError({ message: `n11 server error (${operation})`, status, data, issues });
   }
   return new ValidationError({
     message: `n11 rejected the request (${operation})`,

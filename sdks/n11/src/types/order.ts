@@ -136,3 +136,86 @@ export interface ListN11OrdersParams extends CursorPaginationParams {
   orderByField?: boolean;
   orderByDirection?: 'ASC' | 'DESC';
 }
+
+/** One line's outcome from `orders.approve` / `orders.updateLaborCosts` (HTTP 200, per line). */
+export interface N11LineResult {
+  lineId: string;
+  /** `SUCCESS` or `FAIL`. */
+  status: 'SUCCESS' | 'FAIL' | (string & {});
+  /** n11's message, e.g. "Sipariş onaylamak için uygun statüde değildir." */
+  reason?: string;
+  /** For labour costs: what n11 stored and computed (`amountExcludingVAT`). */
+  details?: Record<string, unknown>;
+}
+
+/** A package created by `orders.splitPackage` / `orders.splitPackageByQuantity`. */
+export interface N11SplitPackageItem {
+  orderNumber?: string;
+  /** New package id. */
+  packageId?: string;
+  /** Line id in the new package (`splitPackageByQuantity` creates new line ids). */
+  lineId?: string;
+  stockCode?: string;
+  quantity?: number;
+}
+
+/** Result of a package split. */
+export interface N11SplitResult {
+  code?: number;
+  message?: string;
+  items: N11SplitPackageItem[];
+}
+
+/** Input for `orders.splitPackageByQuantity`. */
+export interface SplitN11PackageByQuantityParams {
+  /** One entry per new package: the lines and quantities it should hold. */
+  packages: { lineId: string | number; quantity: number }[][];
+  /**
+   * Lines to cancel while splitting (n11 does not allow a cancel alone).
+   * `reasonId`: 61 out of stock, 62 defective, 63 wrong price, 64 force
+   * majeure, 65 other. A cancelled package becomes `UnSupplied`.
+   */
+  cancel?: { lineId: string | number; quantity: number; reasonId: 61 | 62 | 63 | 64 | 65 }[];
+}
+
+/** One line of `orders.createCollectionRequest`. */
+export interface N11CollectionRequestLine {
+  /** Package id / campaign code (`cargoTrackingNumber`). */
+  packageId: string;
+  lineId: string | number;
+  boxQuantity: number;
+  /** Total desi (volumetric weight). */
+  desi: number;
+  /** `HLZ` Horoz Lojistik, `CEVA` Ceva Lojistik, `BL` Ceva Tedarik Zinciri (Borusan). */
+  shipmentCompany: 'HLZ' | 'CEVA' | 'BL';
+}
+
+/** One line of `orders.updateLaborCosts`. */
+export interface N11LaborCost {
+  lineId: string | number;
+  /** Labour cost excluding VAT, in major units. */
+  amountExcludingVat: number;
+  /** Default 20. */
+  vatRate?: 0 | 1 | 10 | 20;
+}
+
+/** Input for `orders.cancelItem` (SOAP `ClaimCancelPartial`). */
+export interface CancelN11OrderItemParams {
+  /** The order line id (`orderItemId`). */
+  lineId: string | number;
+  quantity: number;
+  /** From `claims.getCancelDenyReasons()` (61 "Stokta Kalmayan Ürün", …). */
+  reasonId: string | number;
+  description?: string;
+}
+
+/** Input for `orders.sendInvoiceLink` (SOAP `SaveLinkSellerInvoice`). */
+export interface SendN11InvoiceLinkParams {
+  orderNumber: string;
+  /** HTTPS link to a PDF, PNG or JPEG, at most 2048 characters. */
+  url: string;
+  /** Required for micro-export (e-İhracat) orders. */
+  invoiceNumber?: string;
+  /** Required for micro-export orders; sent as epoch ms. */
+  invoiceDate?: Date | number;
+}

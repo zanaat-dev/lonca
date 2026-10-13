@@ -4,6 +4,12 @@ export { N11Transport, type N11Environment, type SoapCallOptions } from './trans
 export { mapSoapFailure, mapSoapHttpError, type SoapResultInfo } from './soap/errors.js';
 export { mapHttpError } from './errors.js';
 export { n11Capabilities, type N11Capabilities } from './capabilities.js';
+export {
+  CatalogResource,
+  type N11CatalogProduct,
+  type N11CatalogSearchResult,
+  type SearchN11CatalogParams,
+} from './resources/catalog.js';
 export { CategoriesResource } from './resources/categories.js';
 export { ClaimsResource } from './resources/claims.js';
 export { InventoryResource } from './resources/inventory.js';
@@ -18,8 +24,16 @@ export type {
   N11CategoryAttributes,
 } from './types/category.js';
 export type {
+  CancelN11OrderItemParams,
   ListN11OrdersParams,
   N11Address,
+  N11CollectionRequestLine,
+  N11LaborCost,
+  N11LineResult,
+  N11SplitPackageItem,
+  N11SplitResult,
+  SendN11InvoiceLinkParams,
+  SplitN11PackageByQuantityParams,
   N11OrderLine,
   N11PackageHistory,
   N11PackageStatus,
@@ -34,6 +48,8 @@ export type {
   N11Sender,
 } from './types/product.js';
 export type {
+  DenyN11ReturnParams,
+  PostponeN11ReturnParams,
   ListN11CancelsParams,
   ListN11ReturnsParams,
   N11CancelClaim,

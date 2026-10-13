@@ -69,6 +69,11 @@ export interface SoapCallOptions {
   operation: string;
   /** Request fields after `auth`, in schema order. */
   fields?: { [name: string]: XmlInput };
+  /**
+   * Whether the call may be retried on a 5xx / network failure. Default `true`
+   * (reads); every write passes `false` so a lost response is never replayed.
+   */
+  idempotent?: boolean;
   signal?: AbortSignal;
   rateLimiter?: TokenBucketRateLimiter;
 }
@@ -134,8 +139,8 @@ export class N11Transport {
    * companies, …) and return the `<Operation>Response` element, parsed.
    *
    * The key pair travels in the envelope (`auth.appKey` / `auth.appSecret`),
-   * not in headers. Every SOAP call the SDK makes today is a read, so it is
-   * sent as idempotent (retried on 5xx / network failures). A `result.status`
+   * not in headers. Calls are idempotent (retried on 5xx / network failures)
+   * unless `opts.idempotent` is `false`, as it is for writes. A `result.status`
    * of `failure` — n11 reports those with HTTP 200 — is thrown as a
    * `LoncaError` (see `mapSoapFailure`).
    */
@@ -152,7 +157,7 @@ export class N11Transport {
       method: 'POST',
       path: opts.service,
       rawBody: envelope,
-      idempotent: true,
+      idempotent: opts.idempotent ?? true,
       signal: opts.signal,
       rateLimiter: opts.rateLimiter,
     });

@@ -12,8 +12,10 @@ import {
   text,
 } from '../soap/values.js';
 import type {
+  DenyN11ReturnParams,
   ListN11CancelsParams,
   ListN11ReturnsParams,
+  PostponeN11ReturnParams,
   N11CancelClaim,
   N11ReasonType,
   N11ReturnClaim,
@@ -140,10 +142,16 @@ function page<T>(
  * Return and cancel claims (SOAP `ReturnService` / `ClaimCancelService`).
  *
  * Source: developer.n11.com → "İade Talepleri Servisi" / "Parçalı İptal
- * Talebi" and the two WSDLs. Read-only; the lists and reason types were
- * verified against prod on 2026-10-10 (list dates are `DD/MM/YYYY` strings).
- * Approve / deny / pend / partial-cancel are not implemented. n11 fixes the
- * page size (20 per page); `limit` is ignored.
+ * Talebi" and the two WSDLs. The lists and reason types were verified against
+ * prod on 2026-10-10 (list dates are `DD/MM/YYYY` strings). n11 fixes the page
+ * size (20 per page); `limit` is ignored.
+ *
+ * The return writes (`approveReturn`, `denyReturn`, `postponeReturn`) use the
+ * WSDL's element names; on n11's test store (2026-10-13) a claim that is
+ * already approved answered each with an "uygun durumda değildir" failure
+ * (`ValidationError`), which confirms the request shape, but no claim in a
+ * writable state was available to see a success. Partial cancel is
+ * `orders.cancelItem`.
  */
 export class ClaimsResource {
   constructor(private readonly transport: N11Transport) {}
@@ -216,6 +224,71 @@ export class ClaimsResource {
       operation: 'ClaimReturnPendingReasonTypes',
     });
     return reasons(response.pendingReasonTypeDataList, 'pendingReasonTypeData');
+  }
+
+  /**
+   * Approve a return (`ClaimReturnApprove`). `splitQuantity` (a WSDL field the
+   * docs do not describe) approves part of the claimed quantity.
+   */
+  async approveReturn(
+    claimReturnId: string | number,
+    opts: { splitQuantity?: number } = {},
+  ): Promise<void> {
+    await this.transport.soap({
+      service: RETURN_SERVICE,
+      operation: 'ClaimReturnApprove',
+      fields: { claimReturnId: String(claimReturnId), splitQuantity: opts.splitQuantity },
+      idempotent: false,
+    });
+  }
+
+  /**
+   * Deny a return (`ClaimReturnDeny`). `denyReasonId` comes from
+   * {@link getReturnDenyReasons}. n11's rules for the shipment fields: leave
+   * `returnShipmentType` empty when the reason is "Ürün Mağazaya Ulaşmadı";
+   * otherwise `CAMPAIGN` (leave carrier, tracking and receipt empty; n11
+   * issues a campaign code) or `CUSTOM` (send `trackingNumber` once the item
+   * is shipped back).
+   */
+  async denyReturn(params: DenyN11ReturnParams): Promise<void> {
+    await this.transport.soap({
+      service: RETURN_SERVICE,
+      operation: 'ClaimReturnDeny',
+      fields: {
+        claimReturnId: String(params.claimReturnId),
+        denyReasonId: String(params.denyReasonId),
+        denyReasonNote: params.note,
+        returnShipmentType: params.returnShipmentType,
+        shipmentCompanyId:
+          params.shipmentCompanyId === undefined ? undefined : String(params.shipmentCompanyId),
+        trackingNumber: params.trackingNumber,
+        deliveryReceiptNumber: params.deliveryReceiptNumber,
+        imageFirstUrl: params.imageUrls?.[0],
+        imageSecondUrl: params.imageUrls?.[1],
+        imageThirdUrl: params.imageUrls?.[2],
+        videoUrl: params.videoUrl,
+        splitQuantity: params.splitQuantity,
+      },
+      idempotent: false,
+    });
+  }
+
+  /**
+   * Postpone a return decision (`ClaimReturnPending`). `pendingReasonId` comes
+   * from {@link getReturnPendingReasons}.
+   */
+  async postponeReturn(params: PostponeN11ReturnParams): Promise<void> {
+    await this.transport.soap({
+      service: RETURN_SERVICE,
+      operation: 'ClaimReturnPending',
+      fields: {
+        claimReturnId: String(params.claimReturnId),
+        pendingReasonId: String(params.pendingReasonId),
+        pendingDayCount: params.days,
+        pendingReasonNote: params.note,
+      },
+      idempotent: false,
+    });
   }
 
   /** Reasons a seller may give when denying a cancel claim (`ClaimCancelDenyReasonType`). */

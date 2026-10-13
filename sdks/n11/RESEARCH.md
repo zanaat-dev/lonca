@@ -295,8 +295,13 @@ must not retry faults that are not transient.
     default limiter.
   - `claims.listReturns` / `listCancels` and the deny / pending reason lists.
   - `shipping.getShipmentCompanies`.
-- **Not built yet:** SOAP writes (`SaveProductAnswer`, claim approve / deny / pend,
-  `ClaimCancelPartial`, `SaveLinkSellerInvoice`) and `SearchCatalog`.
+- **SOAP writes** (built 2026-10-13): `SaveProductAnswer`, `ClaimReturnApprove` / `Deny` /
+  `Pending`, `ClaimCancelPartial`, `SaveLinkSellerInvoice` and `SearchCatalog`. Element names and
+  order come from the WSDLs (read, not redistributed); the doc examples are not reliable here (the
+  `ClaimReturnApprove` example sends `claimCancelId`, and the WSDLs add `splitQuantity` to approve
+  and deny, which the pages do not describe). Writes go out with `idempotent: false`, so a lost
+  response is never replayed. Service path segments are case-insensitive (`SellerInvoiceService`
+  and `sellerInvoiceService` both answer).
 
 ## 9. Licence and redistribution
 
@@ -385,6 +390,26 @@ InternalServerException` naming `MissingRequestHeaderException` is an `AuthError
   drops the placeholder row; `products.waitForTask` and `inventory.updateAndWait` (chunks of 1000)
   poll until `PROCESSED` / `REJECT`. Batch size, price decimals, the sale/list price pair,
   `listPrice ≥ salePrice` and empty updates are checked before sending.
+- **Order and SOAP writes** (n11's test store, 2026-10-13). The store has no order in `Created`
+  or `Picking` and no return claim awaiting a decision, so success paths could only be checked
+  where data allowed:
+  - **Verified success:** `questions.answer` (a second answer fails with
+    `SELLER_API.productQuestion.alreadyAnswered`), `catalog.search` by title + category, by id and
+    by barcode (an unknown barcode gives an empty `<products/>`).
+  - **Verified request shape, failure only:** `orders.approve` and `orders.updateLaborCosts` answer
+    200 with per-line `{ lineId, status: FAIL, reasons }` (`reasons` is one string; a line id n11
+    does not know is silently left out of `content`). `splitPackage`, `splitPackageByQuantity` and
+    `createCollectionRequest` answer `400 { code, status: "failure", errorCode: "SELLER_API.…",
+errorMessage }`. An invalid `status` on the line update is `400` plain text in ISO-8859-1.
+    `claims.approveReturn` / `denyReturn` / `postponeReturn` on an approved claim answer
+    `SELLER_API.claimReturn.invalidRequestFor…`; on an unknown id, approve says
+    "claimReturnId alanı boş olamaz" (`SELLER_API.nullParam`) and deny says `systemError`.
+    `orders.cancelItem` on a cancelled line: `SELLER_API.claimCancel.invalidRequestForPartial`.
+    `orders.sendInvoiceLink` on an unknown order: `SELLER_API.order.not.found`.
+  - **Error mapping:** SOAP "not found" codes → `NotFoundError`, `systemError` → `ServerError`,
+    the rest → `ValidationError`.
+  - **Partial-cancel reasons** come from `ClaimCancelDenyReasonType` (61 "Stokta Kalmayan Ürün", 62,
+    63, 64, 81); the REST split-and-cancel uses its own documented ids (61–65).
 - **Contract probes.** `scripts/probe/probes/n11.mts` runs the four reads above against prod
   (`pnpm probe:prod -- --only n11`); the shape baseline is `probe-snapshots/n11.json`.
 
