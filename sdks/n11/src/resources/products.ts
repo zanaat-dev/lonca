@@ -8,6 +8,15 @@ import {
 } from '@lonca/core';
 import type { N11Transport } from '../transport.js';
 import type { ListN11ProductsParams, N11Product, N11ProductAttribute } from '../types/product.js';
+import type {
+  N11ProductAttributeInput,
+  N11ProductCreateItem,
+  N11ProductTask,
+  N11ProductUpdateItem,
+  N11TaskDetails,
+  N11TaskPollOptions,
+} from '../types/task.js';
+import { checkBatchSize, checkPrice, getTaskDetails, pollTask, submitTask } from './tasks.js';
 
 /** Server default page size when `size` is omitted (documented). */
 const DEFAULT_PAGE_SIZE = 20;
@@ -196,6 +205,152 @@ export class ProductsResource {
     if (hasMore) result.nextCursor = String(page + 1);
     return result;
   }
+
+  /**
+   * Upload new products (`POST /ms/product/tasks/product-create`), at most
+   * 1000 SKUs per call. Returns the queued task; read the per-SKU outcome with
+   * {@link getTask} or {@link waitForTask}. Create tasks can take from seconds
+   * to about 15 minutes (observed), so give `waitForTask` a longer `timeoutMs`.
+   * Common per-SKU failures: a price above the category's cap ("fahiş fiyat",
+   * e.g. "Maximum 42,000 TL"), a missing mandatory attribute, an invalid
+   * category, or an image n11 cannot fetch.
+   *
+   * @throws {ValidationError} for an empty or oversized batch, a price with
+   *   more than 2 decimals, or `listPrice` below `salePrice` (all checked
+   *   before sending), and for a task n11 rejects.
+   */
+  async create(items: readonly N11ProductCreateItem[]): Promise<N11ProductTask> {
+    checkBatchSize('products.create', items);
+    for (const item of items) {
+      checkPrice('products.create', 'salePrice', item.salePrice);
+      checkPrice('products.create', 'listPrice', item.listPrice);
+      if (item.listPrice < item.salePrice) {
+        throw new ValidationError({
+          message: `products.create: listPrice must not be below salePrice (${item.stockCode})`,
+        });
+      }
+    }
+    return submitTask(
+      this.transport,
+      '/ms/product/tasks/product-create',
+      items.map(createSku),
+      this.limiter,
+    );
+  }
+
+  /**
+   * Update products (`POST /ms/product/tasks/product-update`), at most 1000
+   * SKUs per call: status (`Active` / `Suspended`), preparing day, shipment
+   * template, model code, purchase limit, description, VAT and product-safety
+   * attributes. Title, brand and other base attributes can only be changed by
+   * n11. Prices and stock go through `inventory.update`.
+   *
+   * @throws {ValidationError} for an empty or oversized batch, or an item with
+   *   nothing but a `stockCode` (n11 would fail it).
+   */
+  async update(items: readonly N11ProductUpdateItem[]): Promise<N11ProductTask> {
+    checkBatchSize('products.update', items);
+    const skus = items.map((item) => {
+      const sku = updateSku(item);
+      if (Object.keys(sku).length < 2) {
+        throw new ValidationError({
+          message: `products.update: ${item.stockCode} has no field to update`,
+        });
+      }
+      return sku;
+    });
+    return submitTask(this.transport, '/ms/product/tasks/product-update', skus, this.limiter);
+  }
+
+  /**
+   * Delete products by stock code (`POST /ms/product/tasks/product-delete`),
+   * at most 1000 per call. An unknown stock code fails per SKU, not the call.
+   */
+  async delete(stockCodes: readonly string[]): Promise<N11ProductTask> {
+    checkBatchSize('products.delete', stockCodes);
+    return submitTask(
+      this.transport,
+      '/ms/product/tasks/product-delete',
+      stockCodes.map((stockCode) => ({ stockCode })),
+      this.limiter,
+    );
+  }
+
+  /**
+   * Read a task's state and per-SKU results
+   * (`POST /ms/product/task-details/page-query`). Works for every task type,
+   * including `inventory.update` tasks.
+   *
+   * @throws {NotFoundError} for an unknown task id.
+   */
+  getTask(taskId: string): Promise<N11TaskDetails> {
+    return getTaskDetails(this.transport, taskId, this.limiter);
+  }
+
+  /**
+   * Poll {@link getTask} until the task is `PROCESSED` or `REJECT`.
+   *
+   * @throws {TimeoutError} when it is still running after `opts.timeoutMs`.
+   */
+  waitForTask(taskId: string, opts: N11TaskPollOptions = {}): Promise<N11TaskDetails> {
+    return pollTask((id) => this.getTask(id), taskId, opts);
+  }
+}
+
+function attributeInput(attribute: N11ProductAttributeInput) {
+  return {
+    id: Number(attribute.id),
+    valueId:
+      attribute.valueId === undefined || attribute.valueId === null
+        ? null
+        : Number(attribute.valueId),
+    customValue: attribute.customValue ?? null,
+  };
+}
+
+function createSku(item: N11ProductCreateItem): Record<string, unknown> {
+  const sku: Record<string, unknown> = {
+    title: item.title,
+    description: item.description,
+    categoryId: Number(item.categoryId),
+    currencyType: item.currencyType ?? 'TL',
+    productMainId: item.productMainId,
+    preparingDay: item.preparingDay,
+    shipmentTemplate: item.shipmentTemplate,
+    stockCode: item.stockCode,
+    quantity: item.quantity,
+    images: item.images.map(({ url, order }) => ({ url, order })),
+    attributes: item.attributes.map(attributeInput),
+    salePrice: item.salePrice,
+    listPrice: item.listPrice,
+    vatRate: item.vatRate,
+  };
+  if (item.maxPurchaseQuantity !== undefined) sku.maxPurchaseQuantity = item.maxPurchaseQuantity;
+  if (item.catalogId !== undefined) {
+    sku.catalogId = item.catalogId === null ? null : Number(item.catalogId);
+  }
+  if (item.barcode !== undefined) sku.barcode = item.barcode;
+  return sku;
+}
+
+function updateSku(item: N11ProductUpdateItem): Record<string, unknown> {
+  const sku: Record<string, unknown> = { stockCode: item.stockCode };
+  const fields = [
+    'status',
+    'preparingDay',
+    'shipmentTemplate',
+    'deleteProductMainId',
+    'productMainId',
+    'deleteMaxPurchaseQuantity',
+    'maxPurchaseQuantity',
+    'description',
+    'vatRate',
+  ] as const;
+  for (const field of fields) {
+    if (item[field] !== undefined) sku[field] = item[field];
+  }
+  if (item.attributes !== undefined) sku.attributes = item.attributes.map(attributeInput);
+  return sku;
 }
 
 function parsePageCursor(cursor: string | undefined): number {
