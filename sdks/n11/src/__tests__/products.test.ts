@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { paginate, TokenBucketRateLimiter } from '@lonca/core';
+import { paginate, TokenBucketRateLimiter, ValidationError } from '@lonca/core';
 import { ProductsResource } from '../resources/products.js';
 import type { N11Transport } from '../transport.js';
 
@@ -105,6 +105,16 @@ describe('ProductsResource.list', () => {
       page: 2,
       size: 250,
     });
+  });
+
+  it('rejects more than 1000 categoryIds before sending', async () => {
+    const { transport, request } = mockTransport(pageResponse([]));
+    const resource = new ProductsResource(transport);
+    const ids = Array.from({ length: 1001 }, (_, i) => i + 1);
+    await expect(resource.list({ categoryIds: ids })).rejects.toBeInstanceOf(ValidationError);
+    expect(request).not.toHaveBeenCalled();
+    await resource.list({ categoryIds: ids.slice(0, 1000) });
+    expect(request).toHaveBeenCalledTimes(1);
   });
 
   it('passes an injected rate limiter through to the transport', async () => {

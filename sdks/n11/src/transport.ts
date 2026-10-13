@@ -34,9 +34,11 @@ export interface TransportConfig {
   /** Which n11 environment to target. Only `'prod'` is documented. */
   env: N11Environment;
   /**
-   * Integrator name. n11 asks for it in the `integrator` field of every product
-   * write task ("use the same value in all your requests"). Kept on the
-   * transport so write resources can read it; no header carries it today.
+   * Integrator name, for the `integrator` field of product write tasks. It is
+   * free text (the integrator's company name) with no registration; n11 logs by
+   * it and expects the same value in every product request, including letter
+   * case and `I`/`ı`/`İ`/`i` (n11 support, 2026-10-13). Kept on the transport so
+   * write resources can read it; no header carries it.
    */
   integratorName: string;
   /** Optional structured logger (`@lonca/core` `Logger`). Defaults to no-op. */
@@ -53,8 +55,8 @@ export interface RequestOptions extends BaseRequestOptions {
   path: string;
   /**
    * Query parameters. `undefined` values are skipped; array values are joined
-   * with commas (n11's `categoryIds` is documented as a "long list" — the exact
-   * wire encoding is unverified, see RESEARCH.md).
+   * with commas, the encoding n11 expects for multi-value filters such as
+   * `categoryIds` (confirmed by n11, 2026-10-13).
    */
   query?: Record<string, string | number | boolean | readonly (string | number)[] | undefined>;
 }

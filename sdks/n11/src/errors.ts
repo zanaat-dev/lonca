@@ -34,8 +34,9 @@ import {
  * - `401` / `403` → `AuthError`
  * - `400` / `422` → `ValidationError`
  * - `404` → `NotFoundError`
- * - `429` → `RateLimitError` (carries `retryAfterMs` when the server sent `Retry-After`; no 429
- *   has been observed yet)
+ * - `429` → `RateLimitError` (carries `retryAfterMs` when the server sent `Retry-After`). n11
+ *   does not send 429 (n11 support, 2026-10-13): bursts get the client IP suspended instead,
+ *   and what that response looks like is unknown
  * - `5xx` → `ServerError` (retryable)
  * - other → `LoncaError` with code `UNKNOWN`
  *

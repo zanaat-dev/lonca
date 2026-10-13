@@ -1,6 +1,7 @@
 import {
   moneyFromMajor,
   TRY,
+  ValidationError,
   type CursorPage,
   type Money,
   type TokenBucketRateLimiter,
@@ -12,6 +13,8 @@ import type { ListN11ProductsParams, N11Product, N11ProductAttribute } from '../
 const DEFAULT_PAGE_SIZE = 20;
 /** Documented maximum `size` for `GET /ms/product-query`. */
 const MAX_PAGE_SIZE = 250;
+/** n11 answers more `categoryIds` than this with a `500` (n11 support, 2026-10-13). */
+const MAX_CATEGORY_IDS = 1000;
 
 /**
  * One row of `GET /ms/product-query`. Field names and types match prod
@@ -128,9 +131,13 @@ function normalizeProduct(row: N11ProductWire): N11Product {
  * checked against prod on 2026-10-10: `size` over 250 is rejected (`500
  * ConstraintViolationException`, mapped to `ValidationError`), a page past the
  * end answers an empty `content`, and a single `categoryIds` value filters.
+ * n11 confirmed (2026-10-13) that several `categoryIds` go comma-separated in
+ * one value, at most 1000 of them.
  *
- * Rate limit: none documented for this endpoint, so no limiter is applied by
- * default; inject one through the constructor if needed.
+ * Rate limit: no per-endpoint limit is documented, so no limiter is applied by
+ * default. n11 has no 429: a client that keeps sending requests milliseconds
+ * apart is treated as an attack and its IP is suspended, then restricted.
+ * Inject a limiter through the constructor when paging through a large catalogue.
  */
 export class ProductsResource {
   constructor(
@@ -155,6 +162,11 @@ export class ProductsResource {
    * ```
    */
   async list(params: ListN11ProductsParams = {}): Promise<CursorPage<N11Product>> {
+    if (params.categoryIds && params.categoryIds.length > MAX_CATEGORY_IDS) {
+      throw new ValidationError({
+        message: `products.list: categoryIds accepts at most ${MAX_CATEGORY_IDS} ids`,
+      });
+    }
     const page = parsePageCursor(params.cursor);
     const size = Math.min(Math.max(params.limit ?? DEFAULT_PAGE_SIZE, 1), MAX_PAGE_SIZE);
 

@@ -170,7 +170,12 @@ export class ClaimsResource {
     return page(response, rows, current, normalizeReturn);
   }
 
-  /** Cancel claims (`ClaimCancelList`). */
+  /**
+   * Cancel claims (`ClaimCancelList`). Buyer cancel requests were retired long
+   * ago, says n11 (2026-10-13), and of the cancel-claim service only the
+   * partial cancel (`ClaimCancelPartial`) is still active, so this list may
+   * hold old claims only. It still answers on prod (2026-10-10).
+   */
   async listCancels(params: ListN11CancelsParams = {}): Promise<CursorPage<N11CancelClaim>> {
     const current = pageCursor(params.cursor, 'cancels');
     const window = period(params.startDate, params.endDate);

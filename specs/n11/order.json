@@ -167,7 +167,7 @@
           {
             "name": "orderByField",
             "in": "query",
-            "description": "true girildiğinde paketin lastModifiedDate alanına göre sorgulama yapılır; kaldırıldığında ya da false olduğunda tarih aralığı sipariş oluşturma tarihi olarak baz alınır (tablodaki tip: string). Lonca: the page's example URL spells it \"orderbyField\".",
+            "description": "true girildiğinde paketin lastModifiedDate alanına göre sorgulama yapılır; kaldırıldığında ya da false olduğunda tarih aralığı sipariş oluşturma tarihi olarak baz alınır (tablodaki tip: string). Lonca: the page's example URL spells it \"orderbyField\"; n11 support (2026-10-13) confirmed the true/false meaning.",
             "schema": {
               "type": "string",
               "enum": [

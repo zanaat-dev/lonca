@@ -19,8 +19,9 @@ export interface CreateN11ClientOptions {
    */
   env: N11Environment;
   /**
-   * Integrator name, sent by write services in the `integrator` field. n11 asks
-   * integrators to use the same value in every request.
+   * Integrator name, sent by product write services in the `integrator` field:
+   * your company name, with no registration at n11. n11 logs by it, so keep it
+   * identical in every request, down to letter case and `I`/`ı`/`İ`/`i`.
    */
   integratorName: string;
   /** Optional structured logger (`@lonca/core` `Logger`). Defaults to no-op. */

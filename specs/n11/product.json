@@ -194,9 +194,12 @@
           {
             "name": "categoryIds",
             "in": "query",
-            "description": "Kategori ID ile listeleme (tablodaki tip: \"long list\"). Lonca: the page does not say how several values are encoded (comma-separated or repeated parameter).",
+            "description": "Kategori ID ile listeleme (tablodaki tip: \"long list\"). Lonca: the page does not say how several values are encoded; n11 support (2026-10-13): comma-separated in one value, and more than 1000 ids answer 500.",
+            "style": "form",
+            "explode": false,
             "schema": {
               "type": "array",
+              "maxItems": 1000,
               "items": {
                 "type": "integer",
                 "format": "int64"

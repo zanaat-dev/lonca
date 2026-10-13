@@ -121,12 +121,18 @@ export interface ListN11OrdersParams extends CursorPaginationParams {
   /**
    * Window start (a `Date` or epoch ms). n11 caps the window at 15 days: with
    * `startDate` alone it returns 15 days from that point; with no dates, the
-   * last ~15 days (observed on prod).
+   * last ~15 days (observed on prod). Which date the window applies to is set
+   * by `orderByField`.
    */
   startDate?: Date | number;
   /** Window end (a `Date` or epoch ms). */
   endDate?: Date | number;
   orderNumber?: string;
-  orderByField?: string;
+  /**
+   * Which package date `startDate` / `endDate` filter on. `true`: the last
+   * update (`lastModifiedDate`). `false` or omitted: the creation date. The
+   * name is n11's; it is a boolean on the wire (confirmed by n11, 2026-10-13).
+   */
+  orderByField?: boolean;
   orderByDirection?: 'ASC' | 'DESC';
 }

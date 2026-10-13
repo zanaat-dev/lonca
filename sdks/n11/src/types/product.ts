@@ -83,6 +83,10 @@ export interface ListN11ProductsParams extends CursorPaginationParams {
   saleStatus?: 'On_Sale' | 'Out_Of_Stock';
   productStatus?: N11ProductStatus;
   brandName?: string;
+  /**
+   * Sent comma-separated as one `categoryIds` value. At most 1000 ids: n11
+   * answers a longer list with a `500`, so the SDK rejects it before sending.
+   */
   categoryIds?: readonly (string | number)[];
   /** Defaults to `SELLER` server-side. `ALL` includes n11depom stock. */
   sender?: 'SELLER' | 'N11' | 'ALL';
