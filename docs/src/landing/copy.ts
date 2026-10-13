@@ -25,7 +25,7 @@ export const copy = {
     hero: {
       line1: 'Lisanssız entegrasyon.',
       line2: 'Amiral gemisi işi, sıfır lisans.',
-      sub: 'Trendyol ve Hepsiburada için açık kaynak motorlu entegratör. Panel yakında; küçük satıcıya her zaman ücretsiz.',
+      sub: 'Trendyol, Hepsiburada ve n11 için açık kaynak motorlu entegratör. Panel yakında; küçük satıcıya her zaman ücretsiz.',
       emailLabel: 'E-posta adresin',
       emailPlaceholder: 'E-posta adresin',
       submit: 'Bekleme listesine yazıl',
@@ -91,7 +91,7 @@ export const copy = {
       steps: [
         {
           title: 'Pazaryeri hesabını bağla',
-          body: 'Trendyol ve Hepsiburada satıcı panelinden aldığın API bilgileriyle. n11 yakında.',
+          body: 'Trendyol, Hepsiburada ve n11 satıcı panelinden aldığın API bilgileriyle.',
         },
         {
           title: 'Siparişler ve stok tek yere akar',
@@ -127,7 +127,7 @@ export const copy = {
       hbSurface: '12 kaynak · 95 metod',
       status: 'Pazaryeri durumu',
       verified: 'canlıda doğrulandı',
-      building: 'geliştiriliyor',
+      beta: 'beta (0.x)',
       vote: 'Sıradaki pazaryeri için oy ver',
       releases: 'Sürüm notları',
       independent:
@@ -193,7 +193,7 @@ export const copy = {
         },
         {
           q: 'Hangi pazaryerleri sırada?',
-          a: 'Trendyol ve Hepsiburada hazır, n11 geliştiriliyor. Sıradakini GitHub’daki ankette sen seçebilirsin.',
+          a: 'Trendyol ve Hepsiburada hazır, n11 beta olarak yayında. Sıradakini GitHub’daki ankette sen seçebilirsin.',
         },
         {
           q: 'Geliştiriciyim, nasıl başlarım?',
@@ -245,7 +245,7 @@ export const copy = {
     hero: {
       line1: 'Integration, unlicensed.',
       line2: 'Flagship work, zero licence.',
-      sub: 'An open-source-engine integrator for Trendyol and Hepsiburada. Panel coming soon; small sellers will always be free.',
+      sub: 'An open-source-engine integrator for Trendyol, Hepsiburada and n11. Panel coming soon; small sellers will always be free.',
       emailLabel: 'Your email',
       emailPlaceholder: 'Your email',
       submit: 'Join the waitlist',
@@ -311,7 +311,7 @@ export const copy = {
       steps: [
         {
           title: 'Connect your marketplace account',
-          body: 'With the API credentials from your Trendyol and Hepsiburada seller panels. n11 is coming.',
+          body: 'With the API credentials from your Trendyol, Hepsiburada and n11 seller panels.',
         },
         {
           title: 'Orders and stock flow to one place',
@@ -347,7 +347,7 @@ export const copy = {
       hbSurface: '12 resources · 95 methods',
       status: 'Marketplace status',
       verified: 'verified in production',
-      building: 'in progress',
+      beta: 'beta (0.x)',
       vote: 'Vote for the next marketplace',
       releases: 'Release notes',
       independent:
@@ -413,7 +413,7 @@ export const copy = {
         },
         {
           q: 'Which marketplaces are next?',
-          a: 'Trendyol and Hepsiburada are ready, n11 is in progress. You can pick the next one in the GitHub poll.',
+          a: 'Trendyol and Hepsiburada are ready, n11 is out in beta. You can pick the next one in the GitHub poll.',
         },
         {
           q: 'I am a developer. How do I start?',
