@@ -1,0 +1,51 @@
+import { N11Client } from './client.js';
+import '@lonca/core';
+
+/** A request the fake client received, normalized for matching in a `handler`. */
+interface FakeN11Request {
+    method: string;
+    /** URL path only — no host, no query string (SOAP calls: `/ws/<service>/`). */
+    path: string;
+    /** Parsed query parameters. */
+    query: URLSearchParams;
+    /** Parsed JSON body for REST calls; the raw envelope for SOAP calls. */
+    body?: unknown;
+    /** For SOAP calls: the operation name, e.g. `GetProductQuestionList`. */
+    soapOperation?: string;
+}
+interface N11FakeSeed {
+    /**
+     * Return what n11 would answer, or `undefined` for a permissive default.
+     *
+     * - REST: the JSON body. Defaults: empty pages and lists, a queued task
+     *   (`{ id: 1, status: 'IN_QUEUE' }`) for product writes, and a `PROCESSED`
+     *   task with no SKU results for task details.
+     * - SOAP: the inner XML of `<Operation>Response` (for example
+     *   `'<result><status>success</status></result><productQuestions>…'`).
+     *   Default: a bare success result.
+     */
+    handler?: (req: FakeN11Request) => unknown;
+}
+/**
+ * Build an in-memory {@link N11Client} for unit tests.
+ *
+ * It is the real client graph wired over a fake `fetch`, so your tests exercise
+ * the SDK's real request building and response normalization, REST and SOAP
+ * alike — no network. Unhandled calls get permissive defaults; drive the ones
+ * your test touches with `seed.handler`.
+ *
+ * @example
+ * ```ts
+ * const client = createFakeN11Client({
+ *   handler: (req) =>
+ *     req.path === '/ms/product-query'
+ *       ? { content: [{ n11ProductId: 1, stockCode: 'SKU-1', title: 'Örnek' }], totalPages: 1 }
+ *       : undefined,
+ * });
+ * const page = await client.products.list();
+ * page.items[0].stockCode; // 'SKU-1'
+ * ```
+ */
+declare function createFakeN11Client(seed?: N11FakeSeed): N11Client;
+
+export { createFakeN11Client, type FakeN11Request, type N11FakeSeed };

@@ -73,15 +73,21 @@ export interface N11Client {
  * ```
  */
 export function createN11Client(opts: CreateN11ClientOptions): N11Client {
-  const transport = new N11Transport({
-    appKey: opts.appKey,
-    appSecret: opts.appSecret,
-    env: opts.env,
-    integratorName: opts.integratorName,
-    logger: opts.logger,
-    timeoutMs: opts.timeoutMs,
-    fetch: opts.fetch,
-  });
+  return buildClient(
+    new N11Transport({
+      appKey: opts.appKey,
+      appSecret: opts.appSecret,
+      env: opts.env,
+      integratorName: opts.integratorName,
+      logger: opts.logger,
+      timeoutMs: opts.timeoutMs,
+      fetch: opts.fetch,
+    }),
+  );
+}
+
+/** Wire every resource over one transport (shared by `createN11Client` and the fake client). */
+export function buildClient(transport: N11Transport): N11Client {
   return {
     catalog: new CatalogResource(transport),
     categories: new CategoriesResource(transport),

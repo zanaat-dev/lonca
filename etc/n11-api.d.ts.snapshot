@@ -1,0 +1,106 @@
+import { KnownN11PackageStatus } from './client.js';
+export { CancelN11OrderItemParams, CatalogResource, CategoriesResource, ClaimsResource, createN11Client, CreateN11ClientOptions, DenyN11ReturnParams, InventoryResource, ListN11CancelsParams, ListN11OrdersParams, ListN11ProductsParams, ListN11QuestionsParams, ListN11ReturnsParams, N11Address, N11AttributeValue, N11CancelClaim, N11CancelStatus, n11Capabilities, N11Capabilities, N11CatalogProduct, N11CatalogSearchResult, N11Category, N11CategoryAttribute, N11CategoryAttributes, N11ClaimExecuter, N11ClaimSearchType, N11Client, N11CollectionRequestLine, N11CurrencyType, N11Environment, N11LaborCost, N11LineResult, N11OrderLine, N11PackageHistory, N11PackageStatus, N11PriceStockUpdate, N11Product, N11ProductAttribute, N11ProductAttributeInput, N11ProductCreateItem, N11ProductStatus, N11ProductTask, N11ProductUpdateItem, N11Question, N11QuestionDetail, N11QuestionStatus, N11ReasonType, N11ReturnClaim, N11ReturnStatus, N11SaleStatus, N11Sender, N11ShipmentCompany, N11ShipmentPackage, N11SplitPackageItem, N11SplitResult, N11TaskDetails, N11TaskItemResult, N11TaskItemStatus, N11TaskPollOptions, N11TaskStatus, N11TaskType, N11Transport, N11VatRate, OrdersResource, PostponeN11ReturnParams, ProductsResource, QuestionsResource, SearchN11CatalogParams, SendN11InvoiceLinkParams, ShippingResource, SoapCallOptions, SplitN11PackageByQuantityParams } from './client.js';
+import * as _lonca_core from '@lonca/core';
+import { LoncaError, NormalizedOrderStatus } from '@lonca/core';
+
+/**
+ * The `result` element every n11 SOAP response carries
+ * (`ResultInfo { status, errorCode, errorMessage, errorCategory }`).
+ */
+interface SoapResultInfo {
+    status?: string;
+    errorCode?: string;
+    errorMessage?: string;
+    errorCategory?: string;
+}
+/**
+ * Turn a `result.status: "failure"` (sent with HTTP 200) into a `LoncaError`.
+ *
+ * n11 documents error **codes** only for the REST services, so the mapping
+ * below is keyed on substrings:
+ *
+ * - a code or category mentioning authentication → `AuthError` (a wrong
+ *   secret answers HTTP 200 with `SELLER_API.authenticationFailed`, verified
+ *   on prod 2026-10-10);
+ * - `maxCallLimit` / a "limit" code (the legacy manual's over-limit code, and
+ *   the question list's once-a-minute rule) → `RateLimitError`;
+ * - a "not found" code (`SELLER_API.productQuestion.notFound`,
+ *   `SELLER_API.order.not.found`, seen on the test store 2026-10-13) →
+ *   `NotFoundError`;
+ * - `systemError` ("Sistemde bir hata oluştu.") → `ServerError`;
+ * - anything else → `ValidationError` (not retried). Writes on an id in the
+ *   wrong state answer codes like `SELLER_API.claimReturn.invalidRequestForApprove`.
+ */
+declare function mapSoapFailure(operation: string, info: SoapResultInfo, status?: number): LoncaError;
+/**
+ * Map a non-2xx SOAP response. `body` is the raw response text (the shared
+ * requester falls back to text when the body is not JSON).
+ *
+ * - a SOAP `Fault` whose `faultcode` is a client fault → `ValidationError`;
+ * - any other fault, or an unparsable body, follows the HTTP status:
+ *   `401`/`403` → `AuthError`, `429` → `RateLimitError`, `5xx` → `ServerError`
+ *   (retried — every SOAP call the SDK makes is a read), other `4xx` →
+ *   `ValidationError`.
+ *
+ * Fault strings go to `issues`, never to `message`.
+ */
+declare function mapSoapHttpError(status: number, body: unknown, retryAfterMs?: number): LoncaError;
+
+/**
+ * Map an n11 HTTP error response to a `@lonca/core` error.
+ *
+ * n11's three REST path families answer errors differently (observed on prod,
+ * 2026-10-10, read-only GETs):
+ *
+ * - `/ms/…` (products) — a Spring envelope `{ "@type", name, message,
+ *   description, urlStack, errors: [{ reason }] }`. A wrong `appsecret` is
+ *   `401 SellerApiUserUnauthorizedException`; a **missing** auth header and
+ *   bad parameters (`size` over 250, an unknown enum value, a negative page)
+ *   come back as `500 InternalServerException` whose `message` names the Java
+ *   exception (`MissingRequestHeaderException`, `ConstraintViolationException`,
+ *   `IllegalArgumentException`, …). Those 500s are client errors, so they map
+ *   to `AuthError` / `ValidationError` instead of a retryable `ServerError`.
+ * - `/rest/…` (orders) — a wrong `appsecret` is `400 { code, status: "failure",
+ *   errorCode: "SELLER_API.authenticationFailed", errorMessage, errorCategory }`.
+ * - `/cdn/…` (categories) — a wrong key is `403 text/plain` ("Authentication
+ *   failed"); an unknown or non-leaf category is `400 { errorCode:
+ *   "invalidInput", errorMessage }`.
+ * - `/ms/product/tasks/…` (product writes) — a malformed task (no
+ *   `integrator`, empty `skus`, an unknown enum value, broken JSON) is `500 {
+ *   errorCode: "TASK_ERR_…", errorMessage }` (n11's test store, 2026-10-13).
+ *   Also a client error: mapped to `ValidationError`.
+ *
+ * Otherwise the usual status mapping applies:
+ *
+ * - `401` / `403` → `AuthError`
+ * - `400` / `422` → `ValidationError`
+ * - `404` → `NotFoundError`
+ * - `429` → `RateLimitError` (carries `retryAfterMs` when the server sent `Retry-After`). n11
+ *   does not send 429 (n11 support, 2026-10-13): bursts get the client IP suspended instead,
+ *   and what that response looks like is unknown
+ * - `5xx` → `ServerError` (retryable)
+ * - other → `LoncaError` with code `UNKNOWN`
+ *
+ * The raw body stays on `error.data.body`; user-facing messages are fixed
+ * strings so a server message that echoes request context never leaks into
+ * logs that print `error.message`.
+ */
+declare function mapHttpError(status: number, body: unknown, retryAfterMs?: number): LoncaError;
+
+/**
+ * Exhaustive map from n11's documented shipment-package statuses to the
+ * marketplace-agnostic {@link NormalizedOrderStatus} vocabulary.
+ *
+ * Because the key type is the **closed** {@link KnownN11PackageStatus} union,
+ * adding a value there without mapping it here is a compile-time error. n11
+ * has no `Invoiced` or `Returned` package status (returns are claims).
+ */
+declare const statusMap: Record<KnownN11PackageStatus, NormalizedOrderStatus>;
+/**
+ * Normalize a raw n11 package status into the {@link NormalizedOrderStatus}
+ * vocabulary. Unknown raw values resolve to `{ normalized: 'unknown', mapped:
+ * false }` with the raw string preserved.
+ */
+declare const normalizeStatus: (raw: string) => _lonca_core.NormalizedStatusResult;
+
+export { KnownN11PackageStatus, mapHttpError, mapSoapFailure, mapSoapHttpError, normalizeStatus, type SoapResultInfo, statusMap };

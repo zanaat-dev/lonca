@@ -3,10 +3,10 @@ title: Overview
 description: What Lonca is, what's inside, and how the SDKs are organized.
 ---
 
-**Lonca** is an open-source collection of TypeScript SDKs for Turkish marketplaces — built so a single TypeScript codebase can integrate with Trendyol, Hepsiburada, and (eventually) every other major Turkish marketplace through a uniform, type-safe surface.
+**Lonca** is an open-source collection of TypeScript SDKs for Turkish marketplaces — built so a single TypeScript codebase can integrate with Trendyol, Hepsiburada, n11 and (eventually) every other major Turkish marketplace through a uniform, type-safe surface.
 
 :::caution[Unofficial & independent]
-Lonca is a community-maintained project. These are **not** official SDKs and are not affiliated with, endorsed by, or supported by Trendyol, Hepsiburada, or any other marketplace. All product names and trademarks belong to their respective owners.
+Lonca is a community-maintained project. These are **not** official SDKs and are not affiliated with, endorsed by, or supported by Trendyol, Hepsiburada, n11 or any other marketplace. All product names and trademarks belong to their respective owners.
 :::
 
 ## The problem
@@ -27,6 +27,7 @@ There's no widely-adopted open standard. Marketplaces sometimes ship official SD
 | [`@lonca/core`](https://www.npmjs.com/package/@lonca/core)               | Shared primitives — error hierarchy (`AuthError`, `RateLimitError`, …), retry with exponential backoff, token-bucket rate limiter, structured logger, cursor pagination helpers. |
 | [`@lonca/trendyol`](https://www.npmjs.com/package/@lonca/trendyol)       | Trendyol Marketplace SDK — 14 resources, ~70 methods, webhook event parser.                                                                                                      |
 | [`@lonca/hepsiburada`](https://www.npmjs.com/package/@lonca/hepsiburada) | Hepsiburada Marketplace SDK — 12 resources, 95 methods, webhook event parser. Full developer-portal coverage.                                                                    |
+| [`@lonca/n11`](https://www.npmjs.com/package/@lonca/n11)                 | n11 Marketplace SDK (0.x) — REST and SOAP in one client, 8 resources, 31 methods.                                                                                                |
 
 ## Design principles
 
@@ -39,5 +40,5 @@ There's no widely-adopted open standard. Marketplaces sometimes ship official SD
 
 1. Read the [Installation](/installation/) page.
 2. Configure [Authentication](/authentication/) for the marketplace you target.
-3. Skim the per-SDK guide ([Trendyol](/guides/trendyol/) or [Hepsiburada](/guides/hepsiburada/)) for end-to-end usage flows.
+3. Skim the per-SDK guide ([Trendyol](/guides/trendyol/), [Hepsiburada](/guides/hepsiburada/) or [n11](/guides/n11/)) for end-to-end usage flows.
 4. Use the [API Reference](/api/readme/) sidebar for method-by-method detail.

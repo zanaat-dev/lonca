@@ -48,9 +48,30 @@ The `integratorName` you pass is sent as the `User-Agent`, and Hepsiburada is st
 - Use a recognizable bare slug (e.g. your company name). **Do not** include the merchant ID — `0.1.0` / `0.2.0` did this and returned 401 on every call.
   :::
 
+## n11
+
+Two plain headers (`appkey`, `appsecret`) for REST; the SOAP services carry the same pair inside the envelope. The SDK does both.
+
+```ts
+import { createN11Client } from '@lonca/n11';
+
+const client = createN11Client({
+  appKey: process.env.N11_APP_KEY!,
+  appSecret: process.env.N11_APP_SECRET!,
+  env: 'prod', // n11 has no public sandbox
+  integratorName: 'MyCompany', // sent in product writes; keep it identical every time
+});
+```
+
+Get the key pair from n11 Seller Office (`so.n11.com`). n11 has no sandbox; for integration tests, ask n11 seller-integration support for a test store (it runs on production).
+
+:::note[integratorName on n11]
+n11 needs no registration: send your company name. It logs product writes by this value and expects the same spelling every time, down to letter case and `I`/`ı`.
+:::
+
 ## Client options
 
-Besides the credentials, both factories accept the same optional settings:
+Besides the credentials, every factory accepts the same optional settings:
 
 | Option      | Default        | What it does                                                                                                                 |
 | ----------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------- |

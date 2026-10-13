@@ -53,6 +53,16 @@ const entries: SurfaceEntry[] = [
     source: 'sdks/hepsiburada/dist/testing.d.ts',
     snapshot: 'etc/hepsiburada-testing-api.d.ts.snapshot',
   },
+  {
+    pkg: 'n11',
+    source: 'sdks/n11/dist/index.d.ts',
+    snapshot: 'etc/n11-api.d.ts.snapshot',
+  },
+  {
+    pkg: 'n11',
+    source: 'sdks/n11/dist/testing.d.ts',
+    snapshot: 'etc/n11-testing-api.d.ts.snapshot',
+  },
 ];
 
 /** `'./client-AbC123xy.js'` — a hashed tsup chunk referenced from a declaration file. */

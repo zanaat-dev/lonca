@@ -5,15 +5,14 @@ import type { CursorPaginationParams, Money } from '@lonca/core';
  * accepted by the `status` filter on prod; an unknown filter value answers 200
  * with an empty page rather than an error.
  */
-export type N11PackageStatus =
-  | 'Created'
-  | 'Picking'
-  | 'Shipped'
-  | 'Cancelled'
-  | 'Delivered'
-  | 'Unpacked'
-  | 'UnSupplied'
-  | (string & {});
+export type N11PackageStatus = KnownN11PackageStatus | (string & {});
+
+/**
+ * The closed set of documented package statuses, mapped exhaustively by
+ * `statusMap` / `normalizeStatus`.
+ */
+export type KnownN11PackageStatus =
+  'Created' | 'Picking' | 'Shipped' | 'Cancelled' | 'Delivered' | 'Unpacked' | 'UnSupplied';
 
 /** A billing or shipping address on a package. */
 export interface N11Address {
