@@ -40,5 +40,12 @@
     "path": "header:sellerID",
     "reason": "Suspected SDK bug, not yet fixed: Trendyol's updateTestOrderStatus reference requires a `sellerID` header besides the path sellerId and the SDK never sends it; unverified live. Remove when the SDK sends the header.",
     "since": "2026-10-14"
+  },
+  {
+    "call": "catalog.deleteByMerchantSkuList",
+    "kind": "type-mismatch",
+    "path": "",
+    "reason": "Open SDK bug, not a spec gap: the SDK only accepts and sends { merchantSkuList: [...] } while mpop-catalog.json (deleteByMerchantAndMerchantSkuList) documents an array of { merchant, merchantSku }; never verified live (added in Phase 2b, unit tests only). Accepted so CI stays green until @lonca/hepsiburada is fixed; delete this entry with the fix.",
+    "since": "2026-10-14"
   }
 ]
