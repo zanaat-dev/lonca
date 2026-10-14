@@ -51,6 +51,7 @@ const npmHref = (pkg: string, version: string) => `https://www.npmjs.com/package
               </h2>
               <p class="cl-bump" data-bump={r.entries[0]?.bump ?? 'patch'}>
                 {c.bump[r.entries[0]?.bump ?? 'patch']}
+                {r.beta && ` · ${c.beta}`}
               </p>
               <a class="cl-npm" href={npmHref(r.pkg, r.version)} rel="noopener">
                 {c.npm} →

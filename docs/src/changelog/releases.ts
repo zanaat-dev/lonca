@@ -35,6 +35,8 @@ export interface Release {
   entries: ChangelogEntry[];
   /** Workspace packages bumped alongside, e.g. `@lonca/core@1.1.0`. */
   deps: string[];
+  /** A 0.x release of a package that has not reached 1.0 yet. */
+  beta?: boolean;
 }
 
 const SOURCES = [
@@ -144,13 +146,18 @@ function releaseDate(file: string, version: string) {
 
 let cache: Release[] | undefined;
 
-/** Stable (1.0+) releases of the public packages, newest first. */
+/**
+ * Releases of the public packages, newest first: 1.0+ for a package that has
+ * reached 1.0 (its 0.x notes stay in the CHANGELOG), every release, marked
+ * `beta`, for a package that has not.
+ */
 export function loadReleases(): Release[] {
-  cache ??= SOURCES.flatMap(({ pkg, file, text }) =>
-    parse(pkg, text)
-      .filter((r) => !r.version.startsWith('0.'))
-      .map((r) => ({ ...r, date: releaseDate(file, r.version) })),
-  ).sort(
+  cache ??= SOURCES.flatMap(({ pkg, file, text }) => {
+    const all = parse(pkg, text);
+    const stable = all.filter((r) => !r.version.startsWith('0.'));
+    const shown = stable.length > 0 ? stable : all.map((r) => ({ ...r, beta: true }));
+    return shown.map((r) => ({ ...r, date: releaseDate(file, r.version) }));
+  }).sort(
     (a, b) =>
       (b.date ?? '').localeCompare(a.date ?? '') ||
       SOURCES.findIndex((s) => s.pkg === a.pkg) - SOURCES.findIndex((s) => s.pkg === b.pkg) ||
