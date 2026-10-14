@@ -48,6 +48,17 @@ export {
   type WireRecorderOptions,
 } from './wire.js';
 export {
+  captureRequest,
+  checkRequest,
+  createRequestRecorder,
+  mediaKind,
+  type CapturedPart,
+  type CapturedRequest,
+  type RequestBodyKind,
+  type RequestCheck,
+  type RequestRecorder,
+} from './requests.js';
+export {
   compareResponse,
   DEFAULT_SEVERITY,
   SEVERITIES,

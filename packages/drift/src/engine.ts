@@ -41,7 +41,13 @@ export type FindingKind =
   // SDK TypeScript types vs spec (`pnpm drift:types`, src/types-*.ts)
   | 'sdk-type-mismatch'
   | 'sdk-unknown-field'
-  | 'sdk-missing-field';
+  | 'sdk-missing-field'
+  // What an SDK sends vs the documented request (`pnpm drift:requests`, src/requests.ts)
+  | 'request-content-type'
+  | 'request-body-missing'
+  | 'request-body-unexpected'
+  | 'request-param-missing'
+  | 'request-param-undocumented';
 
 export type Severity = 'breaking' | 'additive' | 'warning' | 'info';
 
@@ -63,6 +69,11 @@ export const DEFAULT_SEVERITY: Record<FindingKind, Severity> = {
   'sdk-type-mismatch': 'warning',
   'sdk-unknown-field': 'warning',
   'sdk-missing-field': 'info',
+  'request-content-type': 'breaking',
+  'request-body-missing': 'breaking',
+  'request-body-unexpected': 'warning',
+  'request-param-missing': 'breaking',
+  'request-param-undocumented': 'warning',
 };
 
 export interface Finding {
