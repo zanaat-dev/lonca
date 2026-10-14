@@ -53,12 +53,20 @@ describe('OrdersResource', () => {
     await r(transport).list({ beginDate: '2026-01-01', endDate: '2026-02-01' });
     const call = (transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0];
     expect(call.query).toEqual({
-      offset: undefined,
-      limit: undefined,
+      // Always sent: the order lists answer 400 without them (SIT, 2026-10-14).
+      offset: 0,
+      limit: 100,
       status: undefined,
       beginDate: '2026-01-01',
       endDate: '2026-02-01',
     });
+  });
+
+  it('order lists keep an explicit offset / limit, including 0', async () => {
+    const transport = mockTransport({ totalCount: 0, items: [] });
+    await r(transport).listCancelled({ offset: 200, limit: 0 });
+    const call = (transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0];
+    expect(call.query).toMatchObject({ offset: 200, limit: 0 });
   });
 
   it('listPackages GETs /packages/merchantId/{id} and unwraps raw array', async () => {

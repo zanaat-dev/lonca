@@ -22,6 +22,8 @@ import type {
 } from '../types/order.js';
 
 const SERVICE = 'oms' as const;
+/** Default page size of the order lists (Hepsiburada's maximum). */
+const DEFAULT_ORDER_LIMIT = 100;
 
 /**
  * Hepsiburada Order Management (`siparis-olusturma-entegrasyonu` +
@@ -490,7 +492,14 @@ export class OrdersResource {
       method: 'GET',
       service: SERVICE,
       path,
-      query: this.listQuery(params),
+      // The order lists answer `400 "limit and offset parameters are required"`
+      // without both (verified on SIT, 2026-10-14), so the documented defaults
+      // are always sent.
+      query: this.listQuery({
+        ...params,
+        offset: params.offset ?? 0,
+        limit: params.limit ?? DEFAULT_ORDER_LIMIT,
+      }),
       rateLimiter: this.limiter,
     });
     return normalizeOrdersPage(data);
