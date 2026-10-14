@@ -101,10 +101,14 @@ for await (const product of paginateOffset((q) => client.catalog.listProducts(q)
 
 ## 12–20 min: Orders from the last 7 days
 
-`orders.list` returns orders whose payment is complete. Filter by `beginDate` (`yyyy-MM-dd` or an ISO 8601 timestamp):
+`orders.list` returns orders whose payment is complete. Filter by `beginDate` as `yyyy-MM-dd HH:mm`. Hepsiburada does not reject other formats; it returns an empty list, so check the format first when a filtered list comes back empty:
 
 ```ts
-const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+// yyyy-MM-dd HH:mm
+const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
+  .toISOString()
+  .slice(0, 16)
+  .replace('T', ' ');
 
 const recent = await client.orders.list({ beginDate: since, limit: 100 });
 for (const line of recent.items) {

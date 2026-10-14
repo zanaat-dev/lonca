@@ -121,8 +121,10 @@ for (const order of open.items) {
 
   // 3. Package the items — the receipt carries the new package number + barcode
   const receipt = await client.orders.createPackages({
-    lineItems: [lineId, ...peers.map((p) => (p as { id: string }).id)],
-    cargoCompany: 'ARAS',
+    lineItemRequests: [lineId, ...peers.map((p) => (p as { id: string }).id)].map((id) => ({
+      id,
+      quantity: 1,
+    })),
   });
   console.log(`packaged as ${receipt.packageNumber} (barcode ${receipt.barcode})`);
 }
@@ -131,7 +133,10 @@ for (const order of open.items) {
 await client.orders.markPackageInTransit('HBP-123', { trackingNumber: 'TR-456' });
 await client.orders.markPackageDelivered('HBP-123');
 // or, on a failed delivery:
-await client.orders.markPackageUndelivered('HBP-123', { reason: 'address-not-found' });
+await client.orders.markPackageUndelivered('HBP-123', {
+  undeliveredReason: '…', // a Hepsiburada undelivered-reason value
+  undeliveredDate: new Date().toISOString(),
+});
 
 // 5. Attach an invoice link before delivery
 await client.orders.sendInvoiceLink('HBP-123', {
@@ -318,7 +323,7 @@ await client.shipping.updateProfile({ profileName: 'Express', cargoFirms: 'ARAS'
 
 ```ts
 // Order lists
-await client.orders.list({ beginDate: '2026-01-01', limit: 100 });
+await client.orders.list({ beginDate: '2026-01-01 00:00', limit: 100 }); // yyyy-MM-dd HH:mm
 await client.orders.listCancelled({ limit: 100 });
 await client.orders.listPaymentAwaiting({ limit: 100 });
 await client.orders.getByOrderNumber('HBO-12345');
@@ -337,24 +342,34 @@ await client.orders.getPackageLabel('HBP-1'); // PDF / barcode
 // ({ packageNumber, barcode, raw }); every other action below resolves to
 // MutationResult ({ raw }) because the API answers with a bare string or 204.
 const { packageNumber, barcode } = await client.orders.createPackages({
-  lineItems: ['L1', 'L2'],
-  cargoCompany: 'ARAS',
+  lineItemRequests: [
+    { id: 'L1', quantity: 1 },
+    { id: 'L2', quantity: 2 },
+  ],
 });
-await client.orders.splitPackage('HBP-1', { lineItems: ['L1'] });
+await client.orders.splitPackage('HBP-1', {
+  packageDetails: [
+    { lines: [{ orderLineId: 'L1', quantity: 1 }] },
+    { lines: [{ orderLineId: 'L2', quantity: 2 }] },
+  ],
+});
 await client.orders.unpackPackage('HBP-1');
 
 // Status transitions
 await client.orders.markPackageInTransit('HBP-1', { trackingNumber: 'TR-1' });
 await client.orders.markPackageDelivered('HBP-1');
-await client.orders.markPackageUndelivered('HBP-1', { reason: '...' });
+await client.orders.markPackageUndelivered('HBP-1', {
+  undeliveredReason: '…',
+  undeliveredDate: '…',
+});
 
 // Line-item actions
-await client.orders.cancelLineItem('L1', { reason: 'out-of-stock' });
-await client.orders.updateLineItemCargoCompany('L1', { cargoCompany: 'MNG' });
+await client.orders.cancelLineItem('L1', { reasonId: 1 }); // a line that is not packaged yet
+await client.orders.updateLineItemCargoCompany('L1', { CargoCompanyShortName: 'YK' });
 await client.orders.updateLineItemLaborCost('L1', { unitLaborCost: 12.5 });
 
 // Package field updates
-await client.orders.updatePackageCargoCompany('HBP-1', { cargoCompany: 'YURTICI' });
+await client.orders.updatePackageCargoCompany('HBP-1', { CargoCompanyShortName: 'YK' });
 await client.orders.sendInvoiceLink('HBP-1', { invoiceLink: '...', serialNumber: '...' });
 await client.orders.updateParcelInfo('HBP-1', { totalDesi: 8, totalParcel: 1 });
 await client.orders.updatePackageWarehouse('HBP-1', { shippingAddressLabel: 'WH-2' });

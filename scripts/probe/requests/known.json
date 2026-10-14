@@ -12,5 +12,26 @@
     "path": "",
     "reason": "Open SDK bug, not a spec gap: the SDK only accepts and sends { merchantSkuList: [...] } while mpop-catalog.json (deleteByMerchantAndMerchantSkuList) documents an array of { merchant, merchantSku }; never verified live (added in Phase 2b, unit tests only). Accepted so CI stays green until @lonca/hepsiburada is fixed; delete this entry with the fix.",
     "since": "2026-10-14"
+  },
+  {
+    "call": "orders.listPackages",
+    "kind": "request-param-undocumented",
+    "path": "?offset",
+    "reason": "Spec spells it `Offset` here (and `offset` on the other lists). Hepsiburada SIT, 2026-10-14: GET /packages/merchantid/{id}?limit=1 with offset=1 and with Offset=1 returned the same second package, so the query name is case-insensitive.",
+    "since": "2026-10-14"
+  },
+  {
+    "call": "orders.listUnpackedPackages",
+    "kind": "request-param-undocumented",
+    "path": "?offset",
+    "reason": "Spec spells it `Offset` here (and `offset` on the other lists). Hepsiburada SIT, 2026-10-14: GET /packages/merchantid/{id}?limit=1 with offset=1 and with Offset=1 returned the same second package, so the query name is case-insensitive.",
+    "since": "2026-10-14"
+  },
+  {
+    "call": "orders.unpackPackage",
+    "kind": "request-body-unexpected",
+    "path": "",
+    "reason": "The SDK sends `{}` (the input defaults to an empty object); Hepsiburada SIT, 2026-10-14, took it past validation to the package lookup (500 DeliveryNotFound on a stub package), so the empty body is harmless.",
+    "since": "2026-10-14"
   }
 ]
