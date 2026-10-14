@@ -566,6 +566,11 @@ interface N11ProductUpdateItem {
     status?: 'Active' | 'Suspended';
     preparingDay?: number;
     shipmentTemplate?: string;
+    /**
+     * Model code. n11 keeps it empty on a product it has matched to a catalogue
+     * product (`catalogId` set): the task still reports `SUCCESS`, but the code
+     * is not stored (observed on n11's test store, 2026-10-14).
+     */
     productMainId?: string;
     /** `true` removes the `productMainId`. */
     deleteProductMainId?: boolean;
@@ -726,6 +731,10 @@ interface N11ShipmentPackage {
     deliveryAddressType?: string;
     shipmentCompanyId?: string;
     cargoProviderName?: string;
+    /**
+     * The package's campaign code. n11 serves no label file; print this value as
+     * a CODE-128 barcode to make the cargo label (n11 support, 2026-10-14).
+     */
     cargoTrackingNumber?: string;
     cargoTrackingLink?: string;
     cargoSenderNumber?: string;

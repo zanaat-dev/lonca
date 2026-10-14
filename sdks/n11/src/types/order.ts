@@ -96,6 +96,10 @@ export interface N11ShipmentPackage {
   deliveryAddressType?: string;
   shipmentCompanyId?: string;
   cargoProviderName?: string;
+  /**
+   * The package's campaign code. n11 serves no label file; print this value as
+   * a CODE-128 barcode to make the cargo label (n11 support, 2026-10-14).
+   */
   cargoTrackingNumber?: string;
   cargoTrackingLink?: string;
   cargoSenderNumber?: string;

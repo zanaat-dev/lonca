@@ -29,7 +29,7 @@ Type-safe TypeScript SDK for the [n11 seller API](https://developer.n11.com/docu
 
 Plus `normalizeStatus` (n11 package status → `@lonca/core` `NormalizedOrderStatus`), `n11Capabilities` and a fake client in `@lonca/n11/testing`.
 
-Not covered, because n11 does not offer it over the API: webhooks, cargo labels (asked n11), settlements over REST (n11 keeps finance on SOAP).
+Not covered, because n11 does not offer it over the API: webhooks, cargo label files (print the package's `cargoTrackingNumber` as a CODE-128 barcode instead, as n11 advises), settlements over REST (n11 keeps finance on SOAP).
 
 ## Install
 
