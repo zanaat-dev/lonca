@@ -74,6 +74,9 @@ export class ProductUpdatesResource {
     if (typeof obj.message === 'string') out.message = obj.message;
     if (Array.isArray(obj.rows)) out.rows = obj.rows as Array<Record<string, unknown>>;
     else if (Array.isArray(obj.items)) out.rows = obj.items as Array<Record<string, unknown>>;
+    // The documented response (`PageResponseIntegratorImportStatusDto`) is a
+    // Spring page whose rows live under `data`.
+    else if (Array.isArray(obj.data)) out.rows = obj.data as Array<Record<string, unknown>>;
     return out;
   }
 

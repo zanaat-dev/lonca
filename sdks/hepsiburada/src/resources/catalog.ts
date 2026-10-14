@@ -146,11 +146,15 @@ export class CatalogResource {
       path: `${BASE_PATH}/trackingId-history`,
       rateLimiter: this.limiter,
     });
+    // The documented response is the mpop `{ success, code, message, data }`
+    // envelope, so rows normally arrive under `data`.
     const rows = Array.isArray(data)
       ? data
       : Array.isArray((data as { items?: unknown[] })?.items)
         ? (data as { items: unknown[] }).items
-        : [];
+        : Array.isArray((data as { data?: unknown[] })?.data)
+          ? (data as { data: unknown[] }).data
+          : [];
     return rows.map(normalizeTrackingIdHistoryEntry);
   }
 

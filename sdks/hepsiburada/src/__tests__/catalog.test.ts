@@ -278,3 +278,198 @@ describe('catalog list endpoints → OffsetPage', () => {
     ]);
   });
 });
+
+describe('catalog.getTrackingIdHistory', () => {
+  it('GETs /product/api/products/trackingId-history on mpop (merchant comes from the credentials, not the URL)', async () => {
+    const transport = mockTransport([]);
+    await r(transport).getTrackingIdHistory();
+    const call = (transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0];
+    expect(call).toMatchObject({
+      method: 'GET',
+      service: 'mpop',
+      path: '/product/api/products/trackingId-history',
+    });
+    expect(call.query).toBeUndefined();
+  });
+
+  it('maps trackingId / createdAt / status per row and keeps the raw row', async () => {
+    const row = {
+      trackingId: 'TRK-1',
+      createdAt: '2026-08-30T09:00:00',
+      status: 'DONE',
+      merchantId: 'M-cat',
+    };
+    await expect(r(mockTransport([row])).getTrackingIdHistory()).resolves.toEqual([
+      { trackingId: 'TRK-1', createdAt: '2026-08-30T09:00:00', status: 'DONE', raw: row },
+    ]);
+  });
+
+  it('unwraps the mpop `{ success, code, data }` envelope and `{ items }`', async () => {
+    // The spec's `Response` envelope carries the rows under `data`; they were
+    // dropped (always []) before.
+    const fromData = await r(
+      mockTransport({ success: true, code: 0, message: null, data: [{ trackingId: 'D' }] }),
+    ).getTrackingIdHistory();
+    expect(fromData.map((e) => e.trackingId)).toEqual(['D']);
+    const fromItems = await r(
+      mockTransport({ items: [{ trackingId: 'I' }] }),
+    ).getTrackingIdHistory();
+    expect(fromItems.map((e) => e.trackingId)).toEqual(['I']);
+  });
+
+  it('returns [] when no row list can be found and never coerces wrong-typed fields', async () => {
+    for (const response of [null, undefined, { success: true, data: {} }]) {
+      await expect(r(mockTransport(response)).getTrackingIdHistory()).resolves.toEqual([]);
+    }
+    await expect(
+      r(
+        mockTransport([null, { trackingId: 1, createdAt: null, status: 2 }]),
+      ).getTrackingIdHistory(),
+    ).resolves.toEqual([{ raw: {} }, { raw: { trackingId: 1, createdAt: null, status: 2 } }]);
+  });
+});
+
+describe('catalog.getProductStatus / getDeleteProcess', () => {
+  it('getProductStatus GETs /status/{trackingId} (URL-encoded) and maps the documented page envelope', async () => {
+    // `PageResponseImportStatusDTO` (spec `mpop-catalog.json`): rows under `data`.
+    const row = { merchantSku: 'MSKU-1', hbSku: 'HB-1', productStatus: 'MATCHED' };
+    const transport = mockTransport(byStatusEnvelope([row], { message: 'ok' }));
+    const status = await r(transport).getProductStatus('TRK 1/2');
+    expect((transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toMatchObject({
+      method: 'GET',
+      service: 'mpop',
+      path: '/product/api/products/status/TRK%201%2F2',
+    });
+    expect(status.rows).toEqual([row]);
+    expect(status.message).toBe('ok');
+    expect(status.raw.totalElements).toBe(46);
+  });
+
+  it('getProductStatus prefers `rows`, then `items`, then `data`, and maps string trackingId / status', async () => {
+    const a = await r(
+      mockTransport({ trackingId: 'T', status: 'Done', rows: [{ n: 1 }], items: [{ n: 2 }] }),
+    ).getProductStatus('T');
+    expect(a).toMatchObject({ trackingId: 'T', status: 'Done', rows: [{ n: 1 }] });
+    const b = await r(mockTransport({ items: [{ n: 2 }], data: [{ n: 3 }] })).getProductStatus('T');
+    expect(b.rows).toEqual([{ n: 2 }]);
+  });
+
+  it('getProductStatus ignores wrong-typed fields and tolerates a non-object response', async () => {
+    const response = { trackingId: 5, status: null, message: 1, rows: {} };
+    await expect(r(mockTransport(response)).getProductStatus('T')).resolves.toEqual({
+      raw: response,
+    });
+    await expect(r(mockTransport(null)).getProductStatus('T')).resolves.toEqual({ raw: {} });
+  });
+
+  it('getDeleteProcess GETs /delete-process/{trackingId} and keeps the `DeleteProcess` body on raw', async () => {
+    const body = {
+      id: 'DP-1',
+      trackingId: 'TRK-D1',
+      completed: true,
+      deletedProductList: [{ merchantSku: 'M-001' }],
+    };
+    const transport = mockTransport(body);
+    const status = await r(transport).getDeleteProcess('TRK-D1');
+    expect((transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0]).toMatchObject({
+      method: 'GET',
+      service: 'mpop',
+      path: '/product/api/products/delete-process/TRK-D1',
+    });
+    expect(status).toEqual({ trackingId: 'TRK-D1', raw: body });
+  });
+});
+
+describe('catalog write endpoints — client-side validation', () => {
+  it.each([
+    ['uploadFastListing', null],
+    ['uploadFastListing', []],
+    ['approvePreMatch', null],
+    ['rejectPreMatch', 'HB-1'],
+    ['checkProductStatus', undefined],
+    ['deleteByMerchantSkuList', null],
+  ] as const)('%s(%j) throws ValidationError without a request', async (method, input) => {
+    const transport = mockTransport({});
+    const call = (r(transport) as unknown as Record<string, (i: unknown) => Promise<unknown>>)[
+      method
+    ]!(input);
+    await expect(call).rejects.toBeInstanceOf(ValidationError);
+    expect(transport.request).not.toHaveBeenCalled();
+  });
+
+  it('upload / delete receipts fall back to `id`, then to an empty trackingId', async () => {
+    const fromId = await r(mockTransport({ id: 99 })).uploadFastListing({ items: [] });
+    expect(fromId).toEqual({ trackingId: '99', raw: { id: 99 } });
+    const empty = await r(mockTransport(null)).deleteByMerchantSkuList({ merchantSkuList: ['A'] });
+    expect(empty).toEqual({ trackingId: '', raw: {} });
+  });
+});
+
+describe('catalog list normalisation — remaining envelope / row edge cases', () => {
+  it('derives limit, offset and pageCount when the envelope has totalElements only', async () => {
+    const page = await r(
+      mockTransport({ totalElements: 7, data: [{ merchantSku: 'A' }, { merchantSku: 'B' }] }),
+    ).listProducts({ page: 3 });
+    // limit ← rows received; offset ← requested page × limit; pageCount ← ceil(7 / 2).
+    expect(page).toMatchObject({ totalCount: 7, limit: 2, offset: 6, pageCount: 4 });
+  });
+
+  it('reports pageCount 0 for an empty envelope with totalElements but no totalPages', async () => {
+    const page = await r(mockTransport({ totalElements: 0, data: [] })).listProducts();
+    expect(page).toEqual({ totalCount: 0, limit: 0, offset: 0, pageCount: 0, items: [] });
+  });
+
+  it('counts the rows when only totalPages is present', async () => {
+    const page = await r(
+      mockTransport({ totalPages: 1, data: [{ merchantSku: 'A' }] }),
+    ).listProducts();
+    expect(page).toMatchObject({ totalCount: 1, pageCount: 1, limit: 1, offset: 0 });
+  });
+
+  it('keeps a non-object row as an empty product and copies numeric scores and the fields map', async () => {
+    const page = await r(
+      mockTransport([
+        'garbage',
+        {
+          merchantSku: 'A',
+          productQuality: 80,
+          categoryScore: 0.5,
+          fields: { Renk: { value: 'Mavi' } },
+        },
+      ]),
+    ).listProducts();
+    expect(page.items[0]).toEqual({ raw: {} });
+    expect(page.items[1]).toMatchObject({
+      merchantSku: 'A',
+      productQuality: 80,
+      categoryScore: 0.5,
+      fields: { Renk: { value: 'Mavi' } },
+    });
+  });
+
+  it('skips empty content strings and resolves image objects / CSV strings defensively', async () => {
+    const [p] = (
+      await r(
+        mockTransport([
+          {
+            productName: '',
+            name: 'Fallback Ad',
+            images: [{ imageUrl: ' https://img/1.jpg ' }, { url: 3 }, 42, '  '],
+          },
+        ]),
+      ).listProducts()
+    ).items;
+    // An empty `productName` is not a title; the next key (`name`) wins.
+    expect(p!.title).toBe('Fallback Ad');
+    // `images` yields one usable URL (trimmed); unusable items are dropped.
+    expect(p!.images).toEqual(['https://img/1.jpg']);
+
+    const [q] = (
+      await r(
+        mockTransport([{ images: [{ url: 7 }], image: ' , ', imageUrls: 'https://img/3.jpg' }]),
+      ).listProducts()
+    ).items;
+    // No usable `images` / `image` (all blanks) → falls through to `imageUrls`.
+    expect(q!.images).toEqual(['https://img/3.jpg']);
+  });
+});
