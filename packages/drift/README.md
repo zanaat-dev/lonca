@@ -280,6 +280,35 @@ Node version after the build and appends `types-report.md` to the job summary. T
 `continue-on-error` and runs with `--fail-on never`: findings never fail a build. Raising it to
 `--fail-on warning` is a separate decision once the current warnings are resolved or accepted.
 
+## SDK requests vs specs
+
+The response checks only see what a marketplace answers, so a write that sends the wrong body
+passes every probe and still never works. On 2026-10-14 three Hepsiburada writes turned out to
+send JSON where the spec documents `multipart/form-data`; Hepsiburada refused all three on SIT.
+`pnpm drift:requests` catches that class of bug offline, and runs in CI:
+
+```bash
+pnpm build && pnpm drift:requests            # exit 1 on breaking findings or a broken sample
+pnpm drift:requests -- --only hepsiburada
+pnpm drift:requests -- --fail-on warning
+```
+
+- **Samples** live in [`scripts/probe/requests/`](../../scripts/probe/requests/), one catalog
+  per marketplace: a call per SDK method, with the inputs a seller would send. They run over
+  `createRequestRecorder` (a `fetch` that records and answers `200 {}`), so there is no network
+  and no credential. The report lists public methods (read from the API lock in `etc/`) that
+  have no sample yet.
+- **Checks** (`checkRequest`): the request is matched to its spec operation, then compared on
+  the media type (`request-content-type`), the JSON body through the same schema engine as the
+  responses (`missing-required` and `type-mismatch` break, `undocumented-field` warns), the
+  multipart parts (required part missing, file sent as text), and the required query and header
+  parameters (`request-param-missing`; `request-param-undocumented` warns). A body the operation
+  does not document warns (`request-body-unexpected`); a missing required body breaks.
+- **Accepted findings** go to `scripts/probe/requests/known.json` as
+  `{ call, kind, path, reason, since }`; the report lists entries that no longer match.
+- Only names and JSON types are compared, never values. Calls to endpoints no spec covers (the
+  n11 SOAP services) run with `skip`, so a sample that throws is still reported.
+
 ## Library
 
 The package also provides what the probe runner uses for wire capture:

@@ -72,6 +72,13 @@ jobs:
           pnpm drift:types --fail-on never
           cat drift-output/types-report.md >> "$GITHUB_STEP_SUMMARY"
 
+      # What the SDKs send vs the documented requests (media type, body, required parameters).
+      # Offline: each sample runs over a recording fetch. Fails on breaking findings and on
+      # samples that throw before sending; the report goes to the job summary.
+      - name: SDK requests vs specs
+        if: matrix.node == 22
+        run: pnpm drift:requests
+
       - name: Package health (publint + attw)
         run: pnpm health:packages
 
