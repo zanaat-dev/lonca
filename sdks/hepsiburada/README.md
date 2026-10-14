@@ -86,11 +86,12 @@ const { id } = await client.listings.uploadPrice([
   { hepsiburadaSku: 'HB-2', price: 249.0 },
 ]);
 
+// `Ready` = queued, `Done` = applied (the listing shows the new price only then)
 let result;
 do {
   await new Promise((r) => setTimeout(r, 2000));
   result = await client.listings.getPriceUpload(id);
-} while (result.status === 'PROCESSING');
+} while (result.status === 'Ready');
 
 // Floor / ceiling rejections (price-specific)
 for (const v of result.priceValidations ?? []) {
@@ -306,7 +307,7 @@ await client.listings.uploadShippingInfo([{ hepsiburadaSku: 'HB-1', dispatchTime
 await client.listings.uploadAdditionalInfo([
   { hepsiburadaSku: 'HB-1', customizationTextLength: 12 },
 ]);
-// Each upload returns { id } — poll get<Kind>Upload(id) until status !== 'PROCESSING'
+// Each upload returns { id } — poll get<Kind>Upload(id) until status !== 'Ready' ('Done' = applied)
 ```
 
 ### `shipping` — cargo firms + shipping profiles (4 methods)

@@ -185,11 +185,11 @@ const { id: priceUploadId } = await client.listings.uploadPrice([
 ]);
 ```
 
-Each upload returns `{ id }` straight away. That means **accepted, not applied**: Hepsiburada processes the batch in the background. Poll the matching `get*Upload(id)` until the status leaves `'PROCESSING'`:
+Each upload returns `{ id }` straight away. That means **accepted, not applied**: Hepsiburada processes the batch in the background. Poll the matching `get*Upload(id)` until the status leaves `'Ready'` (queued); `'Done'` means applied, and the listing shows the new values only then:
 
 ```ts
 let stockResult = await client.listings.getStockUpload(stockUploadId);
-while (stockResult.status === 'PROCESSING') {
+while (stockResult.status === 'Ready') {
   await new Promise((r) => setTimeout(r, 5000));
   stockResult = await client.listings.getStockUpload(stockUploadId);
 }
