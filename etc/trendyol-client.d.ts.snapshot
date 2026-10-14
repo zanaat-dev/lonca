@@ -449,16 +449,9 @@ interface ExportProduct {
  * Max 5000 items per call.
  */
 type ExportProductInput = Record<string, unknown>;
-/**
- * One row of `exportCenter.updatePrices()`: `{ barcode, buyingPrice, rrp? }`
- * per the portal ("autoft-update-prices"; `barcode` and `buyingPrice` are
- * required).
- */
+/** Payload for `exportCenter.updatePrices()` — `{ barcode, salePrice, listPrice, ... }` per docs. */
 type ExportPriceUpdateInput = Record<string, unknown>;
-/**
- * One row of `exportCenter.updateStocks()`: `{ barcode, stock }` per the
- * portal ("autoft-update-stocks"; both required).
- */
+/** Payload for `exportCenter.updateStocks()` — `{ barcode, quantity, ... }` per docs. */
 type ExportStockUpdateInput = Record<string, unknown>;
 /** Returned by every async batch endpoint — poll status via `getBatchStatus(batchId)`. */
 interface ExportBatchAcceptedResponse {
@@ -598,8 +591,6 @@ declare class ExportCenterResource {
     /**
      * Update Export Center stocks. Returns a `batchId`. Sellers using
      * Trendyol's shared inventory cannot use this endpoint (per portal docs).
-     * Sent as `{ stocks: [{ barcode, stock }] }`, the body the portal documents
-     * (it used to go out as `{ items }`).
      *
      * @throws {ValidationError} when `items` is empty / oversized.
      */
@@ -2543,11 +2534,10 @@ declare class TestOrdersResource {
     create(input: CreateTestOrderInput): Promise<CreateTestOrderResult>;
     /**
      * Push a test shipment package to the given status. Trendyol's
-     * `status-updates-on-test-orders` doc requires a `{ lines, status }` body
-     * (`params` optional) — pass `options.lines`. Without `options` the body
-     * stays `{ status }` alone as before, which the reference does not allow;
-     * prefer the three-argument form. Documented response is a bare `200 OK`
-     * (no body), hence `MutationResult`.
+     * `status-updates-on-test-orders` doc shows a `{ lines, params, status }`
+     * body — pass `options` to send the documented `lines` / `params`;
+     * omitted, the body stays `{ status }` alone as before. Documented
+     * response is a bare `200 OK` (no body), hence `MutationResult`.
      */
     updateStatus(packageId: string | number, status: TestOrderStatus, options?: UpdateTestOrderStatusOptions): Promise<MutationResult>;
     /**
@@ -2558,11 +2548,6 @@ declare class TestOrdersResource {
      * is a bare `200 OK` (no body), hence `MutationResult`.
      */
     setClaimsWaitingInAction(input?: SetClaimsWaitingInActionInput): Promise<MutationResult>;
-    /**
-     * The test-order references require a `sellerID` header (`createTestOrder`
-     * has no seller id in its path at all).
-     */
-    private sellerHeader;
 }
 
 /**
