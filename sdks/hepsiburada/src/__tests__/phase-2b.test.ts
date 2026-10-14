@@ -407,14 +407,14 @@ describe('CategoriesResource — Phase 2b getAttributeValues', () => {
 describe('ProductUpdatesResource', () => {
   const r = (t: HepsiburadaTransport) => new ProductUpdatesResource(t, fastLimiter());
 
-  it('importUpdates POSTs raw array body to /ticket-api/api/integrator/import on mpop', async () => {
+  it('importUpdates POSTs a multipart file to /ticket-api/api/integrator/import on mpop', async () => {
     const transport = mockTransport({ trackingId: 'TRK-U1' });
-    const receipt = await r(transport).importUpdates([{ hbSku: 'HB-1', fields: {} }]);
+    const receipt = await r(transport).importUpdates([{ hbSku: 'HB-1', productName: 'Yeni' }]);
     const call = (transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0];
     expect(call.method).toBe('POST');
     expect(call.service).toBe('mpop');
     expect(call.path).toBe('/ticket-api/api/integrator/import');
-    expect(call.body).toEqual([{ hbSku: 'HB-1', fields: {} }]);
+    expect(call.body).toBeInstanceOf(FormData);
     expect(receipt.trackingId).toBe('TRK-U1');
   });
 

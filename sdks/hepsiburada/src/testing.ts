@@ -8,7 +8,7 @@ export interface FakeHepsiburadaRequest {
   path: string;
   /** Parsed query parameters. */
   query: URLSearchParams;
-  /** Parsed JSON request body, when present. */
+  /** Parsed JSON request body, when present; a multipart body as its `FormData`. */
   body?: unknown;
 }
 
@@ -79,6 +79,7 @@ function defaultResponse(): unknown {
 }
 
 function parseBody(body: unknown): unknown {
+  if (body instanceof FormData) return body;
   if (typeof body !== 'string') return undefined;
   try {
     return JSON.parse(body);

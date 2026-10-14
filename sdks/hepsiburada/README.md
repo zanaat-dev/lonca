@@ -441,10 +441,12 @@ await client.catalog.getDeleteProcess(trackingId);
 ### `productUpdates` — async update flow (3 methods)
 
 ```ts
+// Product content (name, description, images, video, attributes) — not price or stock.
+// Send only what changes; '' clears an attribute.
 const { trackingId } = await client.productUpdates.importUpdates([
-  { hbSku: 'HB-1', fields: { price: 249.0 } },
+  { hbSku: 'HB-1', productName: 'Yeni ürün adı', attributes: { renk_variant_property: 'Siyah' } },
 ]);
-await client.productUpdates.getUpdateStatus(trackingId);
+const status = await client.productUpdates.getUpdateStatus(trackingId); // success, code, message, rows
 await client.productUpdates.getUpdateHistory('HB-1');
 ```
 
