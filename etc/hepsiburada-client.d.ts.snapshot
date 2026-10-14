@@ -1361,7 +1361,10 @@ type OrdersPage<T = Order> = OffsetPage<T>;
 interface ListOrdersParams {
     /** Zero-based offset. Default: 0. */
     offset?: number;
-    /** Page size. Default: 100 in SDK, up to 1000 server-side. */
+    /**
+     * Page size. The order lists (`list`, `listCancelled`, …) default to 100,
+     * Hepsiburada's maximum there; the package lists send no default.
+     */
     limit?: number;
     /**
      * Filter by status (open enum: `Open`, `Shipped`, `Delivered`, `Cancelled`, …).
