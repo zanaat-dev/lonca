@@ -86,12 +86,12 @@ const { id } = await client.listings.uploadPrice([
   { hepsiburadaSku: 'HB-2', price: 249.0 },
 ]);
 
-// `Ready` = queued, `Done` = applied (the listing shows the new price only then)
+// `Ready` = queued, `InProgress` = being applied, `Done` = applied (the listing shows the new price only then)
 let result;
 do {
   await new Promise((r) => setTimeout(r, 2000));
   result = await client.listings.getPriceUpload(id);
-} while (result.status === 'Ready');
+} while (result.status === 'Ready' || result.status === 'InProgress');
 
 // Floor / ceiling rejections (price-specific)
 for (const v of result.priceValidations ?? []) {
@@ -307,7 +307,7 @@ await client.listings.uploadShippingInfo([{ hepsiburadaSku: 'HB-1', dispatchTime
 await client.listings.uploadAdditionalInfo([
   { hepsiburadaSku: 'HB-1', customizationTextLength: 12 },
 ]);
-// Each upload returns { id } — poll get<Kind>Upload(id) until status !== 'Ready' ('Done' = applied)
+// Each upload returns { id } — poll get<Kind>Upload(id) while status is 'Ready' or 'InProgress' ('Done' = applied)
 ```
 
 ### `shipping` — cargo firms + shipping profiles (4 methods)
@@ -315,9 +315,13 @@ await client.listings.uploadAdditionalInfo([
 ```ts
 const firms = await client.shipping.getCargoFirms();
 const profiles = await client.shipping.listProfiles();
-// Both resolve to MutationResult ({ raw }) — the portal publishes no response schema
-await client.shipping.createProfile({ profileName: 'Express', cargoFirms: 'ARAS,MNG' });
-await client.shipping.updateProfile({ profileName: 'Express', cargoFirms: 'ARAS' });
+// Both resolve to MutationResult ({ raw }) — the portal publishes no response schema.
+// The SDK adds your merchantId to the body; an update needs the profile id (raw.id from listProfiles).
+const created = await client.shipping.createProfile({ name: 'Express' }); // raw.data = new profile id
+await client.shipping.updateProfile({
+  id: (created.raw as { data: string }).data,
+  name: 'Express 2',
+});
 ```
 
 ### `orders` — full OMS surface (28 methods)

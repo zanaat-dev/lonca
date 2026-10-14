@@ -173,6 +173,9 @@ importers:
       '@lonca/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@lonca/hepsiburada':
+        specifier: workspace:*
+        version: link:../../sdks/hepsiburada
       '@lonca/n11':
         specifier: workspace:*
         version: link:../../sdks/n11

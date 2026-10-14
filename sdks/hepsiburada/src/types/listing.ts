@@ -190,13 +190,16 @@ export interface UploadReceipt {
 
 /**
  * Lifecycle status of an upload. Hepsiburada answers `Ready` while the upload
- * is queued and `Done` once it is applied (stock and price uploads on SIT,
- * 2026-10-14: `Ready` right after the upload, `Done` seconds later, the
- * listing showing the new values only then). Poll until it is not `Ready`.
- * The upper-case values are kept for compatibility; they were not observed.
+ * is queued, `InProgress` while it is being applied and `Done` once it is
+ * applied (stock and price uploads on SIT, 2026-10-14: `Ready` right after the
+ * upload, `Done` seconds later, the listing showing the new values only then;
+ * an inventory upload answered `InProgress` in between). Poll while it is
+ * `Ready` or `InProgress`. The upper-case values are kept for compatibility;
+ * they were not observed.
  */
 export type UploadStatus =
   | 'Ready'
+  | 'InProgress'
   | 'Done'
   | 'PROCESSING'
   | 'COMPLETED'

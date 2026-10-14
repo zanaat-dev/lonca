@@ -28,6 +28,12 @@ export function mapHttpError(status: number, body: unknown, retryAfterMs?: numbe
   const data = { body } as Record<string, unknown>;
   const issues = normalizeErrorIssues(body);
 
+  // The order service answers `403 { code: 1005, message: "MerchantHasNoLine : <n>" }`
+  // for an order number the merchant does not have (verified on SIT,
+  // 2026-10-14): a lookup miss, not a credentials problem.
+  if (status === 403 && /^MerchantHasNo/.test(message)) {
+    return new NotFoundError({ message, status, cause, data, issues });
+  }
   if (status === 401 || status === 403) {
     // Use fixed, safe messages rather than the raw server `message`: Hepsiburada's
     // 403 body varies by service and can echo request context, so it stays on
