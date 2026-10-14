@@ -48,9 +48,11 @@ export type CreateQuestionInput = {
  * `multipart/form-data` with PascalCase part names.
  */
 export type AnswerQuestionInput = {
-  /** Answer text — at most 2000 characters per spec. */
+  /** Answer text — required, at most 2000 characters per spec. */
   Answer?: string;
-  /** Files to send along with the answer. */
+  /** Same as `Answer` (sent as the `Answer` part). */
+  answer?: string;
+  /** Files to send along with the answer (`Blob` / `File`). */
   Files?: unknown[];
 } & Record<string, unknown>;
 

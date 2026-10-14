@@ -522,6 +522,10 @@ interface CatalogTrackingReceipt {
 interface CatalogProductStatus {
     trackingId?: string;
     status?: string;
+    /** Envelope result: `false` when Hepsiburada rejected the request itself. */
+    success?: boolean;
+    /** Hepsiburada's result code (`0` on success). */
+    code?: number;
     message?: string;
     /** Per-row results when the upload contained multiple products. */
     rows?: Array<Record<string, unknown>>;
@@ -537,9 +541,26 @@ interface TrackingIdHistoryEntry {
     raw: Record<string, unknown>;
 }
 /**
- * Body for `catalog.uploadProductViaFile()` — an array of product objects
- * (one per SKU). Hepsiburada's portal documents the per-field rules
- * under "Ürün Bilgisi Gönderme".
+ * One product for `catalog.uploadProductViaFile()`, as the portal documents
+ * the upload file ("Ürün Bilgisi Gönderme"). Attribute keys are Hepsiburada's
+ * own (`merchantSku`, `VaryantGroupID`, `Barcode`, `UrunAdi`, `UrunAciklamasi`,
+ * `Marka`, `GarantiSuresi`, `kg`, `tax_vat_rate`, `price`, `stock`,
+ * `Image1`–`Image10`, `Video1`, plus the category's attributes such as
+ * `renk_variant_property`); `catalog.getAttributes` lists them per category.
+ */
+interface CatalogUploadProduct {
+    /** A leaf category id; anything else fails the row ("Category is not a leaf category"). */
+    categoryId: number;
+    /** Merchant id; the SDK fills in the client's merchant id when omitted. */
+    merchant?: string;
+    attributes: {
+        merchantSku: string;
+    } & Record<string, string | number>;
+}
+/**
+ * Body for `catalog.uploadProductViaFile()`.
+ *
+ * @deprecated Kept for compatibility; type the rows as {@link CatalogUploadProduct}.
  */
 type UploadProductsInput = unknown[];
 /** Body for `catalog.uploadFastListing()`. */
@@ -626,12 +647,19 @@ declare class CatalogResource {
     /** Get the upload-history feed for the merchant's tracking ids. */
     getTrackingIdHistory(): Promise<TrackingIdHistoryEntry[]>;
     /**
-     * Upload one or more products as JSON. Returns a `trackingId` you can
-     * poll via `getProductStatus(trackingId)`.
+     * Upload one or more products. Returns a `trackingId` you can poll via
+     * `getProductStatus(trackingId)`; per-product results (`importStatus`,
+     * `importMessages`) arrive in its `rows`.
      *
-     * @throws {ValidationError} when `products` is empty.
+     * Hepsiburada takes the products as a JSON file (an array) in the multipart
+     * field `file`; the SDK builds that file and fills in `merchant` from the
+     * client when a row has none. (A plain JSON body is answered with a 500 —
+     * verified on SIT, 2026-10-14.)
+     *
+     * @throws {ValidationError} when `products` is empty, or a row has no
+     *   `categoryId` or `attributes.merchantSku` (checked before sending).
      */
-    uploadProductViaFile(products: UploadProductsInput): Promise<CatalogTrackingReceipt>;
+    uploadProductViaFile(products: readonly CatalogUploadProduct[] | UploadProductsInput): Promise<CatalogTrackingReceipt>;
     /** Upload a fast-listing payload (Hepsiburada's "Hızlı Ürün Yükleme" flow). */
     uploadFastListing(input: FastListingInput): Promise<CatalogTrackingReceipt>;
     /** Approve a product Hepsiburada has pre-matched to an existing catalog entry. */
@@ -2037,9 +2065,11 @@ type CreateQuestionInput = {
  * `multipart/form-data` with PascalCase part names.
  */
 type AnswerQuestionInput = {
-    /** Answer text — at most 2000 characters per spec. */
+    /** Answer text — required, at most 2000 characters per spec. */
     Answer?: string;
-    /** Files to send along with the answer. */
+    /** Same as `Answer` (sent as the `Answer` part). */
+    answer?: string;
+    /** Files to send along with the answer (`Blob` / `File`). */
     Files?: unknown[];
 } & Record<string, unknown>;
 /** Body for `questions.reject()` — the spec's `RejectIssueViewModel`. */
@@ -2162,7 +2192,18 @@ declare class QuestionsResource {
      * rather than modelled as a field.
      */
     create(input: CreateQuestionInput): Promise<MutationResult>;
-    /** Answer a question. Resolves to a `MutationResult` (`201`, bare string on `raw`). */
+    /**
+     * Answer a question. Resolves to a `MutationResult` (`201`, the new
+     * conversation id as a bare string on `raw`).
+     *
+     * Sent as `multipart/form-data` with the parts `Answer` and `Files`, as the
+     * spec documents; a JSON body is refused with `422` "Bu alan geçersizdir"
+     * (verified on SIT, 2026-10-14).
+     *
+     * @throws {ValidationError} when `Answer` is empty or longer than 2000
+     *   characters, or a `Files` entry is not a `Blob` / `File` (checked before
+     *   sending).
+     */
     answer(number: string, input: AnswerQuestionInput): Promise<MutationResult>;
     /** Reject a question (mark as inappropriate / spam). Resolves to a `MutationResult` (`201`, bare string on `raw`). */
     reject(number: string, input: RejectQuestionInput): Promise<MutationResult>;
@@ -2702,4 +2743,4 @@ interface HepsiburadaClient {
  */
 declare function createHepsiburadaClient(opts: CreateClientOptions): HepsiburadaClient;
 
-export { type AccountingAmount, AccountingResource, type AccountingTransaction, type AdditionalInfoUploadItem, type AnswerQuestionInput, type BulkUnlockInput, type BuyboxOrderRow, type CancelDiscountInput, type CancelLineItemInput, type CargoCompanyOption, type CargoFirm, type CatalogAttributePair, type CatalogField, type CatalogMatchedHbProduct, type CatalogPage, type CatalogPagingParams, type CatalogProduct, type CatalogProductAttribute, type CatalogProductLifecycleStatus, type CatalogProductStatus, CatalogResource, type CatalogResult, type CatalogTaskDetail, type CatalogTrackingReceipt, type CatalogValidationResult, CategoriesResource, type Category, type CategoryAttribute, type CategoryAttributeValue, type ChangeCargoCompanyInput, type CheckProductStatusInput, type Claim, type ClaimActionInput, ClaimsResource, type ClaimStatus, type CommissionRow, type CreateClaimInput, type CreateClientOptions, createHepsiburadaClient, type CreateListingUpdateRequestInput, type CreateListingUpdateRequestItem, type CreatePackagesInput, type CreatePercentDiscountInput, type CreateQuestionInput, type CreateTestOrderInput, type CreateTlDiscountInput, type CreateXyDiscountInput, type CustomizableProperty, type DeleteBySkuInput, type Discount, type DiscountBudgets, type DiscountLimits, type DiscountReceipt, type FastListingInput, type GetAttributesParams, hepsiburadaCapabilities, type HepsiburadaCapabilities, type HepsiburadaClient, type HepsiburadaEnvironment, type InventoryUploadItem, type InvoiceLinkInput, type InvoiceLinkItem, type LaborCostInput, type ListCatalogProductsParams, type ListCategoriesParams, type ListClaimsByStatusParams, type ListClaimsParams, type ListDiscountsParams, type Listing, type ListingPricing, type ListingsPage, ListingsResource, type ListingUpdateRequestDetail, type ListingUpdateRequestItem, type ListingUpdateRequestReceipt, type ListingUpdateRequestSearchInput, type ListingUpdateRequestSummary, type ListListingsParams, type ListOrdersParams, type ListPackagesParams, type ListProductsByStatusParams, type ListQuestionsParams, type ListTransactionsParams, type MerchantSkuGroup, type OpenPurchaseOrder, type OpenPurchaseOrderSearchInput, type OpenPurchaseOrderStatus, type Order, type OrderPrice, type OrdersPage, OrdersResource, type PackageLabel, type PackageReceipt, type PackageStatusInput, type ParcelInfoInput, type PreMatchActionInput, type PriceUploadItem, type PriceUploadResult, type PriceValidation, type ProductUpdateHistoryEntry, type ProductUpdateInput, type ProductUpdateItem, type ProductUpdateReceipt, ProductUpdatesResource, type ProductUpdateStatus, type PromotionCategory, PromotionsResource, type PurchaseOrderLineRef, type PurchaseOrderType, type Question, type QuestionConversation, type QuestionCountSummary, type QuestionProduct, QuestionsResource, type QuestionSubject, type RejectQuestionInput, type ShippingInfoUploadItem, type ShippingPackage, type ShippingProfile, type ShippingProfileInput, ShippingResource, type SplitPackageInput, type StockUploadItem, type SupplierApprovalStatus, type SupplierEnvelope, type SupplierListing, type SupplierListingSearchInput, type SupplierListingStatus, type SupplierListingType, type SupplierSearchResult, SuppliersResource, TestOrdersResource, type TrackingIdHistoryEntry, type UpdateListingInput, type UploadError, type UploadProductsInput, type UploadReceipt, type UploadResult, type UploadStatus, type WarehouseInput };
+export { type AccountingAmount, AccountingResource, type AccountingTransaction, type AdditionalInfoUploadItem, type AnswerQuestionInput, type BulkUnlockInput, type BuyboxOrderRow, type CancelDiscountInput, type CancelLineItemInput, type CargoCompanyOption, type CargoFirm, type CatalogAttributePair, type CatalogField, type CatalogMatchedHbProduct, type CatalogPage, type CatalogPagingParams, type CatalogProduct, type CatalogProductAttribute, type CatalogProductLifecycleStatus, type CatalogProductStatus, CatalogResource, type CatalogResult, type CatalogTaskDetail, type CatalogTrackingReceipt, type CatalogUploadProduct, type CatalogValidationResult, CategoriesResource, type Category, type CategoryAttribute, type CategoryAttributeValue, type ChangeCargoCompanyInput, type CheckProductStatusInput, type Claim, type ClaimActionInput, ClaimsResource, type ClaimStatus, type CommissionRow, type CreateClaimInput, type CreateClientOptions, createHepsiburadaClient, type CreateListingUpdateRequestInput, type CreateListingUpdateRequestItem, type CreatePackagesInput, type CreatePercentDiscountInput, type CreateQuestionInput, type CreateTestOrderInput, type CreateTlDiscountInput, type CreateXyDiscountInput, type CustomizableProperty, type DeleteBySkuInput, type Discount, type DiscountBudgets, type DiscountLimits, type DiscountReceipt, type FastListingInput, type GetAttributesParams, hepsiburadaCapabilities, type HepsiburadaCapabilities, type HepsiburadaClient, type HepsiburadaEnvironment, type InventoryUploadItem, type InvoiceLinkInput, type InvoiceLinkItem, type LaborCostInput, type ListCatalogProductsParams, type ListCategoriesParams, type ListClaimsByStatusParams, type ListClaimsParams, type ListDiscountsParams, type Listing, type ListingPricing, type ListingsPage, ListingsResource, type ListingUpdateRequestDetail, type ListingUpdateRequestItem, type ListingUpdateRequestReceipt, type ListingUpdateRequestSearchInput, type ListingUpdateRequestSummary, type ListListingsParams, type ListOrdersParams, type ListPackagesParams, type ListProductsByStatusParams, type ListQuestionsParams, type ListTransactionsParams, type MerchantSkuGroup, type OpenPurchaseOrder, type OpenPurchaseOrderSearchInput, type OpenPurchaseOrderStatus, type Order, type OrderPrice, type OrdersPage, OrdersResource, type PackageLabel, type PackageReceipt, type PackageStatusInput, type ParcelInfoInput, type PreMatchActionInput, type PriceUploadItem, type PriceUploadResult, type PriceValidation, type ProductUpdateHistoryEntry, type ProductUpdateInput, type ProductUpdateItem, type ProductUpdateReceipt, ProductUpdatesResource, type ProductUpdateStatus, type PromotionCategory, PromotionsResource, type PurchaseOrderLineRef, type PurchaseOrderType, type Question, type QuestionConversation, type QuestionCountSummary, type QuestionProduct, QuestionsResource, type QuestionSubject, type RejectQuestionInput, type ShippingInfoUploadItem, type ShippingPackage, type ShippingProfile, type ShippingProfileInput, ShippingResource, type SplitPackageInput, type StockUploadItem, type SupplierApprovalStatus, type SupplierEnvelope, type SupplierListing, type SupplierListingSearchInput, type SupplierListingStatus, type SupplierListingType, type SupplierSearchResult, SuppliersResource, TestOrdersResource, type TrackingIdHistoryEntry, type UpdateListingInput, type UploadError, type UploadProductsInput, type UploadReceipt, type UploadResult, type UploadStatus, type WarehouseInput };

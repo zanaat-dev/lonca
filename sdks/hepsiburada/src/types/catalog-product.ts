@@ -272,6 +272,10 @@ export interface CatalogTrackingReceipt {
 export interface CatalogProductStatus {
   trackingId?: string;
   status?: string;
+  /** Envelope result: `false` when Hepsiburada rejected the request itself. */
+  success?: boolean;
+  /** Hepsiburada's result code (`0` on success). */
+  code?: number;
   message?: string;
   /** Per-row results when the upload contained multiple products. */
   rows?: Array<Record<string, unknown>>;
@@ -289,9 +293,25 @@ export interface TrackingIdHistoryEntry {
 }
 
 /**
- * Body for `catalog.uploadProductViaFile()` — an array of product objects
- * (one per SKU). Hepsiburada's portal documents the per-field rules
- * under "Ürün Bilgisi Gönderme".
+ * One product for `catalog.uploadProductViaFile()`, as the portal documents
+ * the upload file ("Ürün Bilgisi Gönderme"). Attribute keys are Hepsiburada's
+ * own (`merchantSku`, `VaryantGroupID`, `Barcode`, `UrunAdi`, `UrunAciklamasi`,
+ * `Marka`, `GarantiSuresi`, `kg`, `tax_vat_rate`, `price`, `stock`,
+ * `Image1`–`Image10`, `Video1`, plus the category's attributes such as
+ * `renk_variant_property`); `catalog.getAttributes` lists them per category.
+ */
+export interface CatalogUploadProduct {
+  /** A leaf category id; anything else fails the row ("Category is not a leaf category"). */
+  categoryId: number;
+  /** Merchant id; the SDK fills in the client's merchant id when omitted. */
+  merchant?: string;
+  attributes: { merchantSku: string } & Record<string, string | number>;
+}
+
+/**
+ * Body for `catalog.uploadProductViaFile()`.
+ *
+ * @deprecated Kept for compatibility; type the rows as {@link CatalogUploadProduct}.
  */
 export type UploadProductsInput = unknown[];
 

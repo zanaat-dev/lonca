@@ -123,18 +123,51 @@ export class QuestionsResource {
     };
   }
 
-  /** Answer a question. Resolves to a `MutationResult` (`201`, bare string on `raw`). */
+  /**
+   * Answer a question. Resolves to a `MutationResult` (`201`, the new
+   * conversation id as a bare string on `raw`).
+   *
+   * Sent as `multipart/form-data` with the parts `Answer` and `Files`, as the
+   * spec documents; a JSON body is refused with `422` "Bu alan geçersizdir"
+   * (verified on SIT, 2026-10-14).
+   *
+   * @throws {ValidationError} when `Answer` is empty or longer than 2000
+   *   characters, or a `Files` entry is not a `Blob` / `File` (checked before
+   *   sending).
+   */
   async answer(number: string, input: AnswerQuestionInput): Promise<MutationResult> {
     if (!number) {
       throw new ValidationError({ message: 'questions.answer: number is required' });
     }
     this.assertInput(input, 'questions.answer');
+    // `answer` (lower case) is accepted too: earlier docs showed it.
+    const { Answer, answer: lower, Files: files, ...rest } = input;
+    const answer = Answer ?? lower;
+    if (typeof answer !== 'string' || answer.trim() === '' || answer.length > 2000) {
+      throw new ValidationError({
+        message: 'questions.answer: Answer must be 1-2000 characters',
+      });
+    }
+    const body = new FormData();
+    body.append('Answer', answer);
+    for (const file of files ?? []) {
+      if (!(file instanceof Blob)) {
+        throw new ValidationError({
+          message: 'questions.answer: every Files entry must be a Blob or File',
+        });
+      }
+      body.append('Files', file);
+    }
+    // Any other part the caller adds goes along as text.
+    for (const [name, value] of Object.entries(rest)) {
+      if (value !== undefined && value !== null) body.append(name, String(value));
+    }
     return {
       raw: await this.transport.request<unknown>({
         method: 'POST',
         service: SERVICE,
         path: `${BASE_PATH}/${encodeURIComponent(number)}/answer`,
-        body: input,
+        body,
         headers: this.merchantHeader(),
         rateLimiter: this.limiter,
       }),

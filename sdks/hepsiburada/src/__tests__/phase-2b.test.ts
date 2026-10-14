@@ -309,14 +309,58 @@ describe('CatalogResource — Phase 2b mutations + tracking', () => {
     await expect(r(mockTransport()).uploadProductViaFile([])).rejects.toThrow(/non-empty/);
   });
 
-  it('uploadProductViaFile POSTs raw array body to /import + returns trackingId', async () => {
-    const transport = mockTransport({ trackingId: 'TRK-1' });
-    const receipt = await r(transport).uploadProductViaFile([{ categoryId: 1 }]);
+  it('uploadProductViaFile POSTs the products as a JSON file in the multipart `file` field', async () => {
+    // The SIT answer: the mpop envelope with the tracking id under `data`.
+    const transport = mockTransport({
+      success: true,
+      code: 0,
+      version: 1,
+      message: null,
+      data: { trackingId: 'TRK-1' },
+    });
+    const receipt = await r(transport).uploadProductViaFile([
+      { categoryId: 18021982, attributes: { merchantSku: 'SKU-1', UrunAdi: 'Ürün' } },
+      { categoryId: 18021982, merchant: 'OTHER', attributes: { merchantSku: 'SKU-2' } },
+    ]);
     const call = (transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0];
     expect(call.method).toBe('POST');
     expect(call.path).toBe('/product/api/products/import');
-    expect(call.body).toEqual([{ categoryId: 1 }]);
+    expect(call.body).toBeInstanceOf(FormData);
+    const file = (call.body as FormData).get('file') as File;
+    expect(file.name).toBe('integrator.json');
+    // `merchant` defaults to the client's merchant id; one the caller sets is kept.
+    expect(JSON.parse(await file.text())).toEqual([
+      {
+        categoryId: 18021982,
+        merchant: 'M-2b',
+        attributes: { merchantSku: 'SKU-1', UrunAdi: 'Ürün' },
+      },
+      { categoryId: 18021982, merchant: 'OTHER', attributes: { merchantSku: 'SKU-2' } },
+    ]);
     expect(receipt.trackingId).toBe('TRK-1');
+  });
+
+  it.each([
+    ['no categoryId', [{ attributes: { merchantSku: 'SKU-1' } }], /needs a categoryId/],
+    ['no merchantSku', [{ categoryId: 1, attributes: {} }], /needs attributes.merchantSku/],
+    ['no attributes', [{ categoryId: 1 }], /needs attributes.merchantSku/],
+    ['a null row', [null], /needs a categoryId/],
+  ])('uploadProductViaFile rejects a row with %s before sending', async (_label, rows, message) => {
+    const transport = mockTransport();
+    await expect(r(transport).uploadProductViaFile(rows as unknown[])).rejects.toThrow(message);
+    expect(transport.request).not.toHaveBeenCalled();
+  });
+
+  it('getProductStatus maps the envelope result and the per-product rows (SIT shape)', async () => {
+    const row = {
+      merchantSku: 'SKU-1',
+      importStatus: 'FAILED',
+      importMessages: [{ severity: 'ERROR', message: 'Category is not a leaf category' }],
+    };
+    const status = await r(
+      mockTransport({ success: true, code: 0, message: null, data: [row] }),
+    ).getProductStatus('TRK-1');
+    expect(status).toMatchObject({ success: true, code: 0, rows: [row] });
   });
 
   it.each([
@@ -604,14 +648,48 @@ describe('QuestionsResource', () => {
   });
 
   it.each([
-    ['answer', '/api/v1.0/issues/Q-1/answer'],
-    ['reject', '/api/v1.0/issues/Q-1/reject'],
-  ] as const)('%s POSTs to %s', async (method, path) => {
+    ['answer', '/api/v1.0/issues/Q-1/answer', { Answer: 'Evet' }],
+    ['reject', '/api/v1.0/issues/Q-1/reject', { rejectReason: 'spam' }],
+  ] as const)('%s POSTs to %s', async (method, path, body) => {
     const transport = mockTransport({});
     await (
       r(transport) as unknown as Record<string, (id: string, body: unknown) => Promise<unknown>>
-    )[method]!('Q-1', { reason: 'spam' });
+    )[method]!('Q-1', body);
     expect((transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0].path).toBe(path);
+  });
+
+  it('answer sends multipart `Answer` and `Files` parts with the merchantId header', async () => {
+    const transport = mockTransport('6acf35064d6bcea1c68fdd7e');
+    const photo = new File(['png'], 'etiket.png', { type: 'image/png' });
+    const result = await r(transport).answer('Q-1', { Answer: 'Stokta var.', Files: [photo] });
+    const call = (transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0];
+    expect(call.method).toBe('POST');
+    expect(call.headers).toEqual({ merchantId: 'M-2b' });
+    expect(call.body).toBeInstanceOf(FormData);
+    const form = call.body as FormData;
+    expect(form.get('Answer')).toBe('Stokta var.');
+    expect((form.getAll('Files')[0] as File).name).toBe('etiket.png');
+    expect(result.raw).toBe('6acf35064d6bcea1c68fdd7e');
+  });
+
+  it('answer takes the lower-case `answer` key as `Answer` and sends extra keys as text parts', async () => {
+    const transport = mockTransport('ok');
+    await r(transport).answer('Q-1', { answer: 'Evet', note: 7 });
+    const form = (transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0].body as FormData;
+    expect(form.get('Answer')).toBe('Evet');
+    expect(form.has('answer')).toBe(false);
+    expect(form.get('note')).toBe('7');
+  });
+
+  it.each([
+    ['no answer', {}, /1-2000 characters/],
+    ['a blank answer', { Answer: '  ' }, /1-2000 characters/],
+    ['a 2001-character answer', { Answer: 'x'.repeat(2001) }, /1-2000 characters/],
+    ['a non-Blob file', { Answer: 'Evet', Files: ['etiket.png'] }, /Blob or File/],
+  ])('answer rejects %s before sending', async (_label, input, message) => {
+    const transport = mockTransport();
+    await expect(r(transport).answer('Q-1', input)).rejects.toThrow(message);
+    expect(transport.request).not.toHaveBeenCalled();
   });
 
   it('getCountByStatus surfaces the flat per-status body as byStatus', async () => {
@@ -633,7 +711,7 @@ describe('QuestionsResource', () => {
 
   it('throws on missing question number / falsy input', async () => {
     await expect(r(mockTransport()).get('')).rejects.toThrow(/number/);
-    await expect(r(mockTransport()).answer('', { a: 1 })).rejects.toThrow(/number/);
+    await expect(r(mockTransport()).answer('', { Answer: 'x' })).rejects.toThrow(/number/);
     await expect(
       r(mockTransport()).answer('Q-1', null as unknown as Record<string, unknown>),
     ).rejects.toThrow(/input/);
