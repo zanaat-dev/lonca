@@ -23,16 +23,22 @@ const DEFAULT_LIMIT = 100;
 
 interface WireClaim {
   claimNumber?: string;
+  /** The claim number as the list endpoints send it (verified on SIT, 2026-10-14). */
+  number?: string;
   status?: string;
   createdAt?: string;
+  /** The claim date as the list endpoints send it (verified on SIT, 2026-10-14). */
+  claimDate?: string;
   [key: string]: unknown;
 }
 
 function normalizeClaim(node: WireClaim): Claim {
   const out: Claim = { raw: node as Record<string, unknown> };
-  if (node.claimNumber !== undefined) out.claimNumber = node.claimNumber;
+  const claimNumber = node.claimNumber ?? node.number;
+  if (claimNumber !== undefined) out.claimNumber = claimNumber;
   if (node.status !== undefined) out.status = node.status;
-  if (node.createdAt !== undefined) out.createdAt = node.createdAt;
+  const createdAt = node.createdAt ?? node.claimDate;
+  if (createdAt !== undefined) out.createdAt = createdAt;
   return out;
 }
 

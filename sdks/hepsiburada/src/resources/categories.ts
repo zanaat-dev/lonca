@@ -140,6 +140,9 @@ export class CategoriesResource {
       path: `${BASE_PATH}/${encodeURIComponent(String(categoryId))}/attribute/${encodeURIComponent(String(attributeId))}/values`,
       rateLimiter: this.limiter,
     });
+    // This endpoint answers a bare `[{ id, value }]` array, without the
+    // `{ success, data }` envelope (verified on SIT, 2026-10-14).
+    if (Array.isArray(data)) return data.map(normalizeAttributeValue);
     const result = normalizeCatalogResult<unknown>(data);
     if (!result.success) {
       throw new ValidationError({
@@ -239,7 +242,9 @@ function normalizeAttributeValue(row: unknown): CategoryAttributeValue {
   const r = (row && typeof row === 'object' ? row : {}) as Record<string, unknown>;
   const out: CategoryAttributeValue = { raw: r };
   if (typeof r.id === 'number' || typeof r.id === 'string') out.id = r.id;
-  if (typeof r.name === 'string') out.name = r.name;
+  // The wire names the value `value` (verified on SIT, 2026-10-14).
+  const name = r.name ?? r.value;
+  if (typeof name === 'string') out.name = name;
   if (typeof r.externalName === 'string') out.externalName = r.externalName;
   return out;
 }

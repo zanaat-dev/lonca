@@ -818,6 +818,7 @@ interface CategoryAttribute {
 /** One attribute-value option (for enum-style attributes). */
 interface CategoryAttributeValue {
     id?: number | string;
+    /** The value's label (the wire's `value`, or `name` where a row carries one). */
     name?: string;
     externalName?: string;
     /** Untouched raw row. */
@@ -1166,12 +1167,14 @@ interface UploadReceipt {
 }
 /**
  * Lifecycle status of an upload. Hepsiburada answers `Ready` while the upload
- * is queued and `Done` once it is applied (stock and price uploads on SIT,
- * 2026-10-14: `Ready` right after the upload, `Done` seconds later, the
- * listing showing the new values only then). Poll until it is not `Ready`.
- * The upper-case values are kept for compatibility; they were not observed.
+ * is queued, `InProgress` while it is being applied and `Done` once it is
+ * applied (stock and price uploads on SIT, 2026-10-14: `Ready` right after the
+ * upload, `Done` seconds later, the listing showing the new values only then;
+ * an inventory upload answered `InProgress` in between). Poll while it is
+ * `Ready` or `InProgress`. The upper-case values are kept for compatibility;
+ * they were not observed.
  */
-type UploadStatus = 'Ready' | 'Done' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'COMPLETED_WITH_ERRORS' | (string & {});
+type UploadStatus = 'Ready' | 'InProgress' | 'Done' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'COMPLETED_WITH_ERRORS' | (string & {});
 /** Per-row failure surfaced by an upload result. */
 interface UploadError {
     /** Index of the failing item in the original request batch. */
@@ -2343,7 +2346,18 @@ interface CargoFirm {
  * any object so future field additions don't require a release bump.
  */
 interface ShippingProfileInput {
-    /** Merchant-side profile name (caller-defined). */
+    /**
+     * Profile id, as `listProfiles()` returns it (`raw.id`). Required by
+     * `updateProfile()`: without it Hepsiburada answers `500` (verified on SIT,
+     * 2026-10-14).
+     */
+    id?: string;
+    /** Profile name. This is the field Hepsiburada stores (verified on SIT, 2026-10-14). */
+    name?: string;
+    /**
+     * @deprecated Hepsiburada ignores this field (an update carrying only
+     * `profileName` clears the stored name). Use `name`.
+     */
     profileName?: string;
     /** CSV / array of cargo firm codes the profile supports. */
     cargoFirms?: string[] | string;
@@ -2352,6 +2366,7 @@ interface ShippingProfileInput {
 }
 /** One shipping profile row returned by `shipping.listProfiles()`. */
 interface ShippingProfile {
+    /** The profile name (the wire's `name`). */
     profileName?: string;
     /** Untouched raw row — see the portal docs for the documented field set. */
     raw: Record<string, unknown>;
@@ -2386,6 +2401,12 @@ declare class ShippingResource {
     createProfile(input: ShippingProfileInput): Promise<MutationResult>;
     /** Update an existing shipping profile. Same body shape (and `MutationResult`) as `createProfile`. */
     updateProfile(input: ShippingProfileInput): Promise<MutationResult>;
+    /**
+     * The `*ByMerchantId` paths carry no merchant id, so Hepsiburada reads it
+     * from the body and answers `403 "Auth Error"` without it (verified on SIT,
+     * 2026-10-14). A caller-supplied `merchantId` wins.
+     */
+    private profileBody;
 }
 
 /**

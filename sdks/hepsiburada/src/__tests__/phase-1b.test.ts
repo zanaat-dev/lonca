@@ -75,7 +75,7 @@ describe('ShippingResource', () => {
         method: 'POST',
         service: 'shipping',
         path: '/profile/createByMerchantId',
-        body: { profileName: 'New', cargoFirms: 'ARAS,MNG' },
+        body: { merchantId: 'M-42', profileName: 'New', cargoFirms: 'ARAS,MNG' },
       }),
     );
   });

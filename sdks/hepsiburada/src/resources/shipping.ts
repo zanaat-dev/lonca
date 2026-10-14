@@ -31,6 +31,8 @@ interface WireCargoFirm {
 
 interface WireProfile {
   profileName?: string;
+  /** The profile name as `listProfiles` sends it (verified on SIT, 2026-10-14). */
+  name?: string;
   [key: string]: unknown;
 }
 
@@ -89,7 +91,8 @@ export class ShippingResource {
     return rows.map((r) => {
       const row = r as WireProfile;
       const out: ShippingProfile = { raw: row as Record<string, unknown> };
-      if (row.profileName !== undefined) out.profileName = row.profileName;
+      const profileName = row.profileName ?? row.name;
+      if (profileName !== undefined) out.profileName = profileName;
       return out;
     });
   }
@@ -110,7 +113,7 @@ export class ShippingResource {
         method: 'POST',
         service: SERVICE,
         path: `/profile/createByMerchantId`,
-        body: input,
+        body: this.profileBody(input),
         rateLimiter: this.limiter,
       }),
     };
@@ -126,9 +129,18 @@ export class ShippingResource {
         method: 'PUT',
         service: SERVICE,
         path: `/profile/updateByMerchantId`,
-        body: input,
+        body: this.profileBody(input),
         rateLimiter: this.limiter,
       }),
     };
+  }
+
+  /**
+   * The `*ByMerchantId` paths carry no merchant id, so Hepsiburada reads it
+   * from the body and answers `403 "Auth Error"` without it (verified on SIT,
+   * 2026-10-14). A caller-supplied `merchantId` wins.
+   */
+  private profileBody(input: ShippingProfileInput): ShippingProfileInput {
+    return { merchantId: this.transport.merchantId, ...input };
   }
 }

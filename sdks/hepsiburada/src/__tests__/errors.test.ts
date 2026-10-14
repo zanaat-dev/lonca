@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AuthError, ValidationError } from '@lonca/core';
+import { AuthError, NotFoundError, ValidationError } from '@lonca/core';
 import { mapHttpError } from '../errors.js';
 
 describe('hepsiburada mapHttpError', () => {
@@ -19,6 +19,15 @@ describe('hepsiburada mapHttpError', () => {
     );
     // …but stays available for debugging.
     expect(err.data).toEqual({ body: { message: 'merchant 12345 not allowed on /oms/orders' } });
+  });
+
+  it('maps 403 "MerchantHasNoLine" (an order the merchant does not have) to NotFoundError', () => {
+    const body = { code: 1005, message: 'MerchantHasNoLine : 1' };
+    const err = mapHttpError(403, body);
+    expect(err).toBeInstanceOf(NotFoundError);
+    expect(err.status).toBe(403);
+    expect(err.message).toBe('MerchantHasNoLine : 1');
+    expect(err.data).toEqual({ body });
   });
 
   it('normalizes { errors: [{ message, code }] } into issues', () => {

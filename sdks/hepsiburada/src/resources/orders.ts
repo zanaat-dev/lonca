@@ -154,7 +154,9 @@ export class OrdersResource {
       path: `/packages/merchantId/${this.merchantSegment()}/packagenumber/${encodeURIComponent(packageNumber)}`,
       rateLimiter: this.limiter,
     });
-    return normalizePackage(data);
+    // The spec documents one object; the wire sends a one-element array
+    // (verified on SIT, 2026-10-14). Accept both.
+    return normalizePackage(Array.isArray(data) ? data[0] : data);
   }
 
   /**
@@ -701,11 +703,19 @@ function extractCustomerName(r: Record<string, unknown>): string | null {
   return null;
 }
 
+/**
+ * Map a package row onto {@link ShippingPackage}. The shipped / delivered /
+ * undelivered lists send `PackageNumber` / `OrderNumber` in PascalCase (spec
+ * `model.*DeliveriesRepresentation`, confirmed on SIT 2026-10-14); the other
+ * package reads send camelCase.
+ */
 function normalizePackage(row: unknown): ShippingPackage {
   const r = (row && typeof row === 'object' ? row : {}) as Record<string, unknown>;
   const out: ShippingPackage = { raw: r };
-  if (typeof r.packageNumber === 'string') out.packageNumber = r.packageNumber;
-  if (typeof r.orderNumber === 'string') out.orderNumber = r.orderNumber;
+  const packageNumber = r.packageNumber ?? r.PackageNumber;
+  if (typeof packageNumber === 'string') out.packageNumber = packageNumber;
+  const orderNumber = r.orderNumber ?? r.OrderNumber;
+  if (typeof orderNumber === 'string') out.orderNumber = orderNumber;
   if (typeof r.status === 'string') out.status = r.status;
   if (typeof r.cargoCompany === 'string') out.cargoCompany = r.cargoCompany;
   if (typeof r.trackingNumber === 'string') out.trackingNumber = r.trackingNumber;
@@ -724,8 +734,13 @@ function normalizeCargoCompanyOptions(data: unknown): CargoCompanyOption[] {
   return rows.map((r) => {
     const row = (r && typeof r === 'object' ? r : {}) as Record<string, unknown>;
     const out: CargoCompanyOption = { raw: row };
-    if (typeof row.code === 'string') out.code = row.code;
-    if (typeof row.name === 'string') out.name = row.name;
+    // The wire sends `{ Id, Name, ShortName, ... }` (PascalCase, verified on SIT
+    // 2026-10-14; the spec documents camelCase). `code` is the short name that
+    // `update*CargoCompany({ CargoCompanyShortName })` takes.
+    const code = row.code ?? row.shortName ?? row.ShortName;
+    if (typeof code === 'string') out.code = code;
+    const name = row.name ?? row.Name;
+    if (typeof name === 'string') out.name = name;
     return out;
   });
 }

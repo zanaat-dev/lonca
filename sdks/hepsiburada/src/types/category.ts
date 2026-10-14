@@ -134,6 +134,7 @@ export interface CategoryAttribute {
 /** One attribute-value option (for enum-style attributes). */
 export interface CategoryAttributeValue {
   id?: number | string;
+  /** The value's label (the wire's `value`, or `name` where a row carries one). */
   name?: string;
   externalName?: string;
   /** Untouched raw row. */
