@@ -1,5 +1,12 @@
 # @lonca/probe
 
+## 0.0.13
+
+### Patch Changes
+
+- Updated dependencies [[`ea5bdb2`](https://github.com/zanaat-dev/lonca/commit/ea5bdb252c2ecc4ebdfdce0d673edbc01c1ac671), [`440a145`](https://github.com/zanaat-dev/lonca/commit/440a1453c2619d7f80946a50731fb5e05627b299)]:
+  - @lonca/hepsiburada@1.3.0
+
 ## 0.0.12
 
 ### Patch Changes
