@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@lonca/core": "workspace:*",
+    "@lonca/hepsiburada": "workspace:*",
     "@lonca/n11": "workspace:*"
   },
   "devDependencies": {
