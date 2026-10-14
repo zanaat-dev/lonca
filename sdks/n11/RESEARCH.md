@@ -221,11 +221,21 @@ The CONTRIBUTING minimum of orders, products and inventory is reachable over RES
     image on its own CDN with `order` 0, and can attach a catalogue (`catalogId`) and clear
     `productMainId`. A product with a custom brand value opened as `InCatalogApproval`. On such a
     catalogue product an update of `productMainId` reports `SUCCESS` but is not stored (2026-10-14).
-  - **End-to-end run** (`pnpm e2e:n11`, `scripts/e2e/n11.mts`, 2026-10-14): all 31 methods against
-    the test store. 20 verified on the success path; the order writes, return decisions and
-    `questions.answer` only up to n11's refusal for a package, claim or question in the wrong state
-    (the store has no unpaid open orders). A new SKU was created, matched to a catalogue product and
-    processed in about 15 seconds.
+  - **Test store, approved orders (2026-10-14).** The store held three old `Picking` orders of
+    other integrators (one line, quantity 1). On them: `sendInvoiceLink` → success (the link did not
+    show in Seller Office; the REST `invoiceLink` field is filled for micro-export orders only, per
+    the docs); `updateLaborCosts` → `FAIL` "kategori uyumsuzdur" (the docs page names a category
+    list but shows none); `createCollectionRequest` → "Satıcı toplama talebi için uygun değil"
+    (store not eligible); `cancelItem` 1 of 1 → "parçalı iptal talebi için uygun durumda değildir",
+    although the docs allow approved and late-approved orders. Approve, split and return decisions
+    need our own orders: LONCA-ORDER-1 / -2 (10 TL) were opened and n11 support was asked for test
+    orders, return claims and the quantity-split / collection permissions. The docs have no test or
+    sandbox page and no way to move a test order to shipped / delivered.
+- **End-to-end run** (`pnpm e2e:n11`, `scripts/e2e/n11.mts`, 2026-10-14): all 31 methods against
+  the test store. 20 verified on the success path; the order writes, return decisions and
+  `questions.answer` only up to n11's refusal for a package, claim or question in the wrong state
+  (the store has no unpaid open orders). A new SKU was created, matched to a catalogue product and
+  processed in about 15 seconds.
   - **Task results echo the SKU** under `sku`, with fields per task type (for a create:
     `n11ProductId`, `groupId`, `status`, prices, images; for price/stock: prices and `stock`).
 - **Order status vocabulary.** n11 publishes the SOAP-to-REST status mapping
