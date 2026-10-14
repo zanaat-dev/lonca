@@ -227,7 +227,7 @@ console.log(result?.status); // 'COMPLETED'
 The fake client needs no credentials and never touches the network, so it runs in CI as-is. Seed a `handler` to script exact responses per request, or `batchStatus: 'FAILED'` to exercise your error paths — no mocking framework, no recorded fixtures.
 :::
 
-**Know what's stable.** The SDK is pre-1.0; the [Stability & versioning page](/stability/) spells out what can change between minors.
+**Know what's stable.** `@lonca/trendyol` is 1.x: breaking changes ship only in major versions. The [Stability & versioning page](/stability/) has the details; coming from 0.x, read [Migrating to 1.0](/migrating-to-1-0/).
 
 ## See also
 
