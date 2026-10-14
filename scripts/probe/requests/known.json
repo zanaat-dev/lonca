@@ -1,1 +1,44 @@
-[]
+[
+  {
+    "call": "exportCenter.updateStocks",
+    "kind": "missing-required",
+    "path": "stocks",
+    "reason": "Suspected SDK bug, not yet fixed: ExportCenterResource.updateStocks wraps the rows as { items } while Trendyol's autoft-update-stocks reference (schema and example) requires { stocks: [{ barcode, stock }] }; never verified live (Export Center needs enrollment). Remove when the SDK sends `stocks`.",
+    "since": "2026-10-14"
+  },
+  {
+    "call": "exportCenter.updateStocks",
+    "kind": "undocumented-field",
+    "path": "items",
+    "reason": "Same suspected SDK bug as the missing `stocks` entry: the envelope key `items` is not in autoft-update-stocks, which names it `stocks`. Remove when the SDK is fixed.",
+    "since": "2026-10-14"
+  },
+  {
+    "call": "testOrders.create",
+    "kind": "request-param-missing",
+    "path": "header:sellerID",
+    "reason": "Suspected SDK bug, not yet fixed: Trendyol's createTestOrder reference requires a `sellerID` header (the path carries no seller id) and the SDK never sends it; test orders were never verified live (stage blocks unlisted IPs). Remove when the SDK sends the header.",
+    "since": "2026-10-14"
+  },
+  {
+    "call": "testOrders.updateStatus: status only",
+    "kind": "request-param-missing",
+    "path": "header:sellerID",
+    "reason": "Suspected SDK bug, not yet fixed: Trendyol's updateTestOrderStatus reference requires a `sellerID` header besides the path sellerId and the SDK never sends it; unverified live. Remove when the SDK sends the header.",
+    "since": "2026-10-14"
+  },
+  {
+    "call": "testOrders.updateStatus: status only",
+    "kind": "missing-required",
+    "path": "lines",
+    "reason": "Suspected SDK bug, not yet fixed: called with two arguments (the README's own example) the SDK sends { status } alone, while updateTestOrderStatus requires `lines` (example { lines, params, status }); unverified live. Remove when `lines` becomes required in the SDK.",
+    "since": "2026-10-14"
+  },
+  {
+    "call": "testOrders.updateStatus: lines",
+    "kind": "request-param-missing",
+    "path": "header:sellerID",
+    "reason": "Suspected SDK bug, not yet fixed: Trendyol's updateTestOrderStatus reference requires a `sellerID` header besides the path sellerId and the SDK never sends it; unverified live. Remove when the SDK sends the header.",
+    "since": "2026-10-14"
+  }
+]
