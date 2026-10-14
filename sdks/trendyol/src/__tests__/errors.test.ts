@@ -73,6 +73,27 @@ describe('mapHttpError', () => {
     expect(err.retryable).toBe(true);
   });
 
+  it('maps 400 / 422 to ValidationError carrying the first message (stage answer, 2026-10-14)', () => {
+    const err = mapHttpError(400, {
+      exception: 'TrendyolBusinessException',
+      errors: [
+        {
+          key: 'invalid.cargo.provider.for.box.info',
+          message: 'Sadece CEVAMP … koli bilgisi beslenebilir',
+        },
+      ],
+    });
+    expect(err).toBeInstanceOf(ValidationError);
+    expect(err.retryable).toBe(false);
+    expect(err.message).toBe(
+      'Trendyol rejected the request (400): Sadece CEVAMP … koli bilgisi beslenebilir',
+    );
+    expect(mapHttpError(422, null)).toMatchObject({
+      message: 'Trendyol rejected the request (422)',
+      status: 422,
+    });
+  });
+
   it('maps unknown statuses to a non-retryable LoncaError', () => {
     const err = mapHttpError(418, { foo: 'bar' });
     expect(err).toBeInstanceOf(LoncaError);

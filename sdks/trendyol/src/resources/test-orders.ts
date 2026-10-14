@@ -53,12 +53,11 @@ export class TestOrdersResource {
   }
 
   /**
-   * Push a test shipment package to the given status. Trendyol's
-   * `status-updates-on-test-orders` doc requires a `{ lines, status }` body
-   * (`params` optional) — pass `options.lines`. Without `options` the body
-   * stays `{ status }` alone as before, which the reference does not allow;
-   * prefer the three-argument form. Documented response is a bare `200 OK`
-   * (no body), hence `MutationResult`.
+   * Push a test shipment package to the given status. Trendyol's reference
+   * shows a `{ lines, params, status }` body and lists `lines` as required,
+   * but stage moves the package with `{ status }` alone too (Created →
+   * Picking, checked 2026-10-14); pass `options` to send `lines` / `params`.
+   * Documented response is a bare `200 OK` (no body), hence `MutationResult`.
    */
   async updateStatus(
     packageId: string | number,

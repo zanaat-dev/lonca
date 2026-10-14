@@ -3,7 +3,7 @@
     "call": "testOrders.updateStatus: status only",
     "kind": "missing-required",
     "path": "lines",
-    "reason": "Kept for compatibility: the two-argument call still sends { status } alone, which updateTestOrderStatus does not allow (lines is required); the SDK docs and README now steer to the three-argument form with options.lines.",
+    "reason": "Spec gap: updateTestOrderStatus lists `lines` as required, but Trendyol stage moved a test package Created → Picking with { status } alone (2026-10-14).",
     "since": "2026-10-14"
   },
   {
