@@ -16,6 +16,7 @@ import type {
   CatalogValidationResult,
   CheckProductStatusInput,
   DeleteBySkuInput,
+  DeleteBySkuItem,
   FastListingInput,
   ListCatalogProductsParams,
   ListProductsByStatusParams,
@@ -280,25 +281,47 @@ export class CatalogResource {
 
   /**
    * Delete one or more products by merchant SKU. Returns a `trackingId` you
-   * can poll via `getDeleteProcess(trackingId)`.
+   * can poll via `getDeleteProcess(trackingId)`, whose `deletedProductList`
+   * reports each SKU.
+   *
+   * Hepsiburada takes an array of `{ merchant, merchantSku }`; the SDK fills in
+   * `merchant` from the client. The older `{ merchantSkuList: [...] }` input
+   * is still accepted and converted (sent as-is it was answered with a 500 —
+   * verified on SIT, 2026-10-14).
    */
-  async deleteByMerchantSkuList(input: DeleteBySkuInput): Promise<CatalogTrackingReceipt> {
+  async deleteByMerchantSkuList(
+    input: readonly DeleteBySkuItem[] | DeleteBySkuInput,
+  ): Promise<CatalogTrackingReceipt> {
     if (!input || typeof input !== 'object') {
       throw new ValidationError({
         message: 'catalog.deleteByMerchantSkuList: input is required',
       });
     }
-    const list = Array.isArray(input.merchantSkuList) ? input.merchantSkuList : null;
-    if (!list || list.length === 0) {
+    const merchant = this.transport.merchantId;
+    const legacy = (input as DeleteBySkuInput).merchantSkuList;
+    const rows: { merchant: string; merchantSku: unknown }[] | null = Array.isArray(input)
+      ? (input as readonly (DeleteBySkuItem | null)[]).map((row) => ({
+          merchant: row?.merchant ?? merchant,
+          merchantSku: row?.merchantSku,
+        }))
+      : Array.isArray(legacy)
+        ? legacy.map((merchantSku) => ({ merchant, merchantSku }))
+        : null;
+    if (!rows || rows.length === 0) {
       throw new ValidationError({
         message: 'catalog.deleteByMerchantSkuList: merchantSkuList must be a non-empty array',
+      });
+    }
+    if (rows.some((row) => typeof row.merchantSku !== 'string' || row.merchantSku === '')) {
+      throw new ValidationError({
+        message: 'catalog.deleteByMerchantSkuList: every row needs a merchantSku',
       });
     }
     const data = await this.transport.request<unknown>({
       method: 'POST',
       service: SERVICE,
       path: `${BASE_PATH}/delete-process`,
-      body: input,
+      body: rows,
       rateLimiter: this.limiter,
     });
     return normalizeTrackingReceipt(data);

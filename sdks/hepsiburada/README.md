@@ -449,9 +449,10 @@ await client.catalog.approvePreMatch([{ merchant: 'M-1', merchantSkuList: ['sku-
 await client.catalog.rejectPreMatch([{ merchant: 'M-1', merchantSkuList: ['sku-2'] }]);
 
 // Async delete with status polling
-const { trackingId } = await client.catalog.deleteByMerchantSkuList({
-  merchantSkuList: ['M-1', 'M-2'],
-});
+const { trackingId } = await client.catalog.deleteByMerchantSkuList([
+  { merchantSku: 'M-1' },
+  { merchantSku: 'M-2' },
+]); // merchant defaults to the client's
 await client.catalog.getDeleteProcess(trackingId);
 ```
 

@@ -343,6 +343,15 @@ export type PreMatchActionInput = MerchantSkuGroup[] | MerchantSkuGroup;
 export type DeleteBySkuInput = { merchantSkuList?: string[]; [key: string]: unknown };
 
 /**
+ * One product for `catalog.deleteByMerchantSkuList()` — the spec's
+ * `MerchantAndMerchantSkuDTO`. `merchant` defaults to the client's merchant id.
+ */
+export interface DeleteBySkuItem {
+  merchantSku: string;
+  merchant?: string;
+}
+
+/**
  * Body for `catalog.checkProductStatus()` — the spec (`checkProductStatus`)
  * takes an **array** of {@link MerchantSkuGroup}; a plain object also passes
  * through unchanged for backwards compatibility.

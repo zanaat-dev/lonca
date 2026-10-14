@@ -98,7 +98,8 @@ export const hepsiburadaRequests: RequestSet<HepsiburadaClient> = {
     },
     {
       name: 'catalog.deleteByMerchantSkuList',
-      call: (c) => c.catalog.deleteByMerchantSkuList({ merchantSkuList: ['SKU-1', 'SKU-2'] }),
+      call: (c) =>
+        c.catalog.deleteByMerchantSkuList([{ merchantSku: 'SKU-1' }, { merchantSku: 'SKU-2' }]),
     },
     { name: 'catalog.getDeleteProcess', call: (c) => c.catalog.getDeleteProcess(TRACKING_ID) },
 
