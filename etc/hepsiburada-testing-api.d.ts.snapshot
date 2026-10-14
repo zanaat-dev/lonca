@@ -8,7 +8,7 @@ interface FakeHepsiburadaRequest {
     path: string;
     /** Parsed query parameters. */
     query: URLSearchParams;
-    /** Parsed JSON request body, when present. */
+    /** Parsed JSON request body, when present; a multipart body as its `FormData`. */
     body?: unknown;
 }
 interface HepsiburadaFakeSeed {

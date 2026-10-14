@@ -3,6 +3,7 @@ import type { HepsiburadaTransport } from '../transport.js';
 import type {
   ProductUpdateHistoryEntry,
   ProductUpdateInput,
+  ProductUpdateItem,
   ProductUpdateReceipt,
   ProductUpdateStatus,
 } from '../types/product-update.js';
@@ -36,18 +37,43 @@ export class ProductUpdatesResource {
   /**
    * Submit a batch of product updates. Returns a `trackingId` you can poll
    * via `getUpdateStatus(trackingId)`.
+   *
+   * Hepsiburada takes the batch as a JSON file, `{ merchantId, items }`, in
+   * the multipart field `file`; the SDK builds that file from `updates` and
+   * the client's merchant id. (A plain JSON body is answered with a 500 —
+   * verified on SIT, 2026-10-14.)
+   *
+   * @throws {ValidationError} for an empty batch or a row without `hbSku`
+   *   (checked before sending).
    */
-  async importUpdates(updates: ProductUpdateInput): Promise<ProductUpdateReceipt> {
+  async importUpdates(
+    updates: readonly ProductUpdateItem[] | ProductUpdateInput,
+  ): Promise<ProductUpdateReceipt> {
     if (!Array.isArray(updates) || updates.length === 0) {
       throw new ValidationError({
         message: 'productUpdates.importUpdates: updates array is required (non-empty)',
       });
     }
+    updates.forEach((row: unknown, i) => {
+      const hbSku = (row as { hbSku?: unknown } | null)?.hbSku;
+      if (typeof hbSku !== 'string' || hbSku === '') {
+        throw new ValidationError({
+          message: `productUpdates.importUpdates: row ${i} needs a non-empty hbSku`,
+        });
+      }
+    });
+    const file = JSON.stringify({ merchantId: this.transport.merchantId, items: updates });
+    const body = new FormData();
+    body.append(
+      'file',
+      new Blob([file], { type: 'application/json' }),
+      'integrator-ticket-upload.json',
+    );
     const data = await this.transport.request<unknown>({
       method: 'POST',
       service: SERVICE,
       path: `${BASE_PATH}/import`,
-      body: updates,
+      body,
       rateLimiter: this.limiter,
     });
     const obj = (data && typeof data === 'object' ? data : {}) as Record<string, unknown>;
@@ -71,6 +97,8 @@ export class ProductUpdatesResource {
     const out: ProductUpdateStatus = { raw: obj };
     if (typeof obj.trackingId === 'string') out.trackingId = obj.trackingId;
     if (typeof obj.status === 'string') out.status = obj.status;
+    if (typeof obj.success === 'boolean') out.success = obj.success;
+    if (typeof obj.code === 'number') out.code = obj.code;
     if (typeof obj.message === 'string') out.message = obj.message;
     if (Array.isArray(obj.rows)) out.rows = obj.rows as Array<Record<string, unknown>>;
     else if (Array.isArray(obj.items)) out.rows = obj.items as Array<Record<string, unknown>>;
@@ -105,6 +133,7 @@ export class ProductUpdatesResource {
       const out: ProductUpdateHistoryEntry = { raw: r };
       if (typeof r.trackingId === 'string') out.trackingId = r.trackingId;
       if (typeof r.status === 'string') out.status = r.status;
+      if (typeof r.createdAt === 'string') out.createdAt = r.createdAt;
       if (typeof r.modifiedAt === 'string') out.modifiedAt = r.modifiedAt;
       return out;
     });

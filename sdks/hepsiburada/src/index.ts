@@ -137,6 +137,7 @@ export type {
 export type {
   ProductUpdateHistoryEntry,
   ProductUpdateInput,
+  ProductUpdateItem,
   ProductUpdateReceipt,
   ProductUpdateStatus,
 } from './types/product-update.js';

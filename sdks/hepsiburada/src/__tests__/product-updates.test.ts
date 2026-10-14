@@ -33,22 +33,50 @@ const statusPage = (data: unknown[]) => ({
   data,
 });
 
+/** The JSON file inside the multipart `file` field of an import request. */
+async function uploadedFile(body: unknown): Promise<{ name: string; type: string; json: unknown }> {
+  expect(body).toBeInstanceOf(FormData);
+  const file = (body as FormData).get('file');
+  expect(file).toBeInstanceOf(Blob);
+  const blob = file as File;
+  return { name: blob.name, type: blob.type, json: JSON.parse(await blob.text()) };
+}
+
 describe('productUpdates.importUpdates', () => {
-  it('POSTs the update rows as the raw body to /ticket-api/api/integrator/import on mpop', async () => {
+  it('POSTs the rows as a `{ merchantId, items }` JSON file in the multipart `file` field', async () => {
     const limiter = fastLimiter();
     const transport = mockTransport({ trackingId: 'TRK-U1' });
-    const rows = [{ hbSku: 'HB-1', productName: 'Yeni ad' }, { hbSku: 'HB-2' }];
+    const rows = [
+      { hbSku: 'HB-1', productName: 'Yeni ad', image1: 'https://img/1.jpg' },
+      { hbSku: 'HB-2', attributes: { malzeme: '' } },
+    ];
     await new ProductUpdatesResource(transport, limiter).importUpdates(rows);
     const call = lastCall(transport);
     expect(call).toMatchObject({
       method: 'POST',
       service: 'mpop',
       path: '/ticket-api/api/integrator/import',
-      body: rows,
+    });
+    expect(await uploadedFile(call.body)).toEqual({
+      name: 'integrator-ticket-upload.json',
+      type: 'application/json',
+      json: { merchantId: 'M-pu', items: rows },
     });
     expect(call.query).toBeUndefined();
     // The resource's own limiter is handed to the transport on every call.
     expect(call.rateLimiter).toBe(limiter);
+  });
+
+  it.each([
+    ['no hbSku', [{ productName: 'x' }]],
+    ['an empty hbSku', [{ hbSku: '' }]],
+    ['a non-object row', [{ hbSku: 'HB-1' }, null]],
+  ])('rejects a batch with %s before sending', async (_label, rows) => {
+    const transport = mockTransport();
+    await expect(r(transport).importUpdates(rows as unknown[])).rejects.toThrow(
+      /needs a non-empty hbSku/,
+    );
+    expect(transport.request).not.toHaveBeenCalled();
   });
 
   it('returns the trackingId and the untouched response', async () => {
@@ -84,6 +112,23 @@ describe('productUpdates.importUpdates', () => {
 });
 
 describe('productUpdates.getUpdateStatus', () => {
+  it('maps success, code and message of a rejected batch (SIT answer for an unknown hbSku)', async () => {
+    const status = await r(
+      mockTransport({
+        ...statusPage([]),
+        success: false,
+        code: 4009,
+        message: 'Variant is not found.',
+      }),
+    ).getUpdateStatus('TRK-1');
+    expect(status).toMatchObject({
+      success: false,
+      code: 4009,
+      message: 'Variant is not found.',
+      rows: [],
+    });
+  });
+
   it('GETs /ticket-api/api/integrator/status/{trackingId} on mpop with the id URL-encoded', async () => {
     const transport = mockTransport(statusPage([]));
     await r(transport).getUpdateStatus('TRK 1/2');
@@ -182,7 +227,7 @@ describe('productUpdates.getUpdateHistory', () => {
     expect(transport.request).not.toHaveBeenCalled();
   });
 
-  it('maps trackingId / status / modifiedAt per row and keeps the raw row', async () => {
+  it('maps trackingId / status / createdAt / modifiedAt per row and keeps the raw row', async () => {
     const row = {
       trackingId: 'TRK-1',
       status: 'COMPLETED',
@@ -193,6 +238,7 @@ describe('productUpdates.getUpdateHistory', () => {
     expect(entry).toEqual({
       trackingId: 'TRK-1',
       status: 'COMPLETED',
+      createdAt: '2026-08-30T09:00:00',
       modifiedAt: '2026-08-30T10:00:00',
       raw: row,
     });

@@ -101,7 +101,7 @@ describe.each([
     );
   });
 
-  it(`productUpdates import / history → mpop${suffix}/ticket-api (JSON body on the POST)`, async () => {
+  it(`productUpdates import / history → mpop${suffix}/ticket-api (multipart file on the POST)`, async () => {
     const { client, fetchMock } = makeClient(env);
     await client.productUpdates.importUpdates([{ hbSku: 'HB-1', productName: 'Yeni' }]);
     await client.productUpdates.getUpdateHistory('HB-1');
@@ -110,7 +110,14 @@ describe.each([
       `https://mpop${suffix}.hepsiburada.com/ticket-api/api/integrator/import`,
     );
     expect(importInit.method).toBe('POST');
-    expect(JSON.parse(String(importInit.body))).toEqual([{ hbSku: 'HB-1', productName: 'Yeni' }]);
+    // multipart: the transport leaves Content-Type to fetch, which adds the boundary.
+    expect(importInit.body).toBeInstanceOf(FormData);
+    expect(new Headers(importInit.headers).has('content-type')).toBe(false);
+    const file = (importInit.body as FormData).get('file') as File;
+    expect(JSON.parse(await file.text())).toEqual({
+      merchantId: 'MID-1',
+      items: [{ hbSku: 'HB-1', productName: 'Yeni' }],
+    });
     expect(String(fetchMock.mock.calls[1]![0])).toBe(
       `https://mpop${suffix}.hepsiburada.com/ticket-api/api/integrator/merchant/MID-1/hbSku/HB-1`,
     );

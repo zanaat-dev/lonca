@@ -79,7 +79,7 @@ describe('createFakeHepsiburadaClient', () => {
     expect(req.body).toBeUndefined();
   });
 
-  it('gives the handler the parsed JSON body of a POST and returns its response', async () => {
+  it('gives the handler the body of a POST (multipart as FormData) and returns its response', async () => {
     const seen: FakeHepsiburadaRequest[] = [];
     const client = createFakeHepsiburadaClient({
       handler: (req) => {
@@ -91,7 +91,10 @@ describe('createFakeHepsiburadaClient', () => {
     });
     const receipt = await client.productUpdates.importUpdates([{ hbSku: 'HB-1' }]);
     expect(receipt.trackingId).toBe('TRK-FAKE');
-    expect(seen[0]).toMatchObject({ method: 'POST', body: [{ hbSku: 'HB-1' }] });
+    // A multipart body reaches the handler as its FormData.
+    expect(seen[0]).toMatchObject({ method: 'POST' });
+    const file = (seen[0]!.body as FormData).get('file') as File;
+    expect(JSON.parse(await file.text())).toMatchObject({ items: [{ hbSku: 'HB-1' }] });
   });
 
   it('resolves un-seeded list endpoints across resources to empty results', async () => {
