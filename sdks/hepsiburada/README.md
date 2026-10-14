@@ -423,7 +423,9 @@ await client.catalog.getProductStatus('trk-id'); // status of a previous upload
 await client.catalog.getTrackingIdHistory();
 
 // Create / update via async upload (returns trackingId, poll status)
-await client.catalog.uploadProductViaFile([{/* per-category attributes */}]);
+await client.catalog.uploadProductViaFile([
+  { categoryId: 18021982, attributes: { merchantSku: 'SKU-1' /* , category attributes */ } },
+]);
 await client.catalog.uploadFastListing(/* ... */);
 await client.catalog.checkProductStatus([{ merchant: 'M-1', merchantSkuList: ['sku-1'] }]);
 
@@ -486,7 +488,7 @@ await client.questions.list({ status: 'Open', limit: 50 });
 await client.questions.get('Q-1');
 await client.questions.getCountByStatus();
 // The three actions resolve to MutationResult ({ raw }) — the API acknowledges with a bare string
-await client.questions.answer('Q-1', { answer: 'Stokumuzda var, 2 günde teslim ediyoruz.' });
+await client.questions.answer('Q-1', { Answer: 'Stokumuzda var, 2 günde teslim ediyoruz.' });
 await client.questions.reject('Q-1', { reasonCode: 'inappropriate' });
 await client.questions.create({
   /* SIT-only — seeds a test question; raw holds the returned number[] */

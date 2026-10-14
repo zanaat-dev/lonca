@@ -21,6 +21,7 @@ import type {
   ListProductsByStatusParams,
   PreMatchActionInput,
   TrackingIdHistoryEntry,
+  CatalogUploadProduct,
   UploadProductsInput,
 } from '../types/catalog-product.js';
 
@@ -161,22 +162,52 @@ export class CatalogResource {
   // ─── Write ─────────────────────────────────────────────────────────────
 
   /**
-   * Upload one or more products as JSON. Returns a `trackingId` you can
-   * poll via `getProductStatus(trackingId)`.
+   * Upload one or more products. Returns a `trackingId` you can poll via
+   * `getProductStatus(trackingId)`; per-product results (`importStatus`,
+   * `importMessages`) arrive in its `rows`.
    *
-   * @throws {ValidationError} when `products` is empty.
+   * Hepsiburada takes the products as a JSON file (an array) in the multipart
+   * field `file`; the SDK builds that file and fills in `merchant` from the
+   * client when a row has none. (A plain JSON body is answered with a 500 —
+   * verified on SIT, 2026-10-14.)
+   *
+   * @throws {ValidationError} when `products` is empty, or a row has no
+   *   `categoryId` or `attributes.merchantSku` (checked before sending).
    */
-  async uploadProductViaFile(products: UploadProductsInput): Promise<CatalogTrackingReceipt> {
+  async uploadProductViaFile(
+    products: readonly CatalogUploadProduct[] | UploadProductsInput,
+  ): Promise<CatalogTrackingReceipt> {
     if (!Array.isArray(products) || products.length === 0) {
       throw new ValidationError({
         message: 'catalog.uploadProductViaFile: products array is required (non-empty)',
       });
     }
+    const rows = products.map((row: unknown, i) => {
+      const product = (row && typeof row === 'object' ? row : {}) as Record<string, unknown>;
+      const attributes = product.attributes as Record<string, unknown> | undefined;
+      if (product.categoryId === undefined || product.categoryId === null) {
+        throw new ValidationError({
+          message: `catalog.uploadProductViaFile: row ${i} needs a categoryId`,
+        });
+      }
+      if (typeof attributes?.merchantSku !== 'string' || attributes.merchantSku === '') {
+        throw new ValidationError({
+          message: `catalog.uploadProductViaFile: row ${i} needs attributes.merchantSku`,
+        });
+      }
+      return { ...product, merchant: product.merchant ?? this.transport.merchantId };
+    });
+    const body = new FormData();
+    body.append(
+      'file',
+      new Blob([JSON.stringify(rows)], { type: 'application/json' }),
+      'integrator.json',
+    );
     const data = await this.transport.request<unknown>({
       method: 'POST',
       service: SERVICE,
       path: `${BASE_PATH}/import`,
-      body: products,
+      body,
       rateLimiter: this.limiter,
     });
     return normalizeTrackingReceipt(data);
@@ -561,8 +592,13 @@ function coerceImages(value: unknown): string[] | undefined {
 
 function normalizeTrackingReceipt(data: unknown): CatalogTrackingReceipt {
   const obj = (data && typeof data === 'object' ? data : {}) as Record<string, unknown>;
+  // The upload answers with the mpop envelope: `{ success, code, data: { trackingId } }`.
+  const inner = (obj.data && typeof obj.data === 'object' ? obj.data : {}) as Record<
+    string,
+    unknown
+  >;
   return {
-    trackingId: String(obj.trackingId ?? obj.id ?? ''),
+    trackingId: String(obj.trackingId ?? obj.id ?? inner.trackingId ?? ''),
     raw: obj,
   };
 }
@@ -572,6 +608,8 @@ function normalizeProductStatus(data: unknown): CatalogProductStatus {
   const out: CatalogProductStatus = { raw: obj };
   if (typeof obj.trackingId === 'string') out.trackingId = obj.trackingId;
   if (typeof obj.status === 'string') out.status = obj.status;
+  if (typeof obj.success === 'boolean') out.success = obj.success;
+  if (typeof obj.code === 'number') out.code = obj.code;
   if (typeof obj.message === 'string') out.message = obj.message;
   if (Array.isArray(obj.rows)) out.rows = obj.rows as Array<Record<string, unknown>>;
   else if (Array.isArray(obj.items)) out.rows = obj.items as Array<Record<string, unknown>>;

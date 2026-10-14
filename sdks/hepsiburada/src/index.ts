@@ -123,6 +123,7 @@ export type {
   CatalogProductStatus,
   CatalogTaskDetail,
   CatalogTrackingReceipt,
+  CatalogUploadProduct,
   CatalogValidationResult,
   CheckProductStatusInput,
   DeleteBySkuInput,

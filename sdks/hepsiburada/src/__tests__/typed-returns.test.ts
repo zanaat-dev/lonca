@@ -145,7 +145,7 @@ describe('questions — MutationResult surface', () => {
   });
 
   it.each(['answer', 'reject'] as const)('%s resolves to a MutationResult', async (name) => {
-    expect(await method(r(mockTransport('Created')), name)('Q-1', { a: 1 })).toEqual({
+    expect(await method(r(mockTransport('Created')), name)('Q-1', { Answer: 'Evet' })).toEqual({
       raw: 'Created',
     });
   });
