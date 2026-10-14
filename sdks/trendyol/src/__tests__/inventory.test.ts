@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ServerError, TimeoutError, ValidationError } from '@lonca/core';
-import { InventoryResource, pollBatchStatus } from '../resources/inventory.js';
+import { InventoryResource, isBatchSettled, pollBatchStatus } from '../resources/inventory.js';
 import type { TrendyolTransport } from '../transport.js';
 import type { BatchRequestResult, BatchRequestStatus } from '../types/product.js';
 
@@ -136,5 +136,40 @@ describe('pollBatchStatus', () => {
 
     expect(result.status).toBe('FAILED');
     expect(getStatus).toHaveBeenCalledTimes(1);
+  });
+
+  it('settles a PROCESSING batch once every item is final (Trendyol stage, 2026-10-14)', async () => {
+    const stuck: BatchRequestResult = {
+      ...batchResult('PROCESSING'),
+      itemCount: 1,
+      failedItemCount: 0,
+      items: [{ status: 'SUCCESS', failureReasons: [] }],
+    };
+    const getStatus = vi.fn().mockResolvedValue(stuck);
+    await expect(pollBatchStatus(getStatus, 'b1', { timeoutMs: 1000 })).resolves.toBe(stuck);
+    expect(getStatus).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('isBatchSettled', () => {
+  const items = (...statuses: (string | undefined)[]) => statuses.map((status) => ({ status }));
+
+  it.each([
+    ['COMPLETED', undefined, [], true],
+    ['FAILED', undefined, [], true],
+    ['PROCESSING', 2, items('SUCCESS', 'FAILED'), true],
+    ['PROCESSING', 2, items('SUCCESS'), false],
+    ['PROCESSING', 2, items('SUCCESS', 'PENDING'), false],
+    ['PROCESSING', 1, items(undefined), false],
+    ['PROCESSING', 0, [], false],
+    ['PROCESSING', undefined, items('SUCCESS'), false],
+  ] as const)('%s with itemCount %s and items %j → %s', (status, itemCount, list, expected) => {
+    expect(
+      isBatchSettled({
+        ...batchResult(status as BatchRequestStatus),
+        ...(itemCount === undefined ? {} : { itemCount }),
+        items: [...list],
+      }),
+    ).toBe(expected);
   });
 });

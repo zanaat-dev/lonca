@@ -32,6 +32,7 @@ export { ExportCenterResource } from './resources/export-center.js';
 export { FinanceResource } from './resources/finance.js';
 export {
   InventoryResource,
+  isBatchSettled,
   pollBatchStatus,
   type BatchPollOptions,
 } from './resources/inventory.js';
