@@ -56,10 +56,37 @@ export interface N11OrderLine {
   /** Line status label (`orderItemLineItemStatusName`). */
   status?: string;
   vatRate?: number;
+  /** Commission rate in percent. */
   commissionRate?: number;
+  /** Unit price after the store's discount (`sellerDiscountedPrice`). */
+  sellerDiscountedPrice?: Money;
+  /** All store discounts on the line (`totalSellerDiscountPrice`). */
+  totalSellerDiscount?: Money;
+  /** All n11-funded discounts on the line (`totalMallDiscountPrice`). */
+  totalMallDiscount?: Money;
+  /** Instalment charge on the line, VAT included (`installmentChargeWithVAT`). */
+  installmentCharge?: Money;
+  /** Labour cost of the line, VAT excluded (`totalLaborCostExcludingVAT`). */
+  laborCostExcludingVat?: Money;
+  /** Commission discount from a seller campaign (`sellerCampaignCommissionDiscount`). */
+  sellerCampaignCommissionDiscount?: Money;
+  /** Commission discount rate of that campaign, in percent. */
+  sellerCampaignCommissionRate?: number;
+  /** Marketplace service fee rate, in percent (`netMarketplaceFeeRate`). */
+  marketplaceFeeRate?: number;
+  /** Marketing service fee rate, in percent (`netMarketingFeeRate`). */
+  marketingFeeRate?: number;
+  /** Tax deduction (withholding) rate of the line, in percent (`taxDeductionRate`). */
+  taxDeductionRate?: number;
+  /** Who pays shipping: `1` conditional (n11 pays), `3` the store, `5` conditional (store pays). */
+  deliveryFeeType?: number;
+  /** Who ships the item: `SELLER`, or `N11` for n11depom stock. */
+  sender?: string;
+  /** Country of origin (micro-export orders). */
+  productOrigin?: string;
   /** Variant attributes such as colour and size. */
   variantAttributes: { name: string; value: string }[];
-  /** Untouched raw line (fees, campaign rates, … not modelled yet). */
+  /** Untouched raw line (`customTextOptionValues`, …). */
   raw: Record<string, unknown>;
 }
 
@@ -111,9 +138,24 @@ export interface N11ShipmentPackage {
   lastModifiedAt?: string;
   /** ISO-8601. */
   agreedDeliveryAt?: string;
+  /** Instalment charge on the package, VAT included (`installmentChargeWithVATprice`). */
+  installmentCharge?: Money;
+  sellerId?: string;
+  /** `true` for an e-export (micro-export) order (`micro`; `null` for a domestic one). */
+  isMicroExport?: boolean;
+  /** Invoice link (micro-export orders only). */
+  invoiceLink?: string;
+  /** ISO-8601, from `invoiceDate` (micro-export orders only). */
+  invoiceAt?: string;
+  /** Customs declaration number, filled in by n11 after delivery (micro export). */
+  etgbNo?: string;
+  /** ISO-8601, from `etgbDate`. */
+  etgbAt?: string;
+  /** Customs tariff (HS / GTİP) code (micro export). */
+  hsCode?: string;
   lines: N11OrderLine[];
   histories: N11PackageHistory[];
-  /** Untouched raw package (`micro`, `invoiceLink`, `etgbNo`, … not modelled yet). */
+  /** Untouched raw package. */
   raw: Record<string, unknown>;
 }
 
