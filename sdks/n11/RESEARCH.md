@@ -175,7 +175,7 @@ product writes) is the safe design.
 | Questions                     | SOAP `GetProductQuestionList/Detail`, `SaveProductAnswer` ([doc](https://developer.n11.com/documentation/n11-marketplace-entegrasyonu/urun-soru-cevap-servisi/))                                                                                                                                                         | `questions.*`                                     | `questions.*`                                     | One answer per question, 1 to 2048 characters. Listing is limited to once per minute.                                                                                                                                                    |
 | Settlements / finance         | **Not on the new portal.** The legacy SOAP `SettlementService` (`GetSettlementList/Detail`) appears in the 2020 .docx; n11 support (2026-10-13) says finance still runs over SOAP                                                                                                                                        | `finance.*`                                       | `accounting.*`                                    | **(unverified)** It may no longer be live. Order lines do carry `commissionRate`, `sellerCampaignCommissionRate`, `netMarketingFeeRate` and `netMarketplaceFeeRate`.                                                                     |
 | Shipment companies            | Order docs refer to a `GetShipmentCompanies` method ([order listing](https://developer.n11.com/documentation/n11-siparis-entegrasyonu/siparis-listeleme-servisi/)), but the new portal has no page for it. The legacy SOAP `ShipmentCompanyService` is in the .docx                                                      | — (`orders.changeCargoProvider` only)             | `shipping.getCargoFirms`                          | **(unverified)**                                                                                                                                                                                                                         |
-| Cargo labels                  | Not documented                                                                                                                                                                                                                                                                                                           | `labels.*`                                        | `orders.getPackageLabel`                          | `cargoTrackingNumber` is the n11 "campaign code" the seller hands to the carrier.                                                                                                                                                        |
+| Cargo labels                  | Not documented                                                                                                                                                                                                                                                                                                           | `labels.*`                                        | `orders.getPackageLabel`                          | No label service (n11, 2026-10-14). The label is `cargoTrackingNumber` (campaign code) as CODE-128.                                                                                                                                      |
 | Webhooks                      | Not documented                                                                                                                                                                                                                                                                                                           | `webhooks.*`                                      | —                                                 | Polling only.                                                                                                                                                                                                                            |
 | Test orders                   | Not documented; n11 support (2026-10-13): a real low-priced order on a test product in their prod test store                                                                                                                                                                                                             | `testOrders.*`                                    | `testOrders.*`                                    | There is no sandbox either (section 3).                                                                                                                                                                                                  |
 | n11 warehouse (n11depom)      | `sender` filter `SELLER`/`N11`/`ALL` on product query, order listing and returns ([doc](https://developer.n11.com/documentation/n11depom/n11depom/))                                                                                                                                                                     | —                                                 | —                                                 |                                                                                                                                                                                                                                          |
@@ -219,7 +219,13 @@ The CONTRIBUTING minimum of orders, products and inventory is reachable over RES
     `exportListableByActorActionCode`.
   - **Create side effects:** n11 re-capitalises the title ("Lonca SDK" → "Lonca Sdk"), stores the
     image on its own CDN with `order` 0, and can attach a catalogue (`catalogId`) and clear
-    `productMainId`. A product with a custom brand value opened as `InCatalogApproval`.
+    `productMainId`. A product with a custom brand value opened as `InCatalogApproval`. On such a
+    catalogue product an update of `productMainId` reports `SUCCESS` but is not stored (2026-10-14).
+  - **End-to-end run** (`pnpm e2e:n11`, `scripts/e2e/n11.mts`, 2026-10-14): all 31 methods against
+    the test store. 20 verified on the success path; the order writes, return decisions and
+    `questions.answer` only up to n11's refusal for a package, claim or question in the wrong state
+    (the store has no unpaid open orders). A new SKU was created, matched to a catalogue product and
+    processed in about 15 seconds.
   - **Task results echo the SKU** under `sku`, with fields per task type (for a create:
     `n11ProductId`, `groupId`, `status`, prices, images; for price/stock: prices and `stock`).
 - **Order status vocabulary.** n11 publishes the SOAP-to-REST status mapping
@@ -501,9 +507,10 @@ totalPages, page, size, content }`, where `pageCount` equals the number of rows 
 9. **Shipment companies, cargo labels, city lists.** Are they still SOAP-only
    (`ShipmentCompanyService`, `CityService`), and is there any label service?
    **Partly answered:** `GetShipmentCompanies` works over SOAP. **n11 (2026-10-13):** cities
-   and the rest stay on SOAP. For cargo labels they asked which step we mean; open until we
-   reply (we mean a printable shipping label or barcode for a package, like Trendyol's
-   `getCommonLabel` or Hepsiburada's package label).
+   and the rest stay on SOAP. **Cargo labels, n11 (2026-10-14):** there is no label
+   integration, so no PDF/ZPL over the API; it may be planned later but is not on the agenda
+   (passed to their development team). The label is the campaign code from Seller Office or
+   from `shipmentPackages` (`cargoTrackingNumber`), printed as a CODE-128 barcode.
 10. **Integrator identity.** Does n11 register integrators by name? Should `integrator` match
     anything configured in Seller Office? Is a `User-Agent` or IP allowlist ever required (both TY and HB
     needed a meaningful `User-Agent`)?
@@ -540,5 +547,5 @@ totalPages, page, size, content }`, where `pageCount` equals the number of rows 
    Then publish as `0.x` with a changeset.~~ Done on 2026-10-13; the first npm publish of a new
    scoped package has to be done by hand (see the release notes in the PR).
 6. Still open: verify order writes and return decisions on a real order (needs an order in
-   `Created` / `Picking` on the test store), cargo labels (waiting for n11's answer), and a
+   `Created` / `Picking` on the test store) and a
    settlements resource over SOAP if users ask for it.

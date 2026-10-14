@@ -1,0 +1,17 @@
+{
+  "name": "@lonca/e2e",
+  "version": "0.0.0",
+  "private": true,
+  "description": "End-to-end runs of Lonca SDKs against marketplace test stores (not published).",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@lonca/core": "workspace:*",
+    "@lonca/n11": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:"
+  }
+}

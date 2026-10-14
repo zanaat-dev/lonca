@@ -48,6 +48,7 @@
     "probe": "tsx --env-file-if-exists=.env scripts/probe/run.mts",
     "probe:check": "tsx --env-file-if-exists=.env scripts/probe/run.mts --check",
     "probe:prod": "tsx --env-file=.env.prod scripts/probe/run.mts",
+    "e2e:n11": "tsx --env-file=.env.n11-test scripts/e2e/n11.mts",
     "probe:hosts": "tsx --env-file-if-exists=.env scripts/probe/host-check.mts",
     "drift": "tsx packages/drift/src/bin.ts",
     "drift:types": "tsx packages/drift/src/types-bin.ts",

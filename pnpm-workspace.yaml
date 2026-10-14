@@ -4,6 +4,7 @@ packages:
   - "apps/*"
   - "examples"
   - "scripts/probe"
+  - "scripts/e2e"
   - "docs"
 
 # Shared dependency versions. Packages reference these with `"typescript": "catalog:"`.

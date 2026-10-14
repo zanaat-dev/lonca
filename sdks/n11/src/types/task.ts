@@ -143,6 +143,11 @@ export interface N11ProductUpdateItem {
   status?: 'Active' | 'Suspended';
   preparingDay?: number;
   shipmentTemplate?: string;
+  /**
+   * Model code. n11 keeps it empty on a product it has matched to a catalogue
+   * product (`catalogId` set): the task still reports `SUCCESS`, but the code
+   * is not stored (observed on n11's test store, 2026-10-14).
+   */
   productMainId?: string;
   /** `true` removes the `productMainId`. */
   deleteProductMainId?: boolean;
