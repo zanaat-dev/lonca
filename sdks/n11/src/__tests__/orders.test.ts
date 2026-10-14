@@ -202,6 +202,65 @@ describe('OrdersResource.list', () => {
     expect(pkg.raw).toHaveProperty('micro', null);
   });
 
+  it('maps the fee, discount and micro-export fields (shapes seen on prod, 2026-10-14)', async () => {
+    const row = packageRow({
+      installmentChargeWithVATprice: 12.5,
+      micro: true,
+      invoiceLink: 'https://example.invalid/inv.pdf',
+      invoiceDate: 1760200000000,
+      etgbNo: 'ETGB-1',
+      etgbDate: 1760300000000,
+      hsCode: '6109',
+    });
+    Object.assign((row.lines as Record<string, unknown>[])[0]!, {
+      sellerDiscountedPrice: 140.5,
+      totalSellerDiscountPrice: 20,
+      totalMallDiscountPrice: 5,
+      installmentChargeWithVAT: 12.5,
+      totalLaborCostExcludingVAT: 0,
+      sellerCampaignCommissionDiscount: 3.25,
+      sellerCampaignCommissionRate: 2,
+      netMarketplaceFeeRate: 1.5,
+      netMarketingFeeRate: 0.5,
+      taxDeductionRate: 1,
+      deliveryFeeType: 3,
+      productOrigin: 'TR',
+    });
+    const { transport } = mockTransport(pageResponse([row]));
+    const [pkg] = (await new OrdersResource(transport).list()).items;
+    expect(pkg).toMatchObject({
+      installmentCharge: { amount: 1250, currency: 'TRY' },
+      sellerId: '2000001',
+      isMicroExport: true,
+      invoiceLink: 'https://example.invalid/inv.pdf',
+      invoiceAt: new Date(1760200000000).toISOString(),
+      etgbNo: 'ETGB-1',
+      etgbAt: new Date(1760300000000).toISOString(),
+      hsCode: '6109',
+    });
+    expect(pkg!.lines[0]).toMatchObject({
+      sellerDiscountedPrice: { amount: 14050, currency: 'TRY' },
+      totalSellerDiscount: { amount: 2000, currency: 'TRY' },
+      totalMallDiscount: { amount: 500, currency: 'TRY' },
+      installmentCharge: { amount: 1250, currency: 'TRY' },
+      laborCostExcludingVat: { amount: 0, currency: 'TRY' },
+      sellerCampaignCommissionDiscount: { amount: 325, currency: 'TRY' },
+      sellerCampaignCommissionRate: 2,
+      marketplaceFeeRate: 1.5,
+      marketingFeeRate: 0.5,
+      taxDeductionRate: 1,
+      deliveryFeeType: 3,
+      sender: 'SELLER',
+      productOrigin: 'TR',
+    });
+  });
+
+  it('leaves isMicroExport out for a domestic order (micro: null)', async () => {
+    const { transport } = mockTransport(pageResponse([packageRow()]));
+    const [pkg] = (await new OrdersResource(transport).list()).items;
+    expect(pkg!.isMicroExport).toBeUndefined();
+  });
+
   it('tolerates a sparse package', async () => {
     const { transport } = mockTransport(
       pageResponse([

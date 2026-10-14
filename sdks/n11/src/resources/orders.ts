@@ -61,6 +61,19 @@ interface N11OrderLineWire {
   orderItemLineItemStatusName?: Nullable<string>;
   vatRate?: Nullable<number>;
   commissionRate?: Nullable<number>;
+  sellerDiscountedPrice?: Nullable<number>;
+  totalSellerDiscountPrice?: Nullable<number>;
+  totalMallDiscountPrice?: Nullable<number>;
+  installmentChargeWithVAT?: Nullable<number>;
+  totalLaborCostExcludingVAT?: Nullable<number>;
+  sellerCampaignCommissionDiscount?: Nullable<number>;
+  sellerCampaignCommissionRate?: Nullable<number>;
+  netMarketplaceFeeRate?: Nullable<number>;
+  netMarketingFeeRate?: Nullable<number>;
+  taxDeductionRate?: Nullable<number>;
+  deliveryFeeType?: Nullable<number>;
+  sender?: Nullable<string>;
+  productOrigin?: Nullable<string>;
   variantAttributes?: Nullable<{ name?: string; value?: string }[]>;
 }
 
@@ -90,6 +103,14 @@ interface N11PackageWire {
   isReturned?: Nullable<boolean>;
   lastModifiedDate?: Nullable<number>;
   agreedDeliveryDate?: Nullable<number>;
+  installmentChargeWithVATprice?: Nullable<number>;
+  sellerId?: Nullable<number | string>;
+  micro?: Nullable<boolean>;
+  invoiceLink?: Nullable<string>;
+  invoiceDate?: Nullable<number>;
+  etgbNo?: Nullable<string>;
+  etgbDate?: Nullable<number>;
+  hsCode?: Nullable<string>;
   lines?: Nullable<N11OrderLineWire[]>;
   packageHistories?: Nullable<{ status?: string; createdDate?: Nullable<number> }[]>;
 }
@@ -159,6 +180,19 @@ function normalizeLine(node: N11OrderLineWire): N11OrderLine {
       status: node.orderItemLineItemStatusName,
       vatRate: node.vatRate,
       commissionRate: node.commissionRate,
+      sellerDiscountedPrice: money(node.sellerDiscountedPrice),
+      totalSellerDiscount: money(node.totalSellerDiscountPrice),
+      totalMallDiscount: money(node.totalMallDiscountPrice),
+      installmentCharge: money(node.installmentChargeWithVAT),
+      laborCostExcludingVat: money(node.totalLaborCostExcludingVAT),
+      sellerCampaignCommissionDiscount: money(node.sellerCampaignCommissionDiscount),
+      sellerCampaignCommissionRate: node.sellerCampaignCommissionRate,
+      marketplaceFeeRate: node.netMarketplaceFeeRate,
+      marketingFeeRate: node.netMarketingFeeRate,
+      taxDeductionRate: node.taxDeductionRate,
+      deliveryFeeType: node.deliveryFeeType,
+      sender: node.sender,
+      productOrigin: node.productOrigin,
     },
   );
 }
@@ -204,6 +238,14 @@ function normalizePackage(row: N11PackageWire): N11ShipmentPackage {
       isReturned: row.isReturned,
       lastModifiedAt: isoFromEpoch(row.lastModifiedDate),
       agreedDeliveryAt: isoFromEpoch(row.agreedDeliveryDate),
+      installmentCharge: money(row.installmentChargeWithVATprice),
+      sellerId: idOf(row.sellerId),
+      isMicroExport: row.micro ?? undefined,
+      invoiceLink: row.invoiceLink,
+      invoiceAt: isoFromEpoch(row.invoiceDate),
+      etgbNo: row.etgbNo,
+      etgbAt: isoFromEpoch(row.etgbDate),
+      hsCode: row.hsCode,
     },
   );
 }
