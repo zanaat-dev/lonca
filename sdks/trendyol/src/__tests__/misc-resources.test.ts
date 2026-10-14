@@ -343,6 +343,8 @@ describe('TestOrdersResource', () => {
         method: 'PUT',
         path: '/integration/test/order/sellers/42/claims/waiting-in-action',
         body: { shipmentPackageId: 56526451 },
+        // Stage refuses this endpoint without the header too (2026-10-14).
+        headers: { sellerID: '42' },
       }),
     );
     expect(out).toEqual({ raw: { ok: true } });

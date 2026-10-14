@@ -147,6 +147,7 @@ export type {
   ClaimItemStatus,
   ClaimIssueReason,
   CreateClaimInput,
+  CreateClaimResult,
   CreateClaimIssueInput,
   CreateClaimItemInput,
   ListClaimsParams,

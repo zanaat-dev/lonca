@@ -151,17 +151,40 @@ describe('pollBatchStatus', () => {
   });
 });
 
+describe('pollBatchStatus — COMPLETED before the items', () => {
+  it('keeps polling a COMPLETED batch until its items arrive', async () => {
+    const early: BatchRequestResult = { ...batchResult('COMPLETED'), itemCount: 1, items: [] };
+    const done: BatchRequestResult = {
+      ...early,
+      items: [{ status: 'SUCCESS', failureReasons: [] }],
+    };
+    const getStatus = vi.fn().mockResolvedValueOnce(early).mockResolvedValueOnce(done);
+    await expect(pollBatchStatus(getStatus, 'b1', { pollIntervalMs: 0 })).resolves.toBe(done);
+    expect(getStatus).toHaveBeenCalledTimes(2);
+  });
+
+  it('returns a COMPLETED batch still missing items when the timeout elapses', async () => {
+    const early: BatchRequestResult = { ...batchResult('COMPLETED'), itemCount: 2, items: [] };
+    const getStatus = vi.fn().mockResolvedValue(early);
+    await expect(pollBatchStatus(getStatus, 'b1', { timeoutMs: 0 })).resolves.toBe(early);
+  });
+});
+
 describe('isBatchSettled', () => {
   const items = (...statuses: (string | undefined)[]) => statuses.map((status) => ({ status }));
 
   it.each([
     ['COMPLETED', undefined, [], true],
     ['FAILED', undefined, [], true],
+    // Product-create batches read COMPLETED before their items appear (stage, 2026-10-14).
+    ['COMPLETED', 1, [], false],
+    ['COMPLETED', 1, items('SUCCESS'), true],
     ['PROCESSING', 2, items('SUCCESS', 'FAILED'), true],
     ['PROCESSING', 2, items('SUCCESS'), false],
     ['PROCESSING', 2, items('SUCCESS', 'PENDING'), false],
     ['PROCESSING', 1, items(undefined), false],
     ['PROCESSING', 0, [], false],
+    ['COMPLETED', 0, [], true],
     ['PROCESSING', undefined, items('SUCCESS'), false],
   ] as const)('%s with itemCount %s and items %j → %s', (status, itemCount, list, expected) => {
     expect(

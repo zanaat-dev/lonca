@@ -179,6 +179,9 @@ importers:
       '@lonca/n11':
         specifier: workspace:*
         version: link:../../sdks/n11
+      '@lonca/trendyol':
+        specifier: workspace:*
+        version: link:../../sdks/trendyol
     devDependencies:
       '@types/node':
         specifier: 'catalog:'

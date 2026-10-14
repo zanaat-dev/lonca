@@ -27,21 +27,23 @@ export interface BatchPollOptions {
 const FINAL_ITEM_STATUSES = new Set(['SUCCESS', 'FAILED']);
 
 /**
- * Whether a batch is done: its status is `COMPLETED` / `FAILED`, or every one
- * of its `itemCount` items has a final status. Trendyol stage left a
- * one-item stock batch at `PROCESSING` for good although the item was
- * `SUCCESS` and the stock had changed (2026-10-14), so the item statuses are
- * the reliable signal.
+ * Whether a batch is done, judged by its items first: every one of its
+ * `itemCount` items has a final status (`SUCCESS` / `FAILED`). The batch
+ * status alone is not reliable either way on Trendyol stage (2026-10-14): a
+ * stock batch stayed `PROCESSING` for good although its item was `SUCCESS`,
+ * and a product-create batch turned `COMPLETED` a few seconds before its item
+ * result appeared. A `COMPLETED` / `FAILED` batch without an `itemCount` is
+ * settled as before.
  */
 export function isBatchSettled(result: BatchRequestResult): boolean {
-  if (result.status === 'COMPLETED' || result.status === 'FAILED') return true;
   const expected = result.itemCount;
-  return (
-    typeof expected === 'number' &&
-    expected > 0 &&
-    result.items.length >= expected &&
-    result.items.every((item) => FINAL_ITEM_STATUSES.has(item.status ?? ''))
-  );
+  if (typeof expected === 'number' && expected > 0) {
+    return (
+      result.items.length >= expected &&
+      result.items.every((item) => FINAL_ITEM_STATUSES.has(item.status ?? ''))
+    );
+  }
+  return result.status === 'COMPLETED' || result.status === 'FAILED';
 }
 
 /**
@@ -51,6 +53,10 @@ export function isBatchSettled(result: BatchRequestResult): boolean {
  * Standalone so callers can poll an id obtained elsewhere (e.g. a persisted
  * `batchRequestId` from a previous process) without going through
  * {@link InventoryResource.updateAndWait}.
+ *
+ * When the timeout elapses on a batch whose status already reads `COMPLETED`
+ * / `FAILED`, that last result is returned (some items may be missing)
+ * rather than thrown.
  *
  * @throws {TimeoutError} when the batch does not settle within `timeoutMs`;
  *   `error.data` carries `{ batchRequestId, lastStatus, lastResult }`.
@@ -71,6 +77,7 @@ export async function pollBatchStatus(
       return result;
     }
     if (Date.now() >= deadline) {
+      if (result.status === 'COMPLETED' || result.status === 'FAILED') return result;
       throw new TimeoutError({
         message: `Trendyol batch ${batchRequestId} did not settle within ${timeoutMs}ms (last status: ${result.status})`,
         data: { batchRequestId, lastStatus: result.status, lastResult: result },

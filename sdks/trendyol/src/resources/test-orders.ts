@@ -90,13 +90,16 @@ export class TestOrdersResource {
       method: 'PUT',
       path: `/integration/test/order/sellers/${this.transport.sellerId}/claims/waiting-in-action`,
       ...(input ? { body: input } : {}),
+      // Not in the reference for this endpoint, but stage refuses it without
+      // the header too ("SellerID or Authorization can not be empty", 2026-10-14).
+      headers: this.sellerHeader(),
       rateLimiter: this.limiter,
     });
     return { raw };
   }
 
   /**
-   * The test-order references require a `sellerID` header (`createTestOrder`
+   * The test-order endpoints require a `sellerID` header (`createTestOrder`
    * has no seller id in its path at all).
    */
   private sellerHeader(): Record<string, string> {

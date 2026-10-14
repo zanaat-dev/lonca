@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { TokenBucketRateLimiter } from '@lonca/core';
+import { NotFoundError, TokenBucketRateLimiter } from '@lonca/core';
 import { ClaimsResource } from '../resources/claims.js';
 import type { TrendyolTransport } from '../transport.js';
 
@@ -31,6 +31,32 @@ describe('ClaimsResource.create', () => {
         },
       }),
     );
+  });
+
+  it('maps claimId, claimItemIds and the return tracking number (stage answer, 2026-10-14)', async () => {
+    const raw = {
+      claimId: 'c9f0cffa-2e17-4928-9156-358f843881a4',
+      cargoTrackingNumber: 7330000174454378,
+      claimItemIds: ['c96289b2', '1989c140'],
+    };
+    await expect(
+      r(mockTransport(raw)).create({
+        orderNumber: '750489847',
+        shipmentCompanyId: 17,
+        claimItems: [{ barcode: 'B1', quantity: 2, reasonId: 401 }],
+      }),
+    ).resolves.toEqual({
+      claimId: 'c9f0cffa-2e17-4928-9156-358f843881a4',
+      claimItemIds: ['c96289b2', '1989c140'],
+      cargoTrackingNumber: '7330000174454378',
+      raw,
+    });
+    await expect(
+      r(mockTransport(undefined)).create({
+        orderNumber: 'O1',
+        claimItems: [{ barcode: 'B1', quantity: 1, reasonId: 401 }],
+      }),
+    ).resolves.toEqual({ claimItemIds: [], raw: undefined });
   });
 
   it('throws ValidationError on empty claimItems', async () => {
@@ -139,6 +165,51 @@ describe('ClaimsResource.approveLineItems', () => {
 });
 
 describe('ClaimsResource.list', () => {
+  it('sends orderNumber and comma-separated claimIds', async () => {
+    const transport = mockTransport({ content: [], totalPages: 0 });
+    await r(transport).list({ orderNumber: '931144167', claimIds: [1, '2'] });
+    const call = (transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0];
+    expect(call.query).toMatchObject({ orderNumber: '931144167', claimIds: '1,2' });
+  });
+
+  it('turns the 404 "order.not.found" answer for a search with no match into an empty page', async () => {
+    const transport = {
+      sellerId: 42,
+      request: vi.fn().mockRejectedValue(
+        new NotFoundError({
+          message: 'Trendyol resource not found',
+          status: 404,
+          data: {
+            body: {
+              exception: 'SupplierApiDomainNotFoundException',
+              errors: [{ key: 'order.not.found', message: 'Order not found for claim' }],
+            },
+          },
+        }),
+      ),
+    } as unknown as TrendyolTransport;
+    await expect(r(transport).list()).resolves.toEqual({ items: [] });
+  });
+
+  it('still throws any other 404', async () => {
+    const transport = {
+      sellerId: 42,
+      request: vi.fn().mockRejectedValue(
+        new NotFoundError({
+          message: 'nope',
+          status: 404,
+          data: { body: { errors: [{ key: 'other' }] } },
+        }),
+      ),
+    } as unknown as TrendyolTransport;
+    await expect(r(transport).list()).rejects.toBeInstanceOf(NotFoundError);
+    const bare = {
+      sellerId: 42,
+      request: vi.fn().mockRejectedValue(new NotFoundError({ message: 'nope', status: 404 })),
+    } as unknown as TrendyolTransport;
+    await expect(r(bare).list()).rejects.toBeInstanceOf(NotFoundError);
+  });
+
   it('GETs /claims with default page+size', async () => {
     const transport = mockTransport({ content: [], totalPages: 0 });
     await r(transport).list();
