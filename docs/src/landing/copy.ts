@@ -208,14 +208,15 @@ export const copy = {
     changelog: {
       title: 'Sürüm notları · Lonca',
       description:
-        '@lonca paketlerinin 1.0 sürümünden bu yana yayımlanan her sürümü ve değişiklikleri.',
+        '@lonca paketlerinin yayımlanan her sürümü ve değişiklikleri: kararlı paketlerde 1.0’dan, beta paketlerde ilk sürümden bu yana.',
       heading: 'Sürüm notları',
-      lead: '@lonca paketlerinin 1.0’dan bu yana her sürümü, en yenisi üstte. Paketler semantik sürümlemeyi izler: kırıcı değişiklik yalnızca büyük sürümde gelir.',
+      lead: '@lonca paketlerinin her sürümü, en yenisi üstte: kararlı paketlerde 1.0’dan, henüz 1.0 olmayan beta paketlerde ilk sürümden bu yana. Paketler semantik sürümlemeyi izler: kırıcı değişiklik yalnızca büyük sürümde gelir; beta (0.x) paketlerde ara sürümde de gelebilir.',
       bump: { major: 'Büyük sürüm', minor: 'Ara sürüm', patch: 'Yama' },
       deps: 'Bağımlılık güncellendi',
       untranslated: 'Bu notun Türkçesi henüz yok.',
       stability: 'Sürümleme politikası',
-      older: '0.x sürümlerinin notları paketlerin CHANGELOG dosyalarında:',
+      beta: 'beta',
+      older: 'Kararlı paketlerin 0.x sürümlerinin notları CHANGELOG dosyalarında:',
       npm: 'npm’de gör',
     },
     footer: {
@@ -427,14 +428,16 @@ export const copy = {
     },
     changelog: {
       title: 'Release notes · Lonca',
-      description: 'Every release of the @lonca packages since 1.0, with what changed.',
+      description:
+        'Every release of the @lonca packages, with what changed: since 1.0 for stable packages, since the first release for beta ones.',
       heading: 'Release notes',
-      lead: 'Every release of the @lonca packages since 1.0, newest first. The packages follow semantic versioning: breaking changes only ship in a major version.',
+      lead: 'Every release of the @lonca packages, newest first: since 1.0 for stable packages, since the first release for beta packages that have not reached 1.0. The packages follow semantic versioning: breaking changes only ship in a major version, or in a minor one for a beta (0.x) package.',
       bump: { major: 'Major', minor: 'Minor', patch: 'Patch' },
       deps: 'Dependency updated',
       untranslated: '',
       stability: 'Versioning policy',
-      older: 'Notes for the 0.x releases live in each package’s CHANGELOG:',
+      beta: 'beta',
+      older: 'Notes for the 0.x releases of the stable packages live in their CHANGELOG:',
       npm: 'View on npm',
     },
     footer: {
