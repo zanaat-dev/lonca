@@ -10,7 +10,7 @@ This page is the contract between Lonca and your integration: what we promise to
 All packages follow [Semantic Versioning](https://semver.org/).
 
 :::note[All packages are 1.0+]
-`@lonca/core`, `@lonca/trendyol`, and `@lonca/hepsiburada` are all at `1.0.0` or later, so the policy below applies to every published package. Historical `0.x` releases allowed breaking changes in minor versions — pin a minor range (`~0.x.y`) only if you are still on one. [Migrating to 1.0](/migrating-to-1-0/) lists what changes when you upgrade.
+`@lonca/core`, `@lonca/trendyol`, and `@lonca/hepsiburada` are at `1.0.0` or later, and the policy below applies to them. `@lonca/n11` is in beta (`0.x`): a minor version may still break, so pin a minor range (`~0.1.0`) until it reaches 1.0. The same held for the historical `0.x` releases of the other packages. [Migrating to 1.0](/migrating-to-1-0/) lists what changes when you upgrade.
 :::
 
 From `1.0.0` onwards:
