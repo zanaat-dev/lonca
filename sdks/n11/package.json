@@ -1,6 +1,6 @@
 {
   "name": "@lonca/n11",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Type-safe TypeScript SDK for the n11 Marketplace API (REST and SOAP)",
   "license": "MIT",
   "repository": {
