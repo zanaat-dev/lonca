@@ -1,5 +1,13 @@
 # @lonca/examples
 
+## 0.0.31
+
+### Patch Changes
+
+- Updated dependencies [[`755a229`](https://github.com/zanaat-dev/lonca/commit/755a229d40151b70db114c45f8e2c40d4ce6ad7a), [`d90147b`](https://github.com/zanaat-dev/lonca/commit/d90147bd3f1598b12db45f734b7ae2144572170c)]:
+  - @lonca/hepsiburada@1.3.3
+  - @lonca/trendyol@1.2.4
+
 ## 0.0.30
 
 ### Patch Changes

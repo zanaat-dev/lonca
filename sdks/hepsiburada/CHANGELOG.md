@@ -1,5 +1,15 @@
 # @lonca/hepsiburada
 
+## 1.3.3
+
+### Patch Changes
+
+- [#235](https://github.com/zanaat-dev/lonca/pull/235) [`755a229`](https://github.com/zanaat-dev/lonca/commit/755a229d40151b70db114c45f8e2c40d4ce6ad7a) Thanks [@keparlak](https://github.com/keparlak)! - `catalog.deleteByMerchantSkuList()` sends the array of `{ merchant, merchantSku }` Hepsiburada documents, filling in `merchant` from the client. It sent `{ merchantSkuList: [...] }`, which Hepsiburada answers with a 500 (verified on SIT, 2026-10-14), so the method never worked. The older input is still accepted and converted, so existing calls now work as written.
+  
+  <!-- tr
+  `catalog.deleteByMerchantSkuList()` artık Hepsiburada'nın dokümante ettiği `{ merchant, merchantSku }` dizisini gönderiyor; `merchant` alanını istemciden dolduruyor. Önceden `{ merchantSkuList: [...] }` gönderiyordu; Hepsiburada buna 500 döndüğü için (SIT'te doğrulandı, 14 Ekim 2026) metot hiç çalışmıyordu. Eski girdi biçimi de kabul edilip diziye çevriliyor, yani mevcut çağrılar yazıldıkları gibi çalışmaya başlıyor.
+  -->
+
 ## 1.3.2
 
 ### Patch Changes
