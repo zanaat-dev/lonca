@@ -1,5 +1,15 @@
 # @lonca/hepsiburada
 
+## 1.2.2
+
+### Patch Changes
+
+- [#219](https://github.com/zanaat-dev/lonca/pull/219) [`6f14246`](https://github.com/zanaat-dev/lonca/commit/6f14246cb54da310265ff7f4207aa0c24509f7f7) Thanks [@keparlak](https://github.com/keparlak)! - `productUpdates.getUpdateStatus()` and `catalog.getTrackingIdHistory()` now read rows from the `data` array of Hepsiburada's response envelope (`{ success, code, message, data: [...] }`). Both used to look only for a bare array, `rows` or `items`, so for a response in the documented shape `getUpdateStatus()` left `rows` unset (the rows were only on `raw`) and `getTrackingIdHistory()` returned an empty list.
+  
+  <!-- tr
+  `productUpdates.getUpdateStatus()` ve `catalog.getTrackingIdHistory()` artık satırları Hepsiburada yanıt zarfının `data` dizisinden okuyor (`{ success, code, message, data: [...] }`). İkisi de yalnızca düz diziye, `rows` ya da `items` alanına bakıyordu; bu yüzden dokümandaki biçimde gelen bir yanıtta `getUpdateStatus()` `rows` alanını boş bırakıyor (satırlar yalnızca `raw` içindeydi), `getTrackingIdHistory()` ise hep boş liste dönüyordu.
+  -->
+
 ## 1.2.1
 
 ### Patch Changes

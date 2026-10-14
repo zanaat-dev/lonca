@@ -1,6 +1,6 @@
 {
   "name": "@lonca/probe",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "private": true,
   "description": "Read-only live contract probes for Lonca SDKs (not published).",
   "type": "module",
