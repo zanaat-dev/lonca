@@ -26,7 +26,13 @@ export interface UploadInvoiceFileInput {
 export interface SendInvoiceLinkInput {
   invoiceLink: string;
   shipmentPackageId: number;
+  /** ms-epoch. */
   invoiceDateTime?: number;
+  /**
+   * e-Archive / e-Invoice number: 3 letters or digits, the year, 9 digits
+   * (`LON2026000000001`). Any other shape is refused with 400 "Fatura numarası
+   * hatalıdır" (stage, 2026-10-14).
+   */
   invoiceNumber?: string;
 }
 

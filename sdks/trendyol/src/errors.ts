@@ -23,6 +23,10 @@ export { parseRetryAfter };
  *   proxy (e.g. Cloudflare's stage IP allowlist) blocked the request before it
  *   reached the API. The raw body is never attached to the error; `data`
  *   carries only a `{ bodyKind, bodyLength }` hint.
+ * - `400` / `422` → `ValidationError` — Trendyol's business rules
+ *   (`TrendyolBusinessException`); the first message from the body joins the
+ *   error message, e.g. "Fatura numarası hatalıdır" (checked on stage,
+ *   2026-10-14)
  * - `404` → `NotFoundError`
  * - `429` → `RateLimitError` (carries `retryAfterMs` if the server provided `Retry-After`)
  * - `5xx` → `ServerError` (retryable)
@@ -42,6 +46,16 @@ export function mapHttpError(status: number, body: unknown, retryAfterMs?: numbe
   const data = { body } as Record<string, unknown>;
   const issues = normalizeErrorIssues(body);
   switch (status) {
+    case 400:
+    case 422: {
+      const first = issues.find((i) => i.message)?.message;
+      return new ValidationError({
+        message: `Trendyol rejected the request (${status})${first ? `: ${first}` : ''}`,
+        status,
+        data,
+        issues,
+      });
+    }
     case 401:
       return new AuthError({
         message: 'Trendyol authentication failed (check apiKey / apiSecret)',

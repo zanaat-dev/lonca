@@ -364,9 +364,10 @@ console.log(label.labels[0]?.label); // ZPL string
 const { orderNumber } = await client.testOrders.create({
   /* CreateTestOrderInput */
 }); // CreateTestOrderResult — documented `{ orderNumber }`
+await client.testOrders.updateStatus(pkgId, 'Picking'); // MutationResult
 await client.testOrders.updateStatus(pkgId, 'Shipped', {
-  lines: [{ lineId, quantity: 1 }], // required by Trendyol's reference ({ lines, status }, params optional)
-}); // MutationResult
+  lines: [{ lineId, quantity: 1 }], // optional — the reference shows { lines, params, status }
+});
 await client.testOrders.setClaimsWaitingInAction({ shipmentPackageId }); // MutationResult; body optional
 
 // videos
