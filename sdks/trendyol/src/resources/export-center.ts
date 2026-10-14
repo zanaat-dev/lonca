@@ -112,6 +112,8 @@ export class ExportCenterResource {
   /**
    * Update Export Center stocks. Returns a `batchId`. Sellers using
    * Trendyol's shared inventory cannot use this endpoint (per portal docs).
+   * Sent as `{ stocks: [{ barcode, stock }] }`, the body the portal documents
+   * (it used to go out as `{ items }`).
    *
    * @throws {ValidationError} when `items` is empty / oversized.
    */
@@ -120,7 +122,7 @@ export class ExportCenterResource {
     const data = await this.transport.request<unknown>({
       method: 'POST',
       path: `/integration/ecgw/v1/${this.transport.sellerId}/stocks`,
-      body: { items },
+      body: { stocks: items },
       rateLimiter: this.limiter,
     });
     return normalizeBatchResponse(data);

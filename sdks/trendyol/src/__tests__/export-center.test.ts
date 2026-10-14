@@ -92,7 +92,7 @@ describe('ExportCenterResource.createProducts / updatePrices / updateStocks', ()
   it.each([
     ['createProducts', 'POST', '/integration/ecgw/v2/42/products', 'products'],
     ['updatePrices', 'POST', '/integration/ecgw/v1/42/prices', 'priceInfos'],
-    ['updateStocks', 'POST', '/integration/ecgw/v1/42/stocks', 'items'],
+    ['updateStocks', 'POST', '/integration/ecgw/v1/42/stocks', 'stocks'],
   ] as const)('%s POSTs to %s with body wrapper %s', async (method, verb, path, key) => {
     const transport = mockTransport({ batchId: 'BR-1' });
     const resource = r(transport);
