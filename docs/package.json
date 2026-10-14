@@ -1,6 +1,6 @@
 {
   "name": "@lonca/docs",
-  "version": "0.0.25",
+  "version": "0.0.26",
   "private": true,
   "description": "Documentation site for the Lonca SDKs (Astro + Starlight).",
   "type": "module",
