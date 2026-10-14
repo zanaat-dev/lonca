@@ -1,5 +1,14 @@
 # @lonca/probe
 
+## 0.0.19
+
+### Patch Changes
+
+- Updated dependencies [[`d05f3e3`](https://github.com/zanaat-dev/lonca/commit/d05f3e3374ae446067ddc6151f05c39f3d990859), [`3af4246`](https://github.com/zanaat-dev/lonca/commit/3af42465703aabb8aaaf259b682a526514c19a25)]:
+  - @lonca/hepsiburada@1.3.5
+  - @lonca/trendyol@1.3.0
+  - @lonca/drift@0.0.0
+
 ## 0.0.18
 
 ### Patch Changes
