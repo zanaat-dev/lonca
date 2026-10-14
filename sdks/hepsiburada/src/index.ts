@@ -128,6 +128,7 @@ export type {
   CatalogValidationResult,
   CheckProductStatusInput,
   DeleteBySkuInput,
+  DeleteBySkuItem,
   FastListingInput,
   ListCatalogProductsParams,
   ListProductsByStatusParams,

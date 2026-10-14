@@ -400,13 +400,37 @@ describe('CatalogResource — Phase 2b mutations + tracking', () => {
     ).rejects.toThrow(/non-empty/);
   });
 
-  it('deleteByMerchantSkuList POSTs to /delete-process + returns trackingId', async () => {
+  it('deleteByMerchantSkuList POSTs the documented array to /delete-process + returns trackingId', async () => {
     const transport = mockTransport({ trackingId: 'TRK-D1' });
-    const receipt = await r(transport).deleteByMerchantSkuList({ merchantSkuList: ['M-001'] });
-    expect((transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0].path).toBe(
-      '/product/api/products/delete-process',
-    );
+    const receipt = await r(transport).deleteByMerchantSkuList([
+      { merchantSku: 'M-001' },
+      { merchant: 'OTHER', merchantSku: 'M-002' },
+    ]);
+    const call = (transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0];
+    expect(call.path).toBe('/product/api/products/delete-process');
+    expect(call.body).toEqual([
+      { merchant: 'M-2b', merchantSku: 'M-001' },
+      { merchant: 'OTHER', merchantSku: 'M-002' },
+    ]);
     expect(receipt.trackingId).toBe('TRK-D1');
+  });
+
+  it('deleteByMerchantSkuList converts the older { merchantSkuList } input (as-is it was a 500 on SIT)', async () => {
+    const transport = mockTransport({ trackingId: 'TRK-D2' });
+    await r(transport).deleteByMerchantSkuList({ merchantSkuList: ['M-001', 'M-002'] });
+    expect((transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0].body).toEqual([
+      { merchant: 'M-2b', merchantSku: 'M-001' },
+      { merchant: 'M-2b', merchantSku: 'M-002' },
+    ]);
+  });
+
+  it('deleteByMerchantSkuList rejects an empty array and a row without merchantSku', async () => {
+    const transport = mockTransport();
+    await expect(r(transport).deleteByMerchantSkuList([])).rejects.toThrow(/non-empty/);
+    await expect(
+      r(transport).deleteByMerchantSkuList([{ merchantSku: '' }, null as never]),
+    ).rejects.toThrow(/every row needs a merchantSku/);
+    expect(transport.request).not.toHaveBeenCalled();
   });
 });
 
