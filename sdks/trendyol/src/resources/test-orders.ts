@@ -43,6 +43,7 @@ export class TestOrdersResource {
       method: 'POST',
       path: `/integration/test/order/orders/core`,
       body: input,
+      headers: this.sellerHeader(),
       rateLimiter: this.limiter,
     });
     const out: CreateTestOrderResult = { raw };
@@ -53,10 +54,11 @@ export class TestOrdersResource {
 
   /**
    * Push a test shipment package to the given status. Trendyol's
-   * `status-updates-on-test-orders` doc shows a `{ lines, params, status }`
-   * body — pass `options` to send the documented `lines` / `params`;
-   * omitted, the body stays `{ status }` alone as before. Documented
-   * response is a bare `200 OK` (no body), hence `MutationResult`.
+   * `status-updates-on-test-orders` doc requires a `{ lines, status }` body
+   * (`params` optional) — pass `options.lines`. Without `options` the body
+   * stays `{ status }` alone as before, which the reference does not allow;
+   * prefer the three-argument form. Documented response is a bare `200 OK`
+   * (no body), hence `MutationResult`.
    */
   async updateStatus(
     packageId: string | number,
@@ -71,6 +73,7 @@ export class TestOrdersResource {
         ...(options.params !== undefined ? { params: options.params } : {}),
         status,
       },
+      headers: this.sellerHeader(),
       rateLimiter: this.limiter,
     });
     return { raw };
@@ -91,5 +94,13 @@ export class TestOrdersResource {
       rateLimiter: this.limiter,
     });
     return { raw };
+  }
+
+  /**
+   * The test-order references require a `sellerID` header (`createTestOrder`
+   * has no seller id in its path at all).
+   */
+  private sellerHeader(): Record<string, string> {
+    return { sellerID: String(this.transport.sellerId) };
   }
 }

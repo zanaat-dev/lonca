@@ -43,7 +43,7 @@ Each entry is a method on the client.
 | `testOrders`     | `create({...})`, `updateStatus(id, status, { lines?, params? })`, `setClaimsWaitingInAction()` — **STAGE-only utility**                                                                                                                                                                                                            |
 | `locations`      | `getCountries()`, `getTurkeyCities()`, `getTurkeyDistricts(cityId)`, `getTurkeyNeighborhoods(cityId, districtId)`, `getAzerbaijanCities()`, `getAzerbaijanDistricts(...)`, `getCitiesByCountry/getDistrictsByCity(...)`                                                                                                            |
 | `exportCenter`   | `listProducts({...})`, `createProducts(items)`, `updatePrices(items)`, `updateStocks(items)`, `getBatchStatus(batchId)`, `listPackagesV2/V3({...})`, `getPackageItems({packageId, ...})`, `getCategoryAttributes(id)`, `getCareInstructions()`, `getCompositions()`, `getOrigins()` — **Trendyol Export Center / İhracat Merkezi** |
-| `videos`         | `create({contentId, url, ...})`, `list({id?, sellerIntegrationStatus?, ...})` — product-page video upload + status                                                                                                                                                                                                                 |
+| `videos`         | `create({title, videoUrl, productContentIds})`, `list({id?, sellerIntegrationStatus?, ...})` — product-page video upload + status                                                                                                                                                                                                  |
 | **top-level**    | `parseWebhookEvent(rawBody)`, `normalizeShipmentPackage(rawNode)` — for inbound webhook handlers                                                                                                                                                                                                                                   |
 
 **Intentionally excluded:** `processAlternativeDeliveryDigital` (digital products only). Note: V1 endpoint sunset is N/A — Trendyol's V2 docs serve the same paths as V1, and the SDK already emits the V2 response shape (`nextPageToken` pagination, content-based variants).
@@ -364,11 +364,9 @@ console.log(label.labels[0]?.label); // ZPL string
 const { orderNumber } = await client.testOrders.create({
   /* CreateTestOrderInput */
 }); // CreateTestOrderResult — documented `{ orderNumber }`
-await client.testOrders.updateStatus(pkgId, 'Shipped'); // MutationResult
-await client.testOrders.updateStatus(pkgId, 'Delivered', {
-  lines: [{ lineId, quantity: 1 }], // optional — the doc shows { lines, params, status }
-  params: {},
-});
+await client.testOrders.updateStatus(pkgId, 'Shipped', {
+  lines: [{ lineId, quantity: 1 }], // required by Trendyol's reference ({ lines, status }, params optional)
+}); // MutationResult
 await client.testOrders.setClaimsWaitingInAction({ shipmentPackageId }); // MutationResult; body optional
 
 // videos

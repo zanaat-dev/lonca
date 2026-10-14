@@ -45,10 +45,17 @@ export interface ExportProduct {
  */
 export type ExportProductInput = Record<string, unknown>;
 
-/** Payload for `exportCenter.updatePrices()` — `{ barcode, salePrice, listPrice, ... }` per docs. */
+/**
+ * One row of `exportCenter.updatePrices()`: `{ barcode, buyingPrice, rrp? }`
+ * per the portal ("autoft-update-prices"; `barcode` and `buyingPrice` are
+ * required).
+ */
 export type ExportPriceUpdateInput = Record<string, unknown>;
 
-/** Payload for `exportCenter.updateStocks()` — `{ barcode, quantity, ... }` per docs. */
+/**
+ * One row of `exportCenter.updateStocks()`: `{ barcode, stock }` per the
+ * portal ("autoft-update-stocks"; both required).
+ */
 export type ExportStockUpdateInput = Record<string, unknown>;
 
 /** Returned by every async batch endpoint — poll status via `getBatchStatus(batchId)`. */

@@ -268,6 +268,8 @@ describe('TestOrdersResource', () => {
         method: 'POST',
         path: '/integration/test/order/orders/core',
         body: minimal,
+        // Required by createTestOrder; the path carries no seller id.
+        headers: { sellerID: '42' },
       }),
     );
     expect(out).toEqual({ orderNumber: '123456789', raw: { orderNumber: '123456789' } });
@@ -300,6 +302,7 @@ describe('TestOrdersResource', () => {
         method: 'PUT',
         path: '/integration/test/order/sellers/42/shipment-packages/99/status',
         body: { status: 'Shipped' },
+        headers: { sellerID: '42' },
       }),
     );
     // Documented as a bare 200 OK — MutationResult with an empty raw.
