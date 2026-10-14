@@ -848,7 +848,9 @@ export class ProductsResource {
    * `productMainId`, `brandId`, `categoryId`, `stockCode`,
    * `dimensionalWeight`, `vatRate`, `images[]`, and `attributes[]` (an
    * empty array is OK for the latter). The SDK forwards your payload
-   * as-is; trim fields only if you have verified the server accepts it.
+   * as-is; trim fields only if you have verified the server accepts it
+   * (stage answered `{ barcode, title }` alone with a 500 "TrendyolSystemException"
+   * and the full payload with a batch, 2026-10-14).
    *
    * @throws {ValidationError} when `items` is empty or longer than 1000.
    */

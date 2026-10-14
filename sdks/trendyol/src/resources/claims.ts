@@ -1,4 +1,5 @@
 import {
+  NotFoundError,
   TokenBucketRateLimiter,
   ValidationError,
   type CursorPage,
@@ -11,6 +12,7 @@ import type {
   ClaimItemAudit,
   ClaimIssueReason,
   CreateClaimInput,
+  CreateClaimResult,
   CreateClaimIssueInput,
   ListClaimsParams,
 } from '../types/claim.js';
@@ -70,22 +72,35 @@ export class ClaimsResource {
    * customer-initiated returns coming from trendyol.com, you receive them
    * via `claims.list()` — no need to call `create`.
    *
-   * Returns whatever Trendyol returns (typically the new claim's identifier).
+   * Resolves to the new claim's id, one claim item id per unit and the
+   * return shipment's tracking number (stage, 2026-10-14), plus `raw`.
    *
    * @throws {ValidationError} when `claimItems` is empty.
    */
-  async create(input: CreateClaimInput): Promise<MutationResult> {
+  async create(input: CreateClaimInput): Promise<CreateClaimResult> {
     if (!Array.isArray(input?.claimItems) || input.claimItems.length === 0) {
       throw new ValidationError({ message: 'claims.create: claimItems must not be empty' });
     }
-    return {
-      raw: await this.transport.request<unknown>({
-        method: 'POST',
-        path: `/integration/order/sellers/${this.transport.sellerId}/claims/create`,
-        body: input,
-        rateLimiter: this.limiter,
-      }),
+    const raw = await this.transport.request<unknown>({
+      method: 'POST',
+      path: `/integration/order/sellers/${this.transport.sellerId}/claims/create`,
+      body: input,
+      rateLimiter: this.limiter,
+    });
+    const body = (raw && typeof raw === 'object' ? raw : {}) as {
+      claimId?: unknown;
+      claimItemIds?: unknown;
+      cargoTrackingNumber?: unknown;
     };
+    const result: CreateClaimResult = {
+      claimItemIds: Array.isArray(body.claimItemIds) ? body.claimItemIds.map(String) : [],
+      raw,
+    };
+    if (body.claimId !== undefined && body.claimId !== null) result.claimId = String(body.claimId);
+    if (body.cargoTrackingNumber !== undefined && body.cargoTrackingNumber !== null) {
+      result.cargoTrackingNumber = String(body.cargoTrackingNumber);
+    }
+    return result;
   }
 
   /**
@@ -177,6 +192,8 @@ export class ClaimsResource {
     if (params.startDate) query.startDate = params.startDate.getTime();
     if (params.endDate) query.endDate = params.endDate.getTime();
     if (params.claimItemStatus) query.claimItemStatus = params.claimItemStatus;
+    if (params.orderNumber) query.orderNumber = params.orderNumber;
+    if (params.claimIds?.length) query.claimIds = params.claimIds.join(',');
 
     interface WireResponse {
       totalElements?: number;
@@ -185,12 +202,20 @@ export class ClaimsResource {
       size?: number;
       content?: WireClaim[];
     }
-    const data = await this.transport.request<WireResponse>({
-      method: 'GET',
-      path: `/integration/order/sellers/${this.transport.sellerId}/claims`,
-      query,
-      rateLimiter: this.limiter,
-    });
+    let data: WireResponse;
+    try {
+      data = await this.transport.request<WireResponse>({
+        method: 'GET',
+        path: `/integration/order/sellers/${this.transport.sellerId}/claims`,
+        query,
+        rateLimiter: this.limiter,
+      });
+    } catch (error) {
+      // Trendyol answers a search with no match with 404 `order.not.found`
+      // ("Order not found for claim", stage 2026-10-14) — an empty page.
+      if (error instanceof NotFoundError && isNoClaimsAnswer(error.data)) return { items: [] };
+      throw error;
+    }
 
     const items = (data.content ?? []).map(normalizeClaim);
     const result: CursorPage<Claim> = { items };
@@ -238,4 +263,9 @@ export class ClaimsResource {
         : [];
     return rows.map((row) => ({ raw: row as Record<string, unknown> }));
   }
+}
+
+function isNoClaimsAnswer(data: Record<string, unknown> | undefined): boolean {
+  const body = data?.body as { errors?: { key?: unknown }[] } | undefined;
+  return Array.isArray(body?.errors) && body.errors.some((e) => e?.key === 'order.not.found');
 }

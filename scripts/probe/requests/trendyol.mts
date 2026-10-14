@@ -9,7 +9,7 @@ const COMPLETED = () => ({
   status: 'COMPLETED',
   itemCount: 1,
   failedItemCount: 0,
-  items: [],
+  items: [{ status: 'SUCCESS', failureReasons: [] }],
 });
 const PACKAGE = 3_145_678_901;
 const TRACKING = '7330012345678';

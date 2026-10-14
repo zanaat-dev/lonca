@@ -35,6 +35,23 @@ export interface CreateClaimInput {
   excludeListing?: boolean;
   /** Force a new shipment package to be created for the return. */
   forcePackageCreation?: boolean;
+  /**
+   * Cargo company of the return shipment (`17` is Trendyol Express). Optional
+   * in the reference, but Trendyol refuses the claim without it ("ShipmentCompanyId:
+   * 0 hatalıdır", stage 2026-10-14).
+   */
+  shipmentCompanyId?: number;
+}
+
+/** Result of `claims.create()`. */
+export interface CreateClaimResult {
+  claimId?: string;
+  /** One id per claimed unit. */
+  claimItemIds: string[];
+  /** Tracking number of the return shipment. */
+  cargoTrackingNumber?: string;
+  /** Untouched raw response. */
+  raw: unknown;
 }
 
 /**
@@ -51,6 +68,10 @@ export interface CreateClaimIssueInput {
   /** Free-text explanation (≤500 chars). */
   description: string;
   /** Optional supporting documents (Blob / File). */
+  /**
+   * Evidence (PDF, JPEG, …). Send at least one: stage answered a request
+   * without a file with a bare 400 "Request Failed" (2026-10-14).
+   */
   files?: Blob[];
 }
 
@@ -81,6 +102,10 @@ export interface ListClaimsParams extends CursorPaginationParams {
   endDate?: Date;
   /** Filter claims by item-level status. */
   claimItemStatus?: ClaimItemStatus;
+  /** Claims of one order. */
+  orderNumber?: string;
+  /** Specific claims (sent comma-separated). */
+  claimIds?: (string | number)[];
 }
 
 /**

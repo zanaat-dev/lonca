@@ -275,6 +275,22 @@ interface CreateClaimInput {
     excludeListing?: boolean;
     /** Force a new shipment package to be created for the return. */
     forcePackageCreation?: boolean;
+    /**
+     * Cargo company of the return shipment (`17` is Trendyol Express). Optional
+     * in the reference, but Trendyol refuses the claim without it ("ShipmentCompanyId:
+     * 0 hatalıdır", stage 2026-10-14).
+     */
+    shipmentCompanyId?: number;
+}
+/** Result of `claims.create()`. */
+interface CreateClaimResult {
+    claimId?: string;
+    /** One id per claimed unit. */
+    claimItemIds: string[];
+    /** Tracking number of the return shipment. */
+    cargoTrackingNumber?: string;
+    /** Untouched raw response. */
+    raw: unknown;
 }
 /**
  * Payload for `claims.createIssue()` — file a seller-side rejection
@@ -290,6 +306,10 @@ interface CreateClaimIssueInput {
     /** Free-text explanation (≤500 chars). */
     description: string;
     /** Optional supporting documents (Blob / File). */
+    /**
+     * Evidence (PDF, JPEG, …). Send at least one: stage answered a request
+     * without a file with a bare 400 "Request Failed" (2026-10-14).
+     */
     files?: Blob[];
 }
 /** Payload for `claims.approveLineItems()`. */
@@ -310,6 +330,10 @@ interface ListClaimsParams extends CursorPaginationParams {
     endDate?: Date;
     /** Filter claims by item-level status. */
     claimItemStatus?: ClaimItemStatus;
+    /** Claims of one order. */
+    orderNumber?: string;
+    /** Specific claims (sent comma-separated). */
+    claimIds?: (string | number)[];
 }
 /**
  * A return claim. Trendyol returns ~20 fields; the SDK surfaces the
@@ -358,11 +382,12 @@ declare class ClaimsResource {
      * customer-initiated returns coming from trendyol.com, you receive them
      * via `claims.list()` — no need to call `create`.
      *
-     * Returns whatever Trendyol returns (typically the new claim's identifier).
+     * Resolves to the new claim's id, one claim item id per unit and the
+     * return shipment's tracking number (stage, 2026-10-14), plus `raw`.
      *
      * @throws {ValidationError} when `claimItems` is empty.
      */
-    create(input: CreateClaimInput): Promise<MutationResult>;
+    create(input: CreateClaimInput): Promise<CreateClaimResult>;
     /**
      * File a seller-side rejection ("ret talebi") against a customer claim.
      *
@@ -1177,11 +1202,13 @@ interface BatchPollOptions {
     signal?: AbortSignal;
 }
 /**
- * Whether a batch is done: its status is `COMPLETED` / `FAILED`, or every one
- * of its `itemCount` items has a final status. Trendyol stage left a
- * one-item stock batch at `PROCESSING` for good although the item was
- * `SUCCESS` and the stock had changed (2026-10-14), so the item statuses are
- * the reliable signal.
+ * Whether a batch is done, judged by its items first: every one of its
+ * `itemCount` items has a final status (`SUCCESS` / `FAILED`). The batch
+ * status alone is not reliable either way on Trendyol stage (2026-10-14): a
+ * stock batch stayed `PROCESSING` for good although its item was `SUCCESS`,
+ * and a product-create batch turned `COMPLETED` a few seconds before its item
+ * result appeared. A `COMPLETED` / `FAILED` batch without an `itemCount` is
+ * settled as before.
  */
 declare function isBatchSettled(result: BatchRequestResult): boolean;
 /**
@@ -1191,6 +1218,10 @@ declare function isBatchSettled(result: BatchRequestResult): boolean;
  * Standalone so callers can poll an id obtained elsewhere (e.g. a persisted
  * `batchRequestId` from a previous process) without going through
  * {@link InventoryResource.updateAndWait}.
+ *
+ * When the timeout elapses on a batch whose status already reads `COMPLETED`
+ * / `FAILED`, that last result is returned (some items may be missing)
+ * rather than thrown.
  *
  * @throws {TimeoutError} when the batch does not settle within `timeoutMs`;
  *   `error.data` carries `{ batchRequestId, lastStatus, lastResult }`.
@@ -2301,7 +2332,9 @@ declare class ProductsResource {
      * `productMainId`, `brandId`, `categoryId`, `stockCode`,
      * `dimensionalWeight`, `vatRate`, `images[]`, and `attributes[]` (an
      * empty array is OK for the latter). The SDK forwards your payload
-     * as-is; trim fields only if you have verified the server accepts it.
+     * as-is; trim fields only if you have verified the server accepts it
+     * (stage answered `{ barcode, title }` alone with a 500 "TrendyolSystemException"
+     * and the full payload with a batch, 2026-10-14).
      *
      * @throws {ValidationError} when `items` is empty or longer than 1000.
      */
@@ -2572,7 +2605,7 @@ declare class TestOrdersResource {
      */
     setClaimsWaitingInAction(input?: SetClaimsWaitingInActionInput): Promise<MutationResult>;
     /**
-     * The test-order references require a `sellerID` header (`createTestOrder`
+     * The test-order endpoints require a `sellerID` header (`createTestOrder`
      * has no seller id in its path at all).
      */
     private sellerHeader;
@@ -2885,4 +2918,4 @@ interface TrendyolClient {
  */
 declare function createTrendyolClient(opts: CreateClientOptions): TrendyolClient;
 
-export { type AnswerQuestionResult, type ApproveClaimLineItemsInput, type ApprovedProductStatus, type BarcodeCategoryLookup, type BatchAcceptedResponse, type BatchPollOptions, type BatchRequestItemResult, type BatchRequestResult, type BatchRequestStatus, type Brand, BrandsResource, type BuyboxInfo, type CancelPackageItemInput, type CareInstruction, type CargoInvoiceItem, CategoriesResource, type Category, type CategoryAttribute, type CategoryAttributeValue, type City, type Claim, type ClaimIssueReason, type ClaimItemAudit, type ClaimItemStatus, ClaimsResource, type CommonLabel, type CommonLabelEntry, type CompensationItemDetail, type CompensationTicket, type CompensationTicketState, type Country, type CreateClaimInput, type CreateClaimIssueInput, type CreateClaimItemInput, type CreateClientOptions, type CreateCommonLabelInput, type CreateProductV2Input, type CreateTestOrderInput, type CreateTestOrderResult, createTrendyolClient, type CreateVideoInput, type CreateVideoResult, type CreateWebhookResult, type DeleteInvoiceLinkInput, type DeliveryOptionInput, type District, type ExportBatchAcceptedResponse, type ExportBatchStatus, type ExportCategoryAttribute, ExportCenterResource, type ExportPackage, type ExportPackageItem, type ExportPackageStatus, type ExportPriceUpdateInput, type ExportProduct, type ExportProductInput, type ExportStockUpdateInput, FinanceResource, type FinancialTransaction, type GetExportPackageItemsParams, InventoryResource, InvoicesResource, isBatchSettled, type KnownShipmentPackageStatus, LabelsResource, type LaborCostInput, type ListCategoryAttributeValuesParams, type ListClaimsParams, type ListCompensationTicketsParams, type ListExportPackagesV2Params, type ListExportPackagesV3Params, type ListExportProductsParams, type ListFinanceParams, type ListInventoryAndPriceParams, type ListOrdersParams, type ListOrdersStreamParams, type ListProductsParams, type ListQuestionsParams, type ListUnapprovedProductsParams, type ListVideosParams, LocationsResource, type NamedRef, type Neighborhood, normalizeShipmentPackage, type OrderAddress, type OrderAddressLines, type OrderCustomer, type OrderLine, type OrderLineDiscountDetail, OrdersResource, type OtherFinancialRow, type PackageDetail, type PackageHistoryEntry, type PackageLineUpdate, pollBatchStatus, type PriceInventoryUpdate, type ProcessAlternativeDeliveryInput, type Product, type ProductAttribute, type ProductAttributeV2Input, type ProductBase, type ProductComposition, type ProductContentBase, type ProductImageInput, type ProductOrigin, ProductsResource, type ProductStockPrice, type ProductStockPriceVariant, type ProductVariant, type QuantitySplit, type Question, type QuestionAnswer, QuestionsResource, type QuestionStatus, type SellerIntegrationStatus, type SellerVideo, type SendInvoiceLinkInput, type SetClaimsWaitingInActionInput, type SettlementRow, type ShipmentPackage, type ShipmentPackageStatus, type SplitGroup, type SplitPackagePlan, type SupplierAddress, type SupplierAddressType, SuppliersResource, type SuppliersResourceOptions, TestOrdersResource, type TestOrderStatus, type TestOrderStatusLine, trendyolCapabilities, type TrendyolCapabilities, type TrendyolCargoProvider, type TrendyolClient, type TrendyolEnvironment, type UnapprovedDateQueryType, type UnapprovedProduct, type UnapprovedProductRejectReason, type UnapprovedProductStatus, type UpdateBoxInfoInput, type UpdateContentInput, type UpdateDeliveryInfoInput, type UpdatePackageStatusInput, type UpdatePriceInventoryResponse, type UpdateTestOrderStatusOptions, type UpdateUnapprovedInput, type UpdateVariantInput, type UploadInvoiceFileInput, type VideoContentType, VideosResource, type Webhook, type WebhookAuthenticationType, type WebhookInput, WebhooksResource };
+export { type AnswerQuestionResult, type ApproveClaimLineItemsInput, type ApprovedProductStatus, type BarcodeCategoryLookup, type BatchAcceptedResponse, type BatchPollOptions, type BatchRequestItemResult, type BatchRequestResult, type BatchRequestStatus, type Brand, BrandsResource, type BuyboxInfo, type CancelPackageItemInput, type CareInstruction, type CargoInvoiceItem, CategoriesResource, type Category, type CategoryAttribute, type CategoryAttributeValue, type City, type Claim, type ClaimIssueReason, type ClaimItemAudit, type ClaimItemStatus, ClaimsResource, type CommonLabel, type CommonLabelEntry, type CompensationItemDetail, type CompensationTicket, type CompensationTicketState, type Country, type CreateClaimInput, type CreateClaimIssueInput, type CreateClaimItemInput, type CreateClaimResult, type CreateClientOptions, type CreateCommonLabelInput, type CreateProductV2Input, type CreateTestOrderInput, type CreateTestOrderResult, createTrendyolClient, type CreateVideoInput, type CreateVideoResult, type CreateWebhookResult, type DeleteInvoiceLinkInput, type DeliveryOptionInput, type District, type ExportBatchAcceptedResponse, type ExportBatchStatus, type ExportCategoryAttribute, ExportCenterResource, type ExportPackage, type ExportPackageItem, type ExportPackageStatus, type ExportPriceUpdateInput, type ExportProduct, type ExportProductInput, type ExportStockUpdateInput, FinanceResource, type FinancialTransaction, type GetExportPackageItemsParams, InventoryResource, InvoicesResource, isBatchSettled, type KnownShipmentPackageStatus, LabelsResource, type LaborCostInput, type ListCategoryAttributeValuesParams, type ListClaimsParams, type ListCompensationTicketsParams, type ListExportPackagesV2Params, type ListExportPackagesV3Params, type ListExportProductsParams, type ListFinanceParams, type ListInventoryAndPriceParams, type ListOrdersParams, type ListOrdersStreamParams, type ListProductsParams, type ListQuestionsParams, type ListUnapprovedProductsParams, type ListVideosParams, LocationsResource, type NamedRef, type Neighborhood, normalizeShipmentPackage, type OrderAddress, type OrderAddressLines, type OrderCustomer, type OrderLine, type OrderLineDiscountDetail, OrdersResource, type OtherFinancialRow, type PackageDetail, type PackageHistoryEntry, type PackageLineUpdate, pollBatchStatus, type PriceInventoryUpdate, type ProcessAlternativeDeliveryInput, type Product, type ProductAttribute, type ProductAttributeV2Input, type ProductBase, type ProductComposition, type ProductContentBase, type ProductImageInput, type ProductOrigin, ProductsResource, type ProductStockPrice, type ProductStockPriceVariant, type ProductVariant, type QuantitySplit, type Question, type QuestionAnswer, QuestionsResource, type QuestionStatus, type SellerIntegrationStatus, type SellerVideo, type SendInvoiceLinkInput, type SetClaimsWaitingInActionInput, type SettlementRow, type ShipmentPackage, type ShipmentPackageStatus, type SplitGroup, type SplitPackagePlan, type SupplierAddress, type SupplierAddressType, SuppliersResource, type SuppliersResourceOptions, TestOrdersResource, type TestOrderStatus, type TestOrderStatusLine, trendyolCapabilities, type TrendyolCapabilities, type TrendyolCargoProvider, type TrendyolClient, type TrendyolEnvironment, type UnapprovedDateQueryType, type UnapprovedProduct, type UnapprovedProductRejectReason, type UnapprovedProductStatus, type UpdateBoxInfoInput, type UpdateContentInput, type UpdateDeliveryInfoInput, type UpdatePackageStatusInput, type UpdatePriceInventoryResponse, type UpdateTestOrderStatusOptions, type UpdateUnapprovedInput, type UpdateVariantInput, type UploadInvoiceFileInput, type VideoContentType, VideosResource, type Webhook, type WebhookAuthenticationType, type WebhookInput, WebhooksResource };
