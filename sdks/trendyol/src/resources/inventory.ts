@@ -23,9 +23,30 @@ export interface BatchPollOptions {
   signal?: AbortSignal;
 }
 
+/** Item statuses after which Trendyol does not touch an item again. */
+const FINAL_ITEM_STATUSES = new Set(['SUCCESS', 'FAILED']);
+
 /**
- * Poll a Trendyol batch request until it reaches a terminal state
- * (`COMPLETED` / `FAILED`) or the timeout elapses.
+ * Whether a batch is done: its status is `COMPLETED` / `FAILED`, or every one
+ * of its `itemCount` items has a final status. Trendyol stage left a
+ * one-item stock batch at `PROCESSING` for good although the item was
+ * `SUCCESS` and the stock had changed (2026-10-14), so the item statuses are
+ * the reliable signal.
+ */
+export function isBatchSettled(result: BatchRequestResult): boolean {
+  if (result.status === 'COMPLETED' || result.status === 'FAILED') return true;
+  const expected = result.itemCount;
+  return (
+    typeof expected === 'number' &&
+    expected > 0 &&
+    result.items.length >= expected &&
+    result.items.every((item) => FINAL_ITEM_STATUSES.has(item.status ?? ''))
+  );
+}
+
+/**
+ * Poll a Trendyol batch request until it settles (see {@link isBatchSettled}:
+ * `COMPLETED` / `FAILED`, or every item final) or the timeout elapses.
  *
  * Standalone so callers can poll an id obtained elsewhere (e.g. a persisted
  * `batchRequestId` from a previous process) without going through
@@ -46,7 +67,7 @@ export async function pollBatchStatus(
   for (;;) {
     opts.signal?.throwIfAborted();
     const result = await getStatus(batchRequestId);
-    if (result.status === 'COMPLETED' || result.status === 'FAILED') {
+    if (isBatchSettled(result)) {
       return result;
     }
     if (Date.now() >= deadline) {
