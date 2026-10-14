@@ -69,6 +69,7 @@ export default defineConfig({
             { label: 'Installation', slug: 'installation' },
             { label: 'Authentication', slug: 'authentication' },
             { label: 'Stability & versioning', slug: 'stability' },
+            { label: 'Migrating to 1.0', slug: 'migrating-to-1-0' },
             { label: 'Release notes', link: '/en/changelog/' },
           ],
         },
@@ -76,6 +77,7 @@ export default defineConfig({
           label: 'Guides',
           items: [
             { label: 'Trendyol in 30 minutes', slug: 'guides/trendyol-in-30-minutes' },
+            { label: 'Hepsiburada in 30 minutes', slug: 'guides/hepsiburada-in-30-minutes' },
             { label: 'Trendyol', slug: 'guides/trendyol' },
             { label: 'Hepsiburada', slug: 'guides/hepsiburada' },
             { label: 'n11', slug: 'guides/n11' },
