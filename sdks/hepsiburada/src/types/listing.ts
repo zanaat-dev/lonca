@@ -188,9 +188,21 @@ export interface UploadReceipt {
   id: string;
 }
 
-/** Lifecycle status of an upload. */
+/**
+ * Lifecycle status of an upload. Hepsiburada answers `Ready` while the upload
+ * is queued and `Done` once it is applied (stock and price uploads on SIT,
+ * 2026-10-14: `Ready` right after the upload, `Done` seconds later, the
+ * listing showing the new values only then). Poll until it is not `Ready`.
+ * The upper-case values are kept for compatibility; they were not observed.
+ */
 export type UploadStatus =
-  'PROCESSING' | 'COMPLETED' | 'FAILED' | 'COMPLETED_WITH_ERRORS' | (string & {});
+  | 'Ready'
+  | 'Done'
+  | 'PROCESSING'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'COMPLETED_WITH_ERRORS'
+  | (string & {});
 
 /** Per-row failure surfaced by an upload result. */
 export interface UploadError {
