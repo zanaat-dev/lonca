@@ -12,10 +12,10 @@ export default defineConfig({
       // Regression floor, not a target: measured coverage rounded DOWN to the
       // nearest 5. Raise these whenever real coverage goes up; CI fails below.
       thresholds: {
-        lines: 85,
+        lines: 95,
         functions: 95,
-        branches: 70,
-        statements: 80,
+        branches: 85,
+        statements: 95,
       },
     },
   },

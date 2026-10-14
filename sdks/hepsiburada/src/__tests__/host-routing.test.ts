@@ -101,6 +101,45 @@ describe.each([
     );
   });
 
+  it(`productUpdates import / history → mpop${suffix}/ticket-api (JSON body on the POST)`, async () => {
+    const { client, fetchMock } = makeClient(env);
+    await client.productUpdates.importUpdates([{ hbSku: 'HB-1', productName: 'Yeni' }]);
+    await client.productUpdates.getUpdateHistory('HB-1');
+    const [importUrl, importInit] = fetchMock.mock.calls[0]! as [string, RequestInit];
+    expect(String(importUrl)).toBe(
+      `https://mpop${suffix}.hepsiburada.com/ticket-api/api/integrator/import`,
+    );
+    expect(importInit.method).toBe('POST');
+    expect(JSON.parse(String(importInit.body))).toEqual([{ hbSku: 'HB-1', productName: 'Yeni' }]);
+    expect(String(fetchMock.mock.calls[1]![0])).toBe(
+      `https://mpop${suffix}.hepsiburada.com/ticket-api/api/integrator/merchant/MID-1/hbSku/HB-1`,
+    );
+  });
+
+  it(`claims → oms-external${suffix} for list/actions, claim-stub-external${suffix} for create`, async () => {
+    const { client, fetchMock } = makeClient(env);
+    await client.claims.list();
+    await client.claims.accept('CLM-1');
+    await client.claims.create({ orderNumber: 'O-1' });
+    expect(String(fetchMock.mock.calls[0]![0])).toBe(
+      `https://oms-external${suffix}.hepsiburada.com/claims/merchantId/MID-1?offset=0&limit=100`,
+    );
+    expect(String(fetchMock.mock.calls[1]![0])).toBe(
+      `https://oms-external${suffix}.hepsiburada.com/claims/number/CLM-1/accept`,
+    );
+    expect(String(fetchMock.mock.calls[2]![0])).toBe(
+      `https://claim-stub-external${suffix}.hepsiburada.com/claims/merchant/MID-1/create`,
+    );
+  });
+
+  it(`catalog.getTrackingIdHistory → mpop${suffix} under /product/api/products`, async () => {
+    const { client, fetchMock } = makeClient(env);
+    await client.catalog.getTrackingIdHistory();
+    expect(firstCall(fetchMock).url).toBe(
+      `https://mpop${suffix}.hepsiburada.com/product/api/products/trackingId-history`,
+    );
+  });
+
   it(`existing resources keep their hosts (orders → oms-external${suffix}, catalog → mpop${suffix})`, async () => {
     const { client, fetchMock } = makeClient(env);
     await client.orders.list({ offset: 0, limit: 1 });

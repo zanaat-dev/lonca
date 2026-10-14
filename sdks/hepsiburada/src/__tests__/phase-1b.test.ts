@@ -160,11 +160,73 @@ describe('ClaimsResource', () => {
     expect(rows[0]).toMatchObject({ claimNumber: 'C-1', status: 'Open' });
   });
 
+  it('listByStatus defaults offset/limit and forwards every date filter, URL-encoding the status', async () => {
+    const transport = mockTransport([]);
+    await r(transport).listByStatus('Awaiting Action', {
+      beginDate: '2026-01-01 00:00',
+      endDate: '2026-02-01 00:00',
+      statusBeginDate: '2026-01-15 00:00',
+      statusEndDate: '2026-01-31 00:00',
+    });
+    const call = (transport.request as ReturnType<typeof vi.fn>).mock.calls[0]![0];
+    expect(call.service).toBe('oms');
+    expect(call.path).toBe('/claims/merchantId/M-42/status/Awaiting%20Action');
+    expect(call.query).toEqual({
+      beginDate: '2026-01-01 00:00',
+      endDate: '2026-02-01 00:00',
+      statusBeginDate: '2026-01-15 00:00',
+      statusEndDate: '2026-01-31 00:00',
+      offset: 0,
+      limit: 100,
+    });
+  });
+
   it('listByStatus throws on empty status', async () => {
     const transport = mockTransport([]);
     await expect(r(transport).listByStatus('' as unknown as string)).rejects.toThrow(
       /status is required/,
     );
+    expect(transport.request).not.toHaveBeenCalled();
+  });
+
+  it('maps claimNumber / status / createdAt and keeps the raw row', async () => {
+    const row = {
+      claimNumber: 'C-1',
+      status: 'NewRequest',
+      createdAt: '2026-02-01T10:00:00',
+      orderNumber: 'O-1',
+    };
+    await expect(r(mockTransport([row])).list()).resolves.toEqual([
+      { claimNumber: 'C-1', status: 'NewRequest', createdAt: '2026-02-01T10:00:00', raw: row },
+    ]);
+    // Absent fields stay absent (never invented).
+    await expect(r(mockTransport([{ orderNumber: 'O-2' }])).list()).resolves.toEqual([
+      { raw: { orderNumber: 'O-2' } },
+    ]);
+  });
+
+  it.each([
+    ['items', { items: [{ claimNumber: 'C-I' }] }, 'C-I'],
+    ['data', { data: [{ claimNumber: 'C-D' }] }, 'C-D'],
+    ['claims', { claims: [{ claimNumber: 'C-C' }], totalCount: 1 }, 'C-C'],
+  ] as const)('unwraps the { %s: [...] } envelope', async (_key, response, expected) => {
+    const byList = await r(mockTransport(response)).list();
+    expect(byList.map((c) => c.claimNumber)).toEqual([expected]);
+    const byStatus = await r(mockTransport(response)).listByStatus('NewRequest');
+    expect(byStatus.map((c) => c.claimNumber)).toEqual([expected]);
+  });
+
+  it('prefers `items` over `data` / `claims` when several envelopes are present', async () => {
+    const rows = await r(
+      mockTransport({ items: [{ claimNumber: 'A' }], data: [{ claimNumber: 'B' }] }),
+    ).list();
+    expect(rows.map((c) => c.claimNumber)).toEqual(['A']);
+  });
+
+  it('returns [] for an unrecognised or empty response instead of throwing', async () => {
+    for (const response of [undefined, null, {}, { claims: null }, 'nope']) {
+      await expect(r(mockTransport(response)).list()).resolves.toEqual([]);
+    }
   });
 
   it.each(['accept', 'reject', 'preApprovalConfirm'] as const)(
