@@ -541,8 +541,9 @@ export class OrdersResource {
       offset: params.offset,
       limit: params.limit,
       status: params.status,
-      beginDate: params.beginDate,
-      endDate: params.endDate,
+      // Lower case, as every oms list operation documents them.
+      begindate: params.beginDate,
+      enddate: params.endDate,
     };
   }
 

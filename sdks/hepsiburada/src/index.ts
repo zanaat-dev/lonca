@@ -100,6 +100,7 @@ export type {
   PackageStatusInput,
   ParcelInfoInput,
   ShippingPackage,
+  SplitPackageDetail,
   SplitPackageInput,
   WarehouseInput,
 } from './types/order.js';

@@ -141,7 +141,12 @@ export const hepsiburadaRequests: RequestSet<HepsiburadaClient> = {
     {
       name: 'orders.list',
       call: (c) =>
-        c.orders.list({ beginDate: '2026-10-01', endDate: '2026-10-14', offset: 0, limit: 100 }),
+        c.orders.list({
+          beginDate: '2026-10-01 00:00',
+          endDate: '2026-10-14 00:00',
+          offset: 0,
+          limit: 100,
+        }),
     },
     { name: 'orders.listCancelled', call: (c) => c.orders.listCancelled({ limit: 100 }) },
     {
@@ -189,11 +194,17 @@ export const hepsiburadaRequests: RequestSet<HepsiburadaClient> = {
     },
     {
       name: 'orders.createPackages',
-      call: (c) => c.orders.createPackages({ lineItems: [LINE_ID], cargoCompany: 'ARAS' }),
+      call: (c) => c.orders.createPackages({ lineItemRequests: [{ id: LINE_ID, quantity: 1 }] }),
     },
     {
       name: 'orders.splitPackage',
-      call: (c) => c.orders.splitPackage(PACKAGE, { lineItems: [LINE_ID] }),
+      call: (c) =>
+        c.orders.splitPackage(PACKAGE, {
+          packageDetails: [
+            { lines: [{ orderLineId: LINE_ID, quantity: 1 }] },
+            { lines: [{ orderLineId: LINE_ID, quantity: 1 }] },
+          ],
+        }),
     },
     { name: 'orders.unpackPackage', call: (c) => c.orders.unpackPackage(PACKAGE) },
     {
@@ -203,15 +214,19 @@ export const hepsiburadaRequests: RequestSet<HepsiburadaClient> = {
     { name: 'orders.markPackageDelivered', call: (c) => c.orders.markPackageDelivered(PACKAGE) },
     {
       name: 'orders.markPackageUndelivered',
-      call: (c) => c.orders.markPackageUndelivered(PACKAGE, { reason: 'address-not-found' }),
+      call: (c) =>
+        c.orders.markPackageUndelivered(PACKAGE, {
+          undeliveredReason: 'AddressNotFound',
+          undeliveredDate: '2026-10-14T12:00:00',
+        }),
     },
     {
       name: 'orders.cancelLineItem',
-      call: (c) => c.orders.cancelLineItem(LINE_ID, { reason: 'out-of-stock' }),
+      call: (c) => c.orders.cancelLineItem(LINE_ID, { reasonId: 1 }),
     },
     {
       name: 'orders.updateLineItemCargoCompany',
-      call: (c) => c.orders.updateLineItemCargoCompany(LINE_ID, { cargoCompany: 'MNG' }),
+      call: (c) => c.orders.updateLineItemCargoCompany(LINE_ID, { CargoCompanyShortName: 'YK' }),
     },
     {
       name: 'orders.updateLineItemLaborCost',
@@ -219,7 +234,7 @@ export const hepsiburadaRequests: RequestSet<HepsiburadaClient> = {
     },
     {
       name: 'orders.updatePackageCargoCompany',
-      call: (c) => c.orders.updatePackageCargoCompany(PACKAGE, { cargoCompany: 'YURTICI' }),
+      call: (c) => c.orders.updatePackageCargoCompany(PACKAGE, { CargoCompanyShortName: 'YK' }),
     },
     {
       name: 'orders.sendInvoiceLink',

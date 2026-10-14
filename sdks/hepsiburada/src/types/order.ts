@@ -42,9 +42,13 @@ export interface ListOrdersParams {
    * status into the path instead.
    */
   status?: string;
-  /** ISO `yyyy-MM-dd` (or ISO 8601 timestamp). */
+  /**
+   * Window start as `yyyy-MM-dd HH:mm`, e.g. `'2026-10-14 00:00'` (sent as
+   * `begindate`). Other formats (`yyyy-MM-dd`, ISO 8601, with seconds) are not
+   * an error: the list just comes back empty (SIT, 2026-10-14).
+   */
   beginDate?: string;
-  /** ISO `yyyy-MM-dd` (or ISO 8601 timestamp). */
+  /** Window end as `yyyy-MM-dd HH:mm` (sent as `enddate`); see `beginDate`. */
   endDate?: string;
 }
 
@@ -201,36 +205,100 @@ export interface PackageReceipt {
  * Body for `orders.createPackages()` — one or more line-item groups to pack.
  * Hepsiburada's portal docs the field set; the SDK accepts any object.
  */
+/**
+ * Body for `orders.createPackages()` — the spec's `CreatePackageRequest`.
+ * The lines go in `lineItemRequests`; a `lineItems` list is not read
+ * (Hepsiburada answers `400 "Line items empty or null"`, SIT 2026-10-14).
+ */
 export type CreatePackagesInput = {
-  /** Line-item ids to pack together. */
-  lineItems?: string[];
-  /** Cargo company code (e.g. `'ARAS'`). */
+  /** The order lines to pack, with the quantity of each. */
+  lineItemRequests?: { id: string; quantity: number; serialNumbers?: string[] }[];
+  /** Cargo company of the lines (it must match the lines' own cargo company). */
   cargoCompany?: string;
+  /** Cargo company short name, e.g. `'YK'`. */
+  carrier?: string;
+  barcode?: string;
+  /** Volumetric weight. */
+  deci?: number;
+  parcelQuantity?: number;
+  warehouse?: Record<string, unknown>;
+  creationReason?: string;
 } & Record<string, unknown>;
 
-/** Body for `orders.splitPackage()`. */
+/** One new package of `orders.splitPackage()` (the spec's `PackageDetail`). */
+export type SplitPackageDetail = {
+  lines: { orderLineId: string; quantity: number }[];
+  cargoCompany?: string;
+  /** Cargo company short name. */
+  carrier?: string;
+  barcode?: string;
+  deci?: number;
+  parcelQuantity?: number;
+  warehouse?: Record<string, unknown>;
+} & Record<string, unknown>;
+
+/** Body for `orders.splitPackage()` — the spec's `SplitPackageRequest`. */
 export type SplitPackageInput = {
-  /** Line-item ids to split into a new package. */
-  lineItems?: string[];
+  /** One entry per package the split produces. */
+  packageDetails?: SplitPackageDetail[];
+  /** Lines to cancel while splitting. */
+  cancelledItems?: { orderLineId: string; quantity: number; cancelReasonId: number }[];
 } & Record<string, unknown>;
 
-/** Body for `orders.cancelLineItem()`. Hepsiburada expects a `reason` field. */
+/**
+ * Body for `orders.cancelLineItem()` — the spec's `CancelByMerchantRequest`
+ * (`{ reasonId }`). Only lines that are not packaged yet can be cancelled.
+ */
 export type CancelLineItemInput = {
-  reason?: string;
+  /** Hepsiburada's cancel reason id. */
+  reasonId?: number;
 } & Record<string, unknown>;
 
-/** Body for the deliver / intransit / undeliver status transitions. */
+/**
+ * Body for the deliver / intransit / undeliver status transitions — the
+ * spec's `ExternalInfoRequest` (in transit), `ExternalDeliverRequest`
+ * (delivered) and `ExternalUnDeliverRequest` (not delivered). An undelivered
+ * transition needs `undeliveredReason`; a `reason` field is not read
+ * (`400 "incorrect undeliveredReason value"`, SIT 2026-10-14).
+ */
 export type PackageStatusInput = {
-  /** Cargo tracking number (e.g. for the in-transit transition). */
+  /** In transit: cargo tracking number. */
   trackingNumber?: string;
-  /** Reason (e.g. for a failed/undelivered transition). */
-  reason?: string;
+  /** In transit: tracking URL. */
+  trackingUrl?: string;
+  /** In transit: tracking phone number. */
+  trackingPhoneNumber?: string;
+  /** In transit: when the package was handed to the carrier. */
+  shippedDate?: string;
+  /** In transit: estimated arrival. */
+  estimatedArrivalDate?: string;
+  /** In transit: volumetric weight. */
+  deci?: number;
+  /** In transit: shipping cost. */
+  cost?: number;
+  /** In transit: VAT of the package. */
+  tax?: number;
+  /** Delivered: who received the package. */
+  receivedBy?: string;
+  /** Delivered: when it was received. */
+  receivedDate?: string;
+  /** Delivered: codes of digital products. */
+  digitalCodes?: string[];
+  /** Not delivered: Hepsiburada's undelivered-reason value. */
+  undeliveredReason?: string;
+  /** Not delivered: when delivery failed. */
+  undeliveredDate?: string;
 } & Record<string, unknown>;
 
-/** Body for cargo-company-change updates (line item or package level). */
+/**
+ * Body for cargo-company-change updates (line item or package level) — the
+ * spec's `ChangeLineCargoCompanyRequest`. The field is `CargoCompanyShortName`
+ * (PascalCase, as published); a `cargoCompany` field is not read
+ * (`400 CargoCompanyNotFound`, SIT 2026-10-14).
+ */
 export type ChangeCargoCompanyInput = {
-  /** Target cargo company code (e.g. `'MNG'`). */
-  cargoCompany?: string;
+  /** Short name of the new cargo company, from `getChangeableCargoCompaniesFor*` (e.g. `'YK'`). */
+  CargoCompanyShortName?: string;
 } & Record<string, unknown>;
 
 /**

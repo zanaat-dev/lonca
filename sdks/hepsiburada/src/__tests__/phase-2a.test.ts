@@ -57,8 +57,9 @@ describe('OrdersResource', () => {
       offset: 0,
       limit: 100,
       status: undefined,
-      beginDate: '2026-01-01',
-      endDate: '2026-02-01',
+      // Sent lower case, as the spec documents them.
+      begindate: '2026-01-01',
+      enddate: '2026-02-01',
     });
   });
 

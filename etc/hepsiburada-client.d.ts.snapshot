@@ -1372,9 +1372,13 @@ interface ListOrdersParams {
      * status into the path instead.
      */
     status?: string;
-    /** ISO `yyyy-MM-dd` (or ISO 8601 timestamp). */
+    /**
+     * Window start as `yyyy-MM-dd HH:mm`, e.g. `'2026-10-14 00:00'` (sent as
+     * `begindate`). Other formats (`yyyy-MM-dd`, ISO 8601, with seconds) are not
+     * an error: the list just comes back empty (SIT, 2026-10-14).
+     */
     beginDate?: string;
-    /** ISO `yyyy-MM-dd` (or ISO 8601 timestamp). */
+    /** Window end as `yyyy-MM-dd HH:mm` (sent as `enddate`); see `beginDate`. */
     endDate?: string;
 }
 /** Query parameters for `orders.listPackages()` and the status-specific helpers. */
@@ -1523,32 +1527,106 @@ interface PackageReceipt {
  * Body for `orders.createPackages()` — one or more line-item groups to pack.
  * Hepsiburada's portal docs the field set; the SDK accepts any object.
  */
+/**
+ * Body for `orders.createPackages()` — the spec's `CreatePackageRequest`.
+ * The lines go in `lineItemRequests`; a `lineItems` list is not read
+ * (Hepsiburada answers `400 "Line items empty or null"`, SIT 2026-10-14).
+ */
 type CreatePackagesInput = {
-    /** Line-item ids to pack together. */
-    lineItems?: string[];
-    /** Cargo company code (e.g. `'ARAS'`). */
+    /** The order lines to pack, with the quantity of each. */
+    lineItemRequests?: {
+        id: string;
+        quantity: number;
+        serialNumbers?: string[];
+    }[];
+    /** Cargo company of the lines (it must match the lines' own cargo company). */
     cargoCompany?: string;
+    /** Cargo company short name, e.g. `'YK'`. */
+    carrier?: string;
+    barcode?: string;
+    /** Volumetric weight. */
+    deci?: number;
+    parcelQuantity?: number;
+    warehouse?: Record<string, unknown>;
+    creationReason?: string;
 } & Record<string, unknown>;
-/** Body for `orders.splitPackage()`. */
+/** One new package of `orders.splitPackage()` (the spec's `PackageDetail`). */
+type SplitPackageDetail = {
+    lines: {
+        orderLineId: string;
+        quantity: number;
+    }[];
+    cargoCompany?: string;
+    /** Cargo company short name. */
+    carrier?: string;
+    barcode?: string;
+    deci?: number;
+    parcelQuantity?: number;
+    warehouse?: Record<string, unknown>;
+} & Record<string, unknown>;
+/** Body for `orders.splitPackage()` — the spec's `SplitPackageRequest`. */
 type SplitPackageInput = {
-    /** Line-item ids to split into a new package. */
-    lineItems?: string[];
+    /** One entry per package the split produces. */
+    packageDetails?: SplitPackageDetail[];
+    /** Lines to cancel while splitting. */
+    cancelledItems?: {
+        orderLineId: string;
+        quantity: number;
+        cancelReasonId: number;
+    }[];
 } & Record<string, unknown>;
-/** Body for `orders.cancelLineItem()`. Hepsiburada expects a `reason` field. */
+/**
+ * Body for `orders.cancelLineItem()` — the spec's `CancelByMerchantRequest`
+ * (`{ reasonId }`). Only lines that are not packaged yet can be cancelled.
+ */
 type CancelLineItemInput = {
-    reason?: string;
+    /** Hepsiburada's cancel reason id. */
+    reasonId?: number;
 } & Record<string, unknown>;
-/** Body for the deliver / intransit / undeliver status transitions. */
+/**
+ * Body for the deliver / intransit / undeliver status transitions — the
+ * spec's `ExternalInfoRequest` (in transit), `ExternalDeliverRequest`
+ * (delivered) and `ExternalUnDeliverRequest` (not delivered). An undelivered
+ * transition needs `undeliveredReason`; a `reason` field is not read
+ * (`400 "incorrect undeliveredReason value"`, SIT 2026-10-14).
+ */
 type PackageStatusInput = {
-    /** Cargo tracking number (e.g. for the in-transit transition). */
+    /** In transit: cargo tracking number. */
     trackingNumber?: string;
-    /** Reason (e.g. for a failed/undelivered transition). */
-    reason?: string;
+    /** In transit: tracking URL. */
+    trackingUrl?: string;
+    /** In transit: tracking phone number. */
+    trackingPhoneNumber?: string;
+    /** In transit: when the package was handed to the carrier. */
+    shippedDate?: string;
+    /** In transit: estimated arrival. */
+    estimatedArrivalDate?: string;
+    /** In transit: volumetric weight. */
+    deci?: number;
+    /** In transit: shipping cost. */
+    cost?: number;
+    /** In transit: VAT of the package. */
+    tax?: number;
+    /** Delivered: who received the package. */
+    receivedBy?: string;
+    /** Delivered: when it was received. */
+    receivedDate?: string;
+    /** Delivered: codes of digital products. */
+    digitalCodes?: string[];
+    /** Not delivered: Hepsiburada's undelivered-reason value. */
+    undeliveredReason?: string;
+    /** Not delivered: when delivery failed. */
+    undeliveredDate?: string;
 } & Record<string, unknown>;
-/** Body for cargo-company-change updates (line item or package level). */
+/**
+ * Body for cargo-company-change updates (line item or package level) — the
+ * spec's `ChangeLineCargoCompanyRequest`. The field is `CargoCompanyShortName`
+ * (PascalCase, as published); a `cargoCompany` field is not read
+ * (`400 CargoCompanyNotFound`, SIT 2026-10-14).
+ */
 type ChangeCargoCompanyInput = {
-    /** Target cargo company code (e.g. `'MNG'`). */
-    cargoCompany?: string;
+    /** Short name of the new cargo company, from `getChangeableCargoCompaniesFor*` (e.g. `'YK'`). */
+    CargoCompanyShortName?: string;
 } & Record<string, unknown>;
 /**
  * Body for `orders.updateLineItemLaborCost()` — the spec's
@@ -2746,4 +2824,4 @@ interface HepsiburadaClient {
  */
 declare function createHepsiburadaClient(opts: CreateClientOptions): HepsiburadaClient;
 
-export { type AccountingAmount, AccountingResource, type AccountingTransaction, type AdditionalInfoUploadItem, type AnswerQuestionInput, type BulkUnlockInput, type BuyboxOrderRow, type CancelDiscountInput, type CancelLineItemInput, type CargoCompanyOption, type CargoFirm, type CatalogAttributePair, type CatalogField, type CatalogMatchedHbProduct, type CatalogPage, type CatalogPagingParams, type CatalogProduct, type CatalogProductAttribute, type CatalogProductLifecycleStatus, type CatalogProductStatus, CatalogResource, type CatalogResult, type CatalogTaskDetail, type CatalogTrackingReceipt, type CatalogUploadProduct, type CatalogValidationResult, CategoriesResource, type Category, type CategoryAttribute, type CategoryAttributeValue, type ChangeCargoCompanyInput, type CheckProductStatusInput, type Claim, type ClaimActionInput, ClaimsResource, type ClaimStatus, type CommissionRow, type CreateClaimInput, type CreateClientOptions, createHepsiburadaClient, type CreateListingUpdateRequestInput, type CreateListingUpdateRequestItem, type CreatePackagesInput, type CreatePercentDiscountInput, type CreateQuestionInput, type CreateTestOrderInput, type CreateTlDiscountInput, type CreateXyDiscountInput, type CustomizableProperty, type DeleteBySkuInput, type Discount, type DiscountBudgets, type DiscountLimits, type DiscountReceipt, type FastListingInput, type GetAttributesParams, hepsiburadaCapabilities, type HepsiburadaCapabilities, type HepsiburadaClient, type HepsiburadaEnvironment, type InventoryUploadItem, type InvoiceLinkInput, type InvoiceLinkItem, type LaborCostInput, type ListCatalogProductsParams, type ListCategoriesParams, type ListClaimsByStatusParams, type ListClaimsParams, type ListDiscountsParams, type Listing, type ListingPricing, type ListingsPage, ListingsResource, type ListingUpdateRequestDetail, type ListingUpdateRequestItem, type ListingUpdateRequestReceipt, type ListingUpdateRequestSearchInput, type ListingUpdateRequestSummary, type ListListingsParams, type ListOrdersParams, type ListPackagesParams, type ListProductsByStatusParams, type ListQuestionsParams, type ListTransactionsParams, type MerchantSkuGroup, type OpenPurchaseOrder, type OpenPurchaseOrderSearchInput, type OpenPurchaseOrderStatus, type Order, type OrderPrice, type OrdersPage, OrdersResource, type PackageLabel, type PackageReceipt, type PackageStatusInput, type ParcelInfoInput, type PreMatchActionInput, type PriceUploadItem, type PriceUploadResult, type PriceValidation, type ProductUpdateHistoryEntry, type ProductUpdateInput, type ProductUpdateItem, type ProductUpdateReceipt, ProductUpdatesResource, type ProductUpdateStatus, type PromotionCategory, PromotionsResource, type PurchaseOrderLineRef, type PurchaseOrderType, type Question, type QuestionConversation, type QuestionCountSummary, type QuestionProduct, QuestionsResource, type QuestionSubject, type RejectQuestionInput, type ShippingInfoUploadItem, type ShippingPackage, type ShippingProfile, type ShippingProfileInput, ShippingResource, type SplitPackageInput, type StockUploadItem, type SupplierApprovalStatus, type SupplierEnvelope, type SupplierListing, type SupplierListingSearchInput, type SupplierListingStatus, type SupplierListingType, type SupplierSearchResult, SuppliersResource, TestOrdersResource, type TrackingIdHistoryEntry, type UpdateListingInput, type UploadError, type UploadProductsInput, type UploadReceipt, type UploadResult, type UploadStatus, type WarehouseInput };
+export { type AccountingAmount, AccountingResource, type AccountingTransaction, type AdditionalInfoUploadItem, type AnswerQuestionInput, type BulkUnlockInput, type BuyboxOrderRow, type CancelDiscountInput, type CancelLineItemInput, type CargoCompanyOption, type CargoFirm, type CatalogAttributePair, type CatalogField, type CatalogMatchedHbProduct, type CatalogPage, type CatalogPagingParams, type CatalogProduct, type CatalogProductAttribute, type CatalogProductLifecycleStatus, type CatalogProductStatus, CatalogResource, type CatalogResult, type CatalogTaskDetail, type CatalogTrackingReceipt, type CatalogUploadProduct, type CatalogValidationResult, CategoriesResource, type Category, type CategoryAttribute, type CategoryAttributeValue, type ChangeCargoCompanyInput, type CheckProductStatusInput, type Claim, type ClaimActionInput, ClaimsResource, type ClaimStatus, type CommissionRow, type CreateClaimInput, type CreateClientOptions, createHepsiburadaClient, type CreateListingUpdateRequestInput, type CreateListingUpdateRequestItem, type CreatePackagesInput, type CreatePercentDiscountInput, type CreateQuestionInput, type CreateTestOrderInput, type CreateTlDiscountInput, type CreateXyDiscountInput, type CustomizableProperty, type DeleteBySkuInput, type Discount, type DiscountBudgets, type DiscountLimits, type DiscountReceipt, type FastListingInput, type GetAttributesParams, hepsiburadaCapabilities, type HepsiburadaCapabilities, type HepsiburadaClient, type HepsiburadaEnvironment, type InventoryUploadItem, type InvoiceLinkInput, type InvoiceLinkItem, type LaborCostInput, type ListCatalogProductsParams, type ListCategoriesParams, type ListClaimsByStatusParams, type ListClaimsParams, type ListDiscountsParams, type Listing, type ListingPricing, type ListingsPage, ListingsResource, type ListingUpdateRequestDetail, type ListingUpdateRequestItem, type ListingUpdateRequestReceipt, type ListingUpdateRequestSearchInput, type ListingUpdateRequestSummary, type ListListingsParams, type ListOrdersParams, type ListPackagesParams, type ListProductsByStatusParams, type ListQuestionsParams, type ListTransactionsParams, type MerchantSkuGroup, type OpenPurchaseOrder, type OpenPurchaseOrderSearchInput, type OpenPurchaseOrderStatus, type Order, type OrderPrice, type OrdersPage, OrdersResource, type PackageLabel, type PackageReceipt, type PackageStatusInput, type ParcelInfoInput, type PreMatchActionInput, type PriceUploadItem, type PriceUploadResult, type PriceValidation, type ProductUpdateHistoryEntry, type ProductUpdateInput, type ProductUpdateItem, type ProductUpdateReceipt, ProductUpdatesResource, type ProductUpdateStatus, type PromotionCategory, PromotionsResource, type PurchaseOrderLineRef, type PurchaseOrderType, type Question, type QuestionConversation, type QuestionCountSummary, type QuestionProduct, QuestionsResource, type QuestionSubject, type RejectQuestionInput, type ShippingInfoUploadItem, type ShippingPackage, type ShippingProfile, type ShippingProfileInput, ShippingResource, type SplitPackageDetail, type SplitPackageInput, type StockUploadItem, type SupplierApprovalStatus, type SupplierEnvelope, type SupplierListing, type SupplierListingSearchInput, type SupplierListingStatus, type SupplierListingType, type SupplierSearchResult, SuppliersResource, TestOrdersResource, type TrackingIdHistoryEntry, type UpdateListingInput, type UploadError, type UploadProductsInput, type UploadReceipt, type UploadResult, type UploadStatus, type WarehouseInput };
