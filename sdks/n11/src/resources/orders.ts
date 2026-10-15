@@ -375,6 +375,12 @@ export class OrdersResource {
    * Ask a logistics company (Horoz, Ceva, Borusan) to collect a `Picking`
    * package (`PUT /rest/delivery/v1/collectionRequest`). Send every line of
    * the package. Returns n11's `{ code, message }`.
+   *
+   * Only packages shipped by one of those logistics companies qualify. A line
+   * shipped with a parcel carrier (Aras, Yurtiçi, …) fails with
+   * `SELLER_API.orderItemInvalidForCollectionRequest`, and a store n11 has not
+   * enabled fails with "Satıcı toplama talebi için uygun değil" (both
+   * `ValidationError`).
    */
   async createCollectionRequest(
     lines: readonly N11CollectionRequestLine[],
@@ -401,8 +407,9 @@ export class OrdersResource {
 
   /**
    * Add labour costs to order lines (`PUT /rest/order/v1/labor-costs`), for
-   * the jewellery categories n11 lists. Results are per line, like
-   * {@link approve}.
+   * the jewellery categories n11 lists (gold, silver, diamond, …; the list is
+   * on the endpoint's docs page). Results are per line, like {@link approve};
+   * a line in another category comes back `FAIL` "kategori uyumsuzdur".
    */
   async updateLaborCosts(costs: readonly N11LaborCost[]): Promise<N11LineResult[]> {
     requireItems('orders.updateLaborCosts', costs);

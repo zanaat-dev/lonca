@@ -50,6 +50,7 @@
     "probe:prod": "tsx --env-file=.env.prod scripts/probe/run.mts",
     "e2e:hepsiburada": "tsx --env-file=.env scripts/e2e/hepsiburada.mts",
     "e2e:n11": "tsx --env-file=.env.n11-test scripts/e2e/n11.mts",
+    "e2e:n11:orders": "tsx --env-file=.env.n11-test scripts/e2e/n11-orders.mts",
     "e2e:trendyol": "tsx --env-file=.env scripts/e2e/trendyol.mts",
     "drift:requests": "tsx scripts/probe/requests/run.mts",
     "probe:hosts": "tsx --env-file-if-exists=.env scripts/probe/host-check.mts",

@@ -231,6 +231,23 @@ The CONTRIBUTING minimum of orders, products and inventory is reachable over RES
     need our own orders: LONCA-ORDER-1 / -2 (10 TL) were opened and n11 support was asked for test
     orders, return claims and the quantity-split / collection permissions. The docs have no test or
     sandbox page and no way to move a test order to shipped / delivered.
+  - **Test store after n11's reply (2026-10-15).** Other developers' test orders on the store
+    (including two on LONCA-ORDER-1 / -2, paid in full by a marketplace discount: `totalAmount` 0,
+    `totalDiscountAmount` 10) all moved from `Created` to `Picking` about one second after
+    creation (package `histories`), so something on the shared store approves new orders and
+    `approve` may not get a `Created` line to work on. Read-only checks on them all passed:
+    `orderNumber`, `status` and update-date filters, `ASC` / `DESC`, a 2-row page size returning
+    every package once, money and fee fields against the raw lines, and `claims.listReturns` per
+    status (the store has approved, denied and cancelled claims, none awaiting a decision).
+    - `createCollectionRequest` on our own `Picking` package no longer fails at store level; it
+      fails per line with `SELLER_API.orderItemInvalidForCollectionRequest` ("Order item toplama
+      talebi için uygun değil"). The docs limit the service to logistics-company shipments
+      (Horoz, Ceva, Borusan); the package ships with Aras, and no shipment template in Seller
+      Office offers a logistics company.
+    - The labour-cost category list is now on the docs page: 68 jewellery categories (gold,
+      silver, diamond, …). Creating a 10 TL test product in one of them (category 1104101,
+      `Gümüş Aksesuar`) failed twice over: the category is restricted (n11 asks for supply
+      invoices) and its minimum price is 32.23 TL. `updateLaborCosts` needs n11 to open such a category.
 - **End-to-end run** (`pnpm e2e:n11`, `scripts/e2e/n11.mts`, 2026-10-14): all 31 methods against
   the test store. 20 verified on the success path; the order writes, return decisions and
   `questions.answer` only up to n11's refusal for a package, claim or question in the wrong state
@@ -449,6 +466,12 @@ sent to n11 seller integration support by e-mail; their reply of 2026-10-13 is m
    test store on prod (credentials kept out of the repo). Test orders are real orders: a product
    marked as a test product in its title and image (or an existing test product of the store),
    at a low price. Every write is still a production write, only on a store meant for it.
+   **n11 (2026-10-15):** there is no test payment method; n11 itself pays for test orders.
+   Order a low-priced test product, then get the money back by cancelling or returning it (n11
+   helps with a cancel or return that gets stuck). `Shipped` is set by the seller in Seller
+   Office; `Delivered` is fed by the cargo companies, so n11 sets it on request (send them the
+   order number). A return can be opened once the order is shipped; a return is followed by a
+   postpone request, so one order line covers both.
 2. **Error envelope.** What status codes and JSON bodies do REST failures use (bad key, missing
    secret, validation)? Is 401 used, or 403, or 200 with an error body?
    **Answered:** it differs per path family.
@@ -536,7 +559,9 @@ totalPages, page, size, content }`, where `pageCount` equals the number of rows 
     there per-service permissions?
     **Answered, n11 (2026-10-13):** the only per-store authorisation n11 named is the
     quantity-based package split (`splitPackageByQuantity`); n11 grants it on the seller's
-    request.
+    request. **n11 (2026-10-15):** on the test store the quantity split is enabled, the store
+    was made eligible for collection requests, and the labour-cost category list was added to
+    the docs page (section 7).
 
 ## 12. Next steps (proposed)
 
@@ -557,5 +582,7 @@ totalPages, page, size, content }`, where `pageCount` equals the number of rows 
    Then publish as `0.x` with a changeset.~~ Done on 2026-10-13; the first npm publish of a new
    scoped package has to be done by hand (see the release notes in the PR).
 6. Still open: verify order writes and return decisions on a real order (needs an order in
-   `Created` / `Picking` on the test store) and a
+   `Created` / `Picking` on the test store; per n11's 2026-10-15 reply we place and pay for it
+   ourselves, and n11 sets `Delivered`), `createCollectionRequest` (needs a logistics-company
+   shipment) and `updateLaborCosts` (needs a jewellery category opened for the test store), and a
    settlements resource over SOAP if users ask for it.
