@@ -156,7 +156,13 @@ function page<T>(
 export class ClaimsResource {
   constructor(private readonly transport: N11Transport) {}
 
-  /** Return claims (`ClaimReturnList`). n11 lists `REQUESTED` claims when no status is given. */
+  /**
+   * Return claims (`ClaimReturnList`). n11 lists `REQUESTED` claims when no
+   * status is given, but only those whose return shipment has reached the
+   * seller: a claim still on its way back reads `REQUESTED` yet shows up under
+   * `status: 'ALL'` only (test store, 2026-10-16). The seller can decide on a
+   * claim only once it is listed under `REQUESTED`.
+   */
   async listReturns(params: ListN11ReturnsParams = {}): Promise<CursorPage<N11ReturnClaim>> {
     const current = pageCursor(params.cursor, 'returns');
     const response = await this.transport.soap({
@@ -249,6 +255,13 @@ export class ClaimsResource {
    * otherwise `CAMPAIGN` (leave carrier, tracking and receipt empty; n11
    * issues a campaign code) or `CUSTOM` (send `trackingNumber` once the item
    * is shipped back).
+   *
+   * "Leave empty" means an empty element: the shipment fields are always sent,
+   * empty when unset, as in n11's example. Without them n11 answered a
+   * `CAMPAIGN` denial with "trackingNumber alanı geçersizdir" (test store,
+   * 2026-10-16). A denial opens a deny request and the claim stays
+   * `REQUESTED` while n11 operations review it; its `sellerCampaignNumber` is
+   * then the code for sending the item back to the buyer.
    */
   async denyReturn(params: DenyN11ReturnParams): Promise<void> {
     await this.transport.soap({
@@ -258,11 +271,11 @@ export class ClaimsResource {
         claimReturnId: String(params.claimReturnId),
         denyReasonId: String(params.denyReasonId),
         denyReasonNote: params.note,
-        returnShipmentType: params.returnShipmentType,
+        returnShipmentType: params.returnShipmentType ?? '',
         shipmentCompanyId:
-          params.shipmentCompanyId === undefined ? undefined : String(params.shipmentCompanyId),
-        trackingNumber: params.trackingNumber,
-        deliveryReceiptNumber: params.deliveryReceiptNumber,
+          params.shipmentCompanyId === undefined ? '' : String(params.shipmentCompanyId),
+        trackingNumber: params.trackingNumber ?? '',
+        deliveryReceiptNumber: params.deliveryReceiptNumber ?? '',
         imageFirstUrl: params.imageUrls?.[0],
         imageSecondUrl: params.imageUrls?.[1],
         imageThirdUrl: params.imageUrls?.[2],

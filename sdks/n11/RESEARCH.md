@@ -287,7 +287,27 @@ stockCode, quantity }], code: 200, message: "success" }`. Each line gets a new p
     - **`cancelItem`** (SOAP `ClaimCancelPartial`) of 1 of the ×2 line: the rest moves to a new
       ×1 package and the old one turns `UnSupplied`. `claims.listCancels` for the order stays
       empty, so a partial cancel opens no cancel claim.
-    - **`sendInvoiceLink`** on the order: success.
+    - **`sendInvoiceLink`** on the order: success. The buyer's order page then shows "Faturayı
+      gör" linking to the sent URL (the earlier test on another integrator's order did not show
+      it in Seller Office).
+    - **`createCollectionRequest`** on order 227327982424, which n11 placed with `test-test001`
+      alone: the package went to Horoz Lojistik (`shipmentCompanyId` 441), and the request on
+      its `Picking` package answered `{ code: 200, message: "success" }`; the package stayed
+      `Picking`. n11 notifies the logistics company, so tell n11 after a test.
+    - **Returns.** n11 set three packages `Delivered`; we opened one return per line as the buyer
+      (pickup from the address declined, so each claim got a return `campaignNumber` for Aras).
+      The claims read `REQUESTED` but were listed only under `status: 'ALL'`: `REQUESTED`,
+      `APPROVAL_WAITING` and no status gave nothing until n11 marked each return shipment
+      delivered to the seller (on request, with the campaign codes; n11 support: the seller
+      cannot act before that). Then all three filters listed them, `approvalRemainingTime` "5
+      Gün". `postponeReturn` (reason 3, 3 days) → `PENDING`; `approveReturn` → `APPROVED`.
+    - **`denyReturn` needs the empty elements.** With `returnShipmentType: CAMPAIGN` and the
+      shipment fields left out, n11 answered "trackingNumber alanı geçersizdir"; with
+      `shipmentCompanyId`, `trackingNumber` and `deliveryReceiptNumber` sent as empty elements
+      (as n11's example request does; its rule says "leave empty") the denial was accepted. The
+      claim stays `REQUESTED` and gains a `sellerCampaignNumber` (the code for sending the item
+      back to the buyer); n11 says a denial opens a deny request that its operations then
+      handle. The SDK now always sends those elements, empty when unset.
 - **End-to-end run** (`pnpm e2e:n11`, `scripts/e2e/n11.mts`, 2026-10-14): all 31 methods against
   the test store. 20 verified on the success path; the order writes, return decisions and
   `questions.answer` only up to n11's refusal for a package, claim or question in the wrong state
@@ -519,8 +539,9 @@ errorMessage }`. An invalid `status` on the line update is `400` plain text in I
     `orders.sendInvoiceLink` on an unknown order: `SELLER_API.order.not.found`.
   - **Success paths, 2026-10-16** (our paid test order, section 7): `orders.approve`,
     `updateLaborCosts`, `splitPackage`, `splitPackageByQuantity`, `cancelItem` and
-    `sendInvoiceLink`. Still failure-only: `createCollectionRequest` and the three return
-    decisions.
+    `sendInvoiceLink`, `createCollectionRequest`, and the return decisions `postponeReturn`,
+    `approveReturn` and `denyReturn` (accepted; the denial's outcome is up to n11 operations).
+    Every write now has a verified success path.
   - **Error mapping:** SOAP "not found" codes → `NotFoundError`, `systemError` → `ServerError`,
     the rest → `ValidationError`.
   - **Partial-cancel reasons** come from `ClaimCancelDenyReasonType` (61 "Stokta Kalmayan Ürün", 62,
@@ -663,10 +684,8 @@ totalPages, page, size, content }`, where `pageCount` equals the number of rows 
 5. ~~Harmonise with the TY/HB SDKs (order-status mapping, capabilities, `testing` fake client).
    Then publish as `0.x` with a changeset.~~ Done on 2026-10-13; the first npm publish of a new
    scoped package has to be done by hand (see the release notes in the PR).
-6. Order writes on a real order: done on 2026-10-16 for approve, labour cost, both splits,
-   partial cancel and invoice link (order 214267982426, section 7). Still open: return
-   decisions (n11 sets three of its packages `Delivered`, then we open returns as the buyer) and
-   `createCollectionRequest` (needs a Horoz package: n11 asked to move the `test-test001`
-   package, otherwise order that product alone).
+6. ~~Order writes and return decisions on a real order.~~ Done on 2026-10-16 (orders
+   214267982426 and 227327982424, section 7). Left with n11: cancelling the leftover packages
+   and refunding the denied return.
 7. ~~A settlements resource over SOAP.~~ Done on 2026-10-16: `finance.listSettlements` /
    `getSettlementDetail` (section 10), verified on the test store.
