@@ -203,6 +203,11 @@ The CONTRIBUTING minimum of orders, products and inventory is reachable over RES
     `salePrice` ("list price boş olamaz"), an update with nothing to change, an invalid category,
     a create without images and attributes, an image n11 cannot fetch ("All Images are invalid"),
     and a price over the category's cap ("fahiş fiyat … Maximum 42,000 TL").
+  - **Price-drop guards (2026-10-16, test store).** Two more per-SKU `FAIL`s guard price cuts. A
+    cut of 70 % or more in one update fails with "70 veya daha fazla oranda indirim yaptınız"
+    (Seller Office support can allow it). Below a per-product floor, the update fails with
+    "fahiş fiyat düşüklüğü … (Minimum 5.5 TL)". The floor did not move after a cut: 10 → 5.50 TL
+    passed, but then 5.49 and 5 TL failed. It was 5.50 TL for our two 10 TL products (category 1001012) and 32.23 TL for the silver product in category 1104101.
   - **Placeholder row.** While a task is `IN_QUEUE`, task details already hold one row with no
     `itemCode`, `status: FAIL` and the reason "N sku işlenmeye alındı.". It is not a result; the
     SDK drops it. Real rows appear one by one as SKUs finish.
