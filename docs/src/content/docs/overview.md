@@ -27,7 +27,7 @@ There's no widely-adopted open standard. Marketplaces sometimes ship official SD
 | [`@lonca/core`](https://www.npmjs.com/package/@lonca/core)               | Shared primitives — error hierarchy (`AuthError`, `RateLimitError`, …), retry with exponential backoff, token-bucket rate limiter, structured logger, cursor pagination helpers. |
 | [`@lonca/trendyol`](https://www.npmjs.com/package/@lonca/trendyol)       | Trendyol Marketplace SDK — 14 resources, ~70 methods, webhook event parser.                                                                                                      |
 | [`@lonca/hepsiburada`](https://www.npmjs.com/package/@lonca/hepsiburada) | Hepsiburada Marketplace SDK — 12 resources, 95 methods, webhook event parser. Full developer-portal coverage.                                                                    |
-| [`@lonca/n11`](https://www.npmjs.com/package/@lonca/n11)                 | n11 Marketplace SDK (0.x) — REST and SOAP in one client, 10 resources, 37 methods.                                                                                               |
+| [`@lonca/n11`](https://www.npmjs.com/package/@lonca/n11)                 | n11 Marketplace SDK — REST and SOAP in one client, 10 resources, 37 methods.                                                                                                     |
 
 ## Design principles
 

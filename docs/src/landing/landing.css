@@ -811,7 +811,7 @@ a {
 .facts-grid {
   margin: 0;
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   border-top: 1px solid var(--line);
   border-left: 1px solid var(--line);
 }
@@ -822,7 +822,7 @@ a {
   min-width: 0;
 }
 .facts-grid > div.wide {
-  grid-column: span 3;
+  grid-column: span 4;
   display: grid;
   grid-template-columns: 14rem 1fr;
   align-items: start;
@@ -882,10 +882,6 @@ a {
 .dot.on {
   background: #4fae7c;
   box-shadow: 0 0 0 3px rgba(79, 174, 124, 0.18);
-}
-.dot.half {
-  background: linear-gradient(90deg, var(--ink-3) 50%, transparent 50%);
-  border: 1px solid var(--ink-3);
 }
 .arrow {
   font-size: 14px;
