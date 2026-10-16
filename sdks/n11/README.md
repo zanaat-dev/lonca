@@ -6,7 +6,7 @@
 
 [![npm version](https://img.shields.io/npm/v/@lonca/n11.svg)](https://www.npmjs.com/package/@lonca/n11)
 
-Type-safe TypeScript SDK for the [n11 seller API](https://developer.n11.com/documentation/). One client for n11's REST services and the SOAP services it still runs (questions, returns, partial cancels, invoice links, catalogue search) — **31 methods across 8 resources**, with no XML in your code and no SOAP dependency.
+Type-safe TypeScript SDK for the [n11 seller API](https://developer.n11.com/documentation/). One client for n11's REST services and the SOAP services it still runs (questions, returns, partial cancels, invoice links, catalogue search, settlements) — **33 methods across 9 resources**, with no XML in your code and no SOAP dependency.
 
 > [!IMPORTANT]
 > **Unofficial.** This is an independent, community-maintained SDK. It is not affiliated with, endorsed by, or supported by n11. "n11" and related names are trademarks of their respective owners.
@@ -26,10 +26,11 @@ Type-safe TypeScript SDK for the [n11 seller API](https://developer.n11.com/docu
 | `questions`  |       3 | `list`, `get`, `answer`                                                                                                                     |
 | `claims`     |       8 | `listReturns`, `listCancels`, reason lists ×3, `approveReturn`, `denyReturn`, `postponeReturn`                                              |
 | `shipping`   |       1 | `getShipmentCompanies`                                                                                                                      |
+| `finance`    |       2 | `listSettlements`, `getSettlementDetail` (daily payouts, per-line commission and fees, deferments)                                          |
 
 Plus `normalizeStatus` (n11 package status → `@lonca/core` `NormalizedOrderStatus`), `n11Capabilities` and a fake client in `@lonca/n11/testing`.
 
-Not covered, because n11 does not offer it over the API: webhooks, cargo label files (print the package's `cargoTrackingNumber` as a CODE-128 barcode instead, as n11 advises), settlements over REST (n11 keeps finance on SOAP).
+Not covered, because n11 does not offer it over the API: webhooks, cargo label files (print the package's `cargoTrackingNumber` as a CODE-128 barcode instead, as n11 advises).
 
 ## Install
 

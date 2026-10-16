@@ -24,7 +24,7 @@
  *
  * Exit codes: 0 every check passed, 1 a check failed, 2 setup error.
  */
-import { LoncaError, NotFoundError, ValidationError } from '@lonca/core';
+import { LoncaError, NotFoundError, paginate, ValidationError } from '@lonca/core';
 import {
   createN11Client,
   n11Capabilities,
@@ -71,6 +71,8 @@ const METHODS = [
   'claims.denyReturn',
   'claims.postponeReturn',
   'shipping.getShipmentCompanies',
+  'finance.listSettlements',
+  'finance.getSettlementDetail',
 ] as const;
 type Method = (typeof METHODS)[number];
 
@@ -219,6 +221,49 @@ await check('shipping.getShipmentCompanies', 'shipping.getShipmentCompanies', as
   assert(companies.length > 0 && companies.every((c) => c.id && c.name), 'bad list');
   return `${companies.length} companies (${companies[0]!.name})`;
 });
+
+let settlementDay: string | undefined;
+await check(
+  'finance.listSettlements',
+  'finance.listSettlements: since 2020, 2 per page',
+  async () => {
+    const days = [];
+    for await (const s of paginate(
+      (p) => client.finance.listSettlements({ startDate: '2020-01-01', endDate: new Date(), ...p }),
+      { limit: 2 },
+    )) {
+      days.push(s);
+    }
+    assert(
+      days.every((s) => /^\d{4}-\d{2}-\d{2}$/.test(s.settlementDate) && s.status),
+      'bad row',
+    );
+    settlementDay = days.find((s) => s.paymentAmount && s.paymentAmount.amount > 0)?.settlementDate;
+    return `${days.length} days (${[...new Set(days.map((s) => s.status))].join(', ') || '-'})`;
+  },
+);
+await check('finance.listSettlements', 'finance.listSettlements: DD/MM/YYYY string', () =>
+  refused(() => client.finance.listSettlements({ startDate: '01/01/2026', endDate: '31/01/2026' })),
+);
+if (settlementDay) {
+  const day = settlementDay;
+  await check(
+    'finance.getSettlementDetail',
+    `finance.getSettlementDetail: ${day}, 1 per page`,
+    async () => {
+      const lines = [];
+      for await (const line of paginate((p) => client.finance.getSettlementDetail(day, p), {
+        limit: 1,
+      })) {
+        lines.push(line);
+      }
+      assert(lines.length > 0 && lines.every((l) => l.lineId && l.paymentAmount), 'bad lines');
+      const detail = await client.finance.getSettlementDetail(day);
+      assert(detail.summary.salesAmount, 'no summary');
+      return `${lines.length} lines, ${detail.deferments.length} deferments`;
+    },
+  );
+}
 
 let catalogHit: { catalogId: string; barcode?: string } | undefined;
 await check('catalog.search', 'catalog.search: title + category', async () => {

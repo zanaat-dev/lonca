@@ -432,6 +432,175 @@ declare class ClaimsResource {
 }
 
 /**
+ * Settlement status. Seen on n11's test store: `Success`, `Failed`; the 2020
+ * SOAP manual also shows `Confirmed` and `Wait_Remittance`.
+ */
+type N11SettlementStatus = 'Success' | 'Failed' | 'Confirmed' | 'Wait_Remittance' | (string & {});
+/** Filters for {@link FinanceResource.listSettlements}. */
+interface ListN11SettlementsParams extends CursorPaginationParams {
+    /**
+     * Window start, by settlement day — **required** by n11. A `Date` is sent as
+     * its Turkish calendar day (`YYYY-MM-DD`); a string is sent as given and
+     * must be `YYYY-MM-DD` (`DD/MM/YYYY` fails with `SELLER_API.invalidDate`).
+     */
+    startDate: Date | string;
+    /** Window end — **required** by n11. A start after the end gives an empty page. */
+    endDate: Date | string;
+}
+/** One row of `GetSettlementList`: a settlement day's totals. Dates are `YYYY-MM-DD`. */
+interface N11Settlement {
+    /** The settlement day; pass it to `finance.getSettlementDetail`. */
+    settlementDate: string;
+    status: N11SettlementStatus;
+    /** Day the money is (or was) sent to the seller's bank (`remittanceDate`). */
+    remittanceDate?: string;
+    /** Sales paid by buyers (`paymentAmount`). */
+    paymentAmount?: Money;
+    /** Everything n11 kept: commission, fees, discounts and deferments (`deductionAmount`). */
+    deductionAmount?: Money;
+    /** What the seller receives (`settlementAmount`). */
+    settlementAmount?: Money;
+    /** Untouched parsed element. */
+    raw: Record<string, unknown>;
+}
+/** `settlementDetail.settlement`: the day's totals. */
+interface N11SettlementSummary {
+    salesAmount?: Money;
+    sellerWithdraw?: Money;
+    releaseDeferment?: Money;
+    deductionAmount?: Money;
+    defermentOfPayment?: Money;
+    /** Paid into the seller's n11 e-wallet (`paymentToECash`). */
+    paymentToECash?: Money;
+    /** Sent to the seller's bank (`remittance`). */
+    remittance?: Money;
+}
+/**
+ * One order line of a settlement day (`orderItemSettlement`). Amounts are in
+ * Turkish lira. On the test store, `settlementAmount` = `paymentAmount` −
+ * `deductionAmount` − `defermentOfPayment`, and `deductionAmount` included
+ * the `sellerDiscount`.
+ */
+interface N11SettlementLine {
+    /** Order line id (`orderItemId`), the `lineId` of `orders.list`. */
+    lineId: string;
+    orderNumber?: string;
+    productId?: string;
+    productName?: string;
+    buyerName?: string;
+    buyerEmail?: string;
+    /** Cargo tracking number; missing on some lines. */
+    trackingNumber?: string;
+    paymentAmount?: Money;
+    deductionAmount?: Money;
+    settlementAmount?: Money;
+    sellerDiscount?: Money;
+    sellerCouponDiscount?: Money;
+    /**
+     * Commission **rate** in percent (`commission`). The test store sent the
+     * same value (12.2) on a 649.90 TL and a 5,000 TL line.
+     */
+    commissionRate?: number;
+    adFee?: Money;
+    adFeeVat?: Money;
+    serviceFee?: Money;
+    serviceFeeVat?: Money;
+    cargoPrice?: Money;
+    defermentOfPayment?: Money;
+    /**
+     * `taxDeduction`, not in the WSDL or the docs. On the test store it was
+     * the VAT contained in `paymentAmount` − `sellerDiscount` at
+     * `taxDeductionRate` (100 TL at 20 % → 16.67).
+     */
+    taxDeduction?: Money;
+    /** `taxDeductionRate` in percent (20, 10 and 0 seen); not in the WSDL. */
+    taxDeductionRate?: number;
+    paymentDate?: string;
+    shippingDate?: string;
+    completedDate?: string;
+    settlementDate?: string;
+    remittanceDate?: string;
+    /** Untouched parsed element. */
+    raw: Record<string, unknown>;
+}
+/** A deduction deferred to this day (`deferments.deferment`). */
+interface N11Deferment {
+    /** `DD.MM.YYYY HH:mm` (`deferredDate`). */
+    deferredDate?: string;
+    amount?: Money;
+    /** n11's free-text reason, e.g. an early-payment fee or a return. */
+    reason?: string;
+}
+/** A shipping cost deferred to this day (`defermentSppUsages.defermentSppUsage`). */
+interface N11ShipmentDeferment {
+    orderNumber?: string;
+    campaignNumber?: string;
+    /** `DD.MM.YYYY HH:mm`. */
+    createdDate?: string;
+    /** Weight (desi) the cargo company reported (`cargoWeightFromShipmentCompany`). */
+    cargoWeight?: number;
+    amount?: Money;
+    shipmentCompanyName?: string;
+}
+/** A deferment used against an order (`defermentSettlementUsages.defermentSettlementUsage`). */
+interface N11DefermentUsage {
+    orderNumber?: string;
+    orderDate?: string;
+    productId?: string;
+    productTitle?: string;
+    amount?: Money;
+}
+/**
+ * `GetSettlementDetail` for one day. `items` and `nextCursor` page through the
+ * order lines; the other fields are the same on every page.
+ */
+interface N11SettlementDetail extends CursorPage<N11SettlementLine> {
+    /** The day that was asked for, as sent. */
+    date: string;
+    summary: N11SettlementSummary;
+    /** `financialTotalDeferment`. */
+    totalDeferment?: Money;
+    /** `totalReturnDefermentAmount`. */
+    totalReturnDeferment?: Money;
+    deferments: N11Deferment[];
+    shipmentDeferments: N11ShipmentDeferment[];
+    defermentUsages: N11DefermentUsage[];
+    /** Untouched parsed `settlementDetail` element. */
+    raw: Record<string, unknown>;
+}
+
+/**
+ * Settlements (SOAP `SettlementService`): what n11 pays out per day and the
+ * order lines, fees and deferments behind it.
+ *
+ * Source: `api.n11.com/ws/SettlementService.wsdl` and the 2020 SOAP manual;
+ * the new portal has no page for it, and n11 (2026-10-13) says finance stays
+ * on SOAP. Verified on n11's test store on 2026-10-16. Live responses follow
+ * the WSDL's list wrappers (`orderItemSettlements.orderItemSettlement`), not
+ * the manual's examples, and add `taxDeduction` / `taxDeductionRate` per line.
+ */
+declare class FinanceResource {
+    private readonly transport;
+    constructor(transport: N11Transport);
+    /**
+     * Settlement days in a window (`GetSettlementList`). n11 pages by `limit`
+     * (at most 100, the default). A day can appear more than once with
+     * different statuses.
+     */
+    listSettlements(params: ListN11SettlementsParams): Promise<CursorPage<N11Settlement>>;
+    /**
+     * One settlement day (`GetSettlementDetail`): its totals, the order lines
+     * (paged by `limit`, at most 100) and the deferments. A day without a
+     * settlement answers with zero totals and no lines.
+     *
+     * @param date The settlement day: a `Date` (sent as its Turkish calendar
+     *   day) or a `YYYY-MM-DD` string, e.g. `settlementDate` from
+     *   {@link listSettlements}.
+     */
+    getSettlementDetail(date: Date | string, params?: CursorPaginationParams): Promise<N11SettlementDetail>;
+}
+
+/**
  * Product write tasks (`POST /ms/product/tasks/*`) and their results
  * (`POST /ms/product/task-details/page-query`).
  *
@@ -1311,6 +1480,8 @@ interface N11Client {
     categories: CategoriesResource;
     /** Return and cancel claims (SOAP). */
     claims: ClaimsResource;
+    /** Settlements: daily payouts, order-line fees and deferments (SOAP). */
+    finance: FinanceResource;
     /** Price and stock updates (async tasks). */
     inventory: InventoryResource;
     orders: OrdersResource;
@@ -1327,7 +1498,7 @@ interface N11Client {
  *
  * **Unreleased** — private and unpublished. The reads (`categories`,
  * `orders.list`, `products.list` and the SOAP `questions`, `claims`,
- * `shipping`) are verified on prod; the product writes (`products.create` /
+ * `shipping`, `finance`) are verified on prod; the product writes (`products.create` /
  * `update` / `delete`, `inventory.update`) on n11's test store. See
  * `sdks/n11/RESEARCH.md`.
  *
@@ -1344,4 +1515,4 @@ interface N11Client {
  */
 declare function createN11Client(opts: CreateN11ClientOptions): N11Client;
 
-export { type CancelN11OrderItemParams, CatalogResource, CategoriesResource, ClaimsResource, createN11Client, type CreateN11ClientOptions, type DenyN11ReturnParams, InventoryResource, type KnownN11PackageStatus, type ListN11CancelsParams, type ListN11OrdersParams, type ListN11ProductsParams, type ListN11QuestionsParams, type ListN11ReturnsParams, type N11Address, type N11AttributeValue, type N11CancelClaim, type N11CancelStatus, n11Capabilities, type N11Capabilities, type N11CatalogProduct, type N11CatalogSearchResult, type N11Category, type N11CategoryAttribute, type N11CategoryAttributes, type N11ClaimExecuter, type N11ClaimSearchType, type N11Client, type N11CollectionRequestLine, type N11CurrencyType, type N11Environment, type N11LaborCost, type N11LineResult, type N11OrderLine, type N11PackageHistory, type N11PackageStatus, type N11PriceStockUpdate, type N11Product, type N11ProductAttribute, type N11ProductAttributeInput, type N11ProductCreateItem, type N11ProductStatus, type N11ProductTask, type N11ProductUpdateItem, type N11Question, type N11QuestionDetail, type N11QuestionStatus, type N11ReasonType, type N11ReturnClaim, type N11ReturnStatus, type N11SaleStatus, type N11Sender, type N11ShipmentCompany, type N11ShipmentPackage, type N11SplitPackageItem, type N11SplitResult, type N11TaskDetails, type N11TaskItemResult, type N11TaskItemStatus, type N11TaskPollOptions, type N11TaskStatus, type N11TaskType, N11Transport, type N11VatRate, OrdersResource, type PostponeN11ReturnParams, ProductsResource, QuestionsResource, type SearchN11CatalogParams, type SendN11InvoiceLinkParams, ShippingResource, type SoapCallOptions, type SplitN11PackageByQuantityParams };
+export { type CancelN11OrderItemParams, CatalogResource, CategoriesResource, ClaimsResource, createN11Client, type CreateN11ClientOptions, type DenyN11ReturnParams, FinanceResource, InventoryResource, type KnownN11PackageStatus, type ListN11CancelsParams, type ListN11OrdersParams, type ListN11ProductsParams, type ListN11QuestionsParams, type ListN11ReturnsParams, type ListN11SettlementsParams, type N11Address, type N11AttributeValue, type N11CancelClaim, type N11CancelStatus, n11Capabilities, type N11Capabilities, type N11CatalogProduct, type N11CatalogSearchResult, type N11Category, type N11CategoryAttribute, type N11CategoryAttributes, type N11ClaimExecuter, type N11ClaimSearchType, type N11Client, type N11CollectionRequestLine, type N11CurrencyType, type N11Deferment, type N11DefermentUsage, type N11Environment, type N11LaborCost, type N11LineResult, type N11OrderLine, type N11PackageHistory, type N11PackageStatus, type N11PriceStockUpdate, type N11Product, type N11ProductAttribute, type N11ProductAttributeInput, type N11ProductCreateItem, type N11ProductStatus, type N11ProductTask, type N11ProductUpdateItem, type N11Question, type N11QuestionDetail, type N11QuestionStatus, type N11ReasonType, type N11ReturnClaim, type N11ReturnStatus, type N11SaleStatus, type N11Sender, type N11Settlement, type N11SettlementDetail, type N11SettlementLine, type N11SettlementStatus, type N11SettlementSummary, type N11ShipmentCompany, type N11ShipmentDeferment, type N11ShipmentPackage, type N11SplitPackageItem, type N11SplitResult, type N11TaskDetails, type N11TaskItemResult, type N11TaskItemStatus, type N11TaskPollOptions, type N11TaskStatus, type N11TaskType, N11Transport, type N11VatRate, OrdersResource, type PostponeN11ReturnParams, ProductsResource, QuestionsResource, type SearchN11CatalogParams, type SendN11InvoiceLinkParams, ShippingResource, type SoapCallOptions, type SplitN11PackageByQuantityParams };

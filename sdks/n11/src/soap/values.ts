@@ -17,6 +17,19 @@ export function soapDate(value: Date | string | undefined): string | undefined {
   return `${get('day')}/${get('month')}/${get('year')}`;
 }
 
+/**
+ * Format a date as `YYYY-MM-DD` on the Turkish calendar day, for the services
+ * that take ISO days (`SettlementService`). Strings pass through unchanged.
+ */
+export function isoDay(value: Date | string): string;
+export function isoDay(value: Date | string | undefined): string | undefined;
+export function isoDay(value: Date | string | undefined): string | undefined {
+  const day = soapDate(value);
+  if (day === undefined || typeof value === 'string') return day;
+  const [dd, mm, yyyy] = day.split('/');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 /** Non-empty text of a child element. */
 export function text(node: XmlNode | undefined): string | undefined {
   return asText(node);

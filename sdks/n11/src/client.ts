@@ -2,6 +2,7 @@ import type { Logger } from '@lonca/core';
 import { CatalogResource } from './resources/catalog.js';
 import { CategoriesResource } from './resources/categories.js';
 import { ClaimsResource } from './resources/claims.js';
+import { FinanceResource } from './resources/finance.js';
 import { InventoryResource } from './resources/inventory.js';
 import { OrdersResource } from './resources/orders.js';
 import { ProductsResource } from './resources/products.js';
@@ -40,6 +41,8 @@ export interface N11Client {
   categories: CategoriesResource;
   /** Return and cancel claims (SOAP). */
   claims: ClaimsResource;
+  /** Settlements: daily payouts, order-line fees and deferments (SOAP). */
+  finance: FinanceResource;
   /** Price and stock updates (async tasks). */
   inventory: InventoryResource;
   orders: OrdersResource;
@@ -57,7 +60,7 @@ export interface N11Client {
  *
  * **Unreleased** — private and unpublished. The reads (`categories`,
  * `orders.list`, `products.list` and the SOAP `questions`, `claims`,
- * `shipping`) are verified on prod; the product writes (`products.create` /
+ * `shipping`, `finance`) are verified on prod; the product writes (`products.create` /
  * `update` / `delete`, `inventory.update`) on n11's test store. See
  * `sdks/n11/RESEARCH.md`.
  *
@@ -92,6 +95,7 @@ export function buildClient(transport: N11Transport): N11Client {
     catalog: new CatalogResource(transport),
     categories: new CategoriesResource(transport),
     claims: new ClaimsResource(transport),
+    finance: new FinanceResource(transport),
     inventory: new InventoryResource(transport),
     orders: new OrdersResource(transport),
     products: new ProductsResource(transport),
