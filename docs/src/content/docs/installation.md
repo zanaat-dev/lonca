@@ -22,24 +22,26 @@ pnpm add @lonca/hepsiburada @lonca/core
 # n11
 pnpm add @lonca/n11 @lonca/core
 
-# Both (a typical multi-marketplace seller)
-pnpm add @lonca/trendyol @lonca/hepsiburada @lonca/core
+# All three (a typical multi-marketplace seller)
+pnpm add @lonca/trendyol @lonca/hepsiburada @lonca/n11 @lonca/core
 ```
 
 ## Versioning
 
-Lonca uses [Changesets](https://github.com/changesets/changesets) for releases. While the SDKs are on `0.x`, **pin to a minor range** — the `0.x` line ships breaking type changes when live observation reveals stricter contracts:
+Lonca uses [Changesets](https://github.com/changesets/changesets) for releases. Every package is at `1.0` or later and follows semver: breaking changes ship only in major versions, so a caret range is safe:
 
 ```jsonc
 {
   "dependencies": {
-    "@lonca/hepsiburada": "~0.9.0",
-    "@lonca/trendyol": "~0.11.0",
+    "@lonca/core": "^1.1.0",
+    "@lonca/hepsiburada": "^1.3.0",
+    "@lonca/n11": "^1.0.0",
+    "@lonca/trendyol": "^1.3.0",
   },
 }
 ```
 
-Once a package reaches `1.0`, standard semver guarantees apply.
+[Stability & versioning](/stability/) has the full policy; [Migrating to 1.0](/migrating-to-1-0/) covers upgrades from `0.x`.
 
 ## Stable releases & changelogs
 

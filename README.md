@@ -66,7 +66,7 @@ Three-stage roadmap:
 Marketplaces:
 
 - **Trendyol, Hepsiburada** — 1.x, full documented surface.
-- **n11** — 0.x ([`sdks/n11/`](sdks/n11/)): REST and SOAP in one client. Reads are verified on production, product writes on the test store n11 provides to integrators.
+- **n11** — 1.x ([`sdks/n11/`](sdks/n11/)): REST and SOAP in one client. Every method has run against n11: reads on production, writes on the test store n11 provides to integrators, order writes and return decisions on real test orders.
 - **Amazon TR, Pazarama, Çiçeksepeti** — planned.
 
 ## Why?
@@ -82,7 +82,7 @@ Lonca aims to fill this gap with a community-maintained open standard.
 | `@lonca/core`        | Shared types, error hierarchy, retry / logger / rate-limiter                        | [![npm](https://img.shields.io/npm/v/@lonca/core.svg)](https://www.npmjs.com/package/@lonca/core)               |
 | `@lonca/trendyol`    | Trendyol Marketplace SDK — full surface (14 resources, ~70 methods, webhook helper) | [![npm](https://img.shields.io/npm/v/@lonca/trendyol.svg)](https://www.npmjs.com/package/@lonca/trendyol)       |
 | `@lonca/hepsiburada` | Hepsiburada Marketplace SDK — full dev-portal coverage (12 resources, 95 methods)   | [![npm](https://img.shields.io/npm/v/@lonca/hepsiburada.svg)](https://www.npmjs.com/package/@lonca/hepsiburada) |
-| `@lonca/n11`         | n11 Marketplace SDK — REST and SOAP in one client (8 resources, 31 methods), 0.x    | [![npm](https://img.shields.io/npm/v/@lonca/n11.svg)](https://www.npmjs.com/package/@lonca/n11)                 |
+| `@lonca/n11`         | n11 Marketplace SDK — REST and SOAP in one client (10 resources, 37 methods)        | [![npm](https://img.shields.io/npm/v/@lonca/n11.svg)](https://www.npmjs.com/package/@lonca/n11)                 |
 
 📄 **OpenAPI specs**: [`specs/`](specs/) — curated per-service OpenAPI 3.0 documents for Hepsiburada (7 files, 67 operations) and Trendyol ([`specs/trendyol/`](specs/trendyol/): 13 files, 95 operations, covering every endpoint `@lonca/trendyol` calls). Both are captured from the marketplaces' developer portals and redistributed under the marketplaces' copyright. See [`specs/README.md`](specs/README.md).
 
