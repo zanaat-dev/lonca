@@ -262,6 +262,32 @@ The CONTRIBUTING minimum of orders, products and inventory is reachable over RES
     (n11: "add stock as needed"). n11 also turned off automatic approval on the store, so new
     orders stay `Created`; n11 can switch automatic approval on per seller on request. The
     `collection` and `labor-cost` steps of `pnpm e2e:n11:orders` run on that product's line.
+  - **Our paid test order (2026-10-16).** Order 214267982426: LONCA-ORDER-1 ×3, LONCA-ORDER-2
+    ×2 and `test-test001` ×1 in one cart, 59.73 TL less a 3.85 TL marketplace discount
+    (`pnpm e2e:n11:orders`, one step at a time):
+    - **The order went to Aras as one package.** The cart grouped the store's lines under one
+      company, so `test-test001` shipped with Aras (`shipmentCompanyId` 345) despite its
+      `horozTest` template, and it stayed with Aras after `splitPackage`. Its collection request
+      failed per line (`SELLER_API.orderItemInvalidForCollectionRequest`); a Horoz package needs
+      the Horoz product ordered alone. n11 was asked whether this is intended and to move package
+      112784826681383 to Horoz.
+    - **Every line stayed `Created`** with automatic approval off, and `approve` moved them to
+      `Picking`: one result per line, `SUCCESS` "Başarıyla tamamlandı.".
+    - **`updateLaborCosts`** on the `Picking` silver line: `SUCCESS` "İşçilik Ekleme Başarıyla
+      Tamamlandı." with `details { totalLaborCostExcludingVAT: 5, laborVatRate: 20,
+amountExcludingVAT: 25.86 }`; `orders.list` then reads `totalLaborCostExcludingVAT` 5 on the
+      line.
+    - **`splitPackage`** into one package per line: `{ items: [{ orderNumber, packageId, lineId,
+stockCode, quantity }], code: 200, message: "success" }`. Each line gets a new package (new
+      campaign code); the old package stays in the list as `Unpacked` with every line.
+    - **`splitPackageByQuantity`** of the ×3 package into 1 + 1 with one item cancelled: same
+      result shape. One of the new packages carries a **new line id** (480038464, lower than the
+      original 480251934); the source package turns `UnSupplied` and an intermediate ×2 package
+      shows as `Unpacked`.
+    - **`cancelItem`** (SOAP `ClaimCancelPartial`) of 1 of the ×2 line: the rest moves to a new
+      ×1 package and the old one turns `UnSupplied`. `claims.listCancels` for the order stays
+      empty, so a partial cancel opens no cancel claim.
+    - **`sendInvoiceLink`** on the order: success.
 - **End-to-end run** (`pnpm e2e:n11`, `scripts/e2e/n11.mts`, 2026-10-14): all 31 methods against
   the test store. 20 verified on the success path; the order writes, return decisions and
   `questions.answer` only up to n11's refusal for a package, claim or question in the wrong state
@@ -481,6 +507,10 @@ errorMessage }`. An invalid `status` on the line update is `400` plain text in I
     "claimReturnId alanı boş olamaz" (`SELLER_API.nullParam`) and deny says `systemError`.
     `orders.cancelItem` on a cancelled line: `SELLER_API.claimCancel.invalidRequestForPartial`.
     `orders.sendInvoiceLink` on an unknown order: `SELLER_API.order.not.found`.
+  - **Success paths, 2026-10-16** (our paid test order, section 7): `orders.approve`,
+    `updateLaborCosts`, `splitPackage`, `splitPackageByQuantity`, `cancelItem` and
+    `sendInvoiceLink`. Still failure-only: `createCollectionRequest` and the three return
+    decisions.
   - **Error mapping:** SOAP "not found" codes → `NotFoundError`, `systemError` → `ServerError`,
     the rest → `ValidationError`.
   - **Partial-cancel reasons** come from `ClaimCancelDenyReasonType` (61 "Stokta Kalmayan Ürün", 62,
@@ -621,10 +651,10 @@ totalPages, page, size, content }`, where `pageCount` equals the number of rows 
 5. ~~Harmonise with the TY/HB SDKs (order-status mapping, capabilities, `testing` fake client).
    Then publish as `0.x` with a changeset.~~ Done on 2026-10-13; the first npm publish of a new
    scoped package has to be done by hand (see the release notes in the PR).
-6. Still open: verify order writes and return decisions on a real order (needs an order in
-   `Created` / `Picking` on the test store; per n11's 2026-10-15 reply we place and pay for it
-   ourselves, and n11 sets `Delivered`), plus `createCollectionRequest` and `updateLaborCosts`
-   on the same order through n11's `test-test001` product (Horoz template, labour-cost category;
-   n11's 2026-10-16 reply).
+6. Order writes on a real order: done on 2026-10-16 for approve, labour cost, both splits,
+   partial cancel and invoice link (order 214267982426, section 7). Still open: return
+   decisions (n11 sets three of its packages `Delivered`, then we open returns as the buyer) and
+   `createCollectionRequest` (needs a Horoz package: n11 asked to move the `test-test001`
+   package, otherwise order that product alone).
 7. ~~A settlements resource over SOAP.~~ Done on 2026-10-16: `finance.listSettlements` /
    `getSettlementDetail` (section 10), verified on the test store.
