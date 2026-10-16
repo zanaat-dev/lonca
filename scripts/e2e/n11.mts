@@ -73,6 +73,10 @@ const METHODS = [
   'shipping.getShipmentCompanies',
   'finance.listSettlements',
   'finance.getSettlementDetail',
+  'locations.getCities',
+  'locations.getCity',
+  'locations.getDistricts',
+  'locations.getNeighborhoods',
 ] as const;
 type Method = (typeof METHODS)[number];
 
@@ -221,6 +225,33 @@ await check('shipping.getShipmentCompanies', 'shipping.getShipmentCompanies', as
   assert(companies.length > 0 && companies.every((c) => c.id && c.name), 'bad list');
   return `${companies.length} companies (${companies[0]!.name})`;
 });
+
+await check(
+  [
+    'locations.getCities',
+    'locations.getCity',
+    'locations.getDistricts',
+    'locations.getNeighborhoods',
+  ],
+  'locations: cities → İstanbul → districts → neighborhoods',
+  async () => {
+    const cities = await client.locations.getCities();
+    assert(cities.length === 81 && cities.every((c) => c.code && c.id && c.name), 'bad city list');
+    await sleep(SPACING_MS);
+    const istanbul = await client.locations.getCity(34);
+    assert(istanbul.name === 'İstanbul', `city 34 is ${istanbul.name}`);
+    await sleep(SPACING_MS);
+    const districts = await client.locations.getDistricts(istanbul.code);
+    assert(districts.length > 0 && districts.every((d) => d.id && d.name), 'bad districts');
+    await sleep(SPACING_MS);
+    const neighborhoods = await client.locations.getNeighborhoods(districts[0]!.id);
+    assert(neighborhoods.length > 0, 'no neighborhoods');
+    return `${cities.length} cities, ${districts.length} districts in İstanbul, ${neighborhoods.length} neighborhoods in ${districts[0]!.name}`;
+  },
+);
+await check('locations.getCity', 'locations.getCity: unknown code', () =>
+  refused(() => client.locations.getCity(500)),
+);
 
 let settlementDay: string | undefined;
 await check(

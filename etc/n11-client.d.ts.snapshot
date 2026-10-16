@@ -807,6 +807,49 @@ declare class InventoryResource {
     updateAndWait(items: readonly N11PriceStockUpdate[], opts?: N11TaskPollOptions): Promise<N11TaskDetails[]>;
 }
 
+/** A city (`CityData`). */
+interface N11City {
+    /** Plate code, e.g. `"34"` for İstanbul (`cityCode`); the key for {@link LocationsResource.getDistricts}. */
+    code: string;
+    /** n11's internal id (`cityId`), e.g. `"2534"`. */
+    id: string;
+    name: string;
+}
+/** A district (`DistrictData`) or a neighborhood (`NeighborhoodData`). */
+interface N11District {
+    id: string;
+    name: string;
+}
+/** A neighborhood (`NeighborhoodData`). */
+type N11Neighborhood = N11District;
+/**
+ * Address reference data (SOAP `CityService`): cities, districts and
+ * neighborhoods.
+ *
+ * Source: `api.n11.com/ws/CityService.wsdl` and the 2020 SOAP manual (the new
+ * portal has no page for it; n11 said on 2026-10-13 that cities stay on SOAP).
+ * Verified on n11's test store on 2026-10-16.
+ */
+declare class LocationsResource {
+    private readonly transport;
+    constructor(transport: N11Transport);
+    /** The 81 Turkish cities (`GetCities`), in n11's order (alphabetical, by Turkish name). */
+    getCities(): Promise<N11City[]>;
+    /**
+     * One city by plate code (`GetCity`). A code n11 does not know fails with
+     * `SELLER_API.invalidAttributeValue` (`ValidationError`). n11 also answers
+     * some codes that `getCities` does not list (99 was "Novosibirsk").
+     */
+    getCity(cityCode: string | number): Promise<N11City>;
+    /**
+     * Districts of a city (`GetDistrict`), by plate code (`N11City.code`, not
+     * its `id`). An unknown code answers with an empty list.
+     */
+    getDistricts(cityCode: string | number): Promise<N11District[]>;
+    /** Neighborhoods of a district (`GetNeighborhoods`). An unknown id answers with an empty list. */
+    getNeighborhoods(districtId: string | number): Promise<N11Neighborhood[]>;
+}
+
 /**
  * Shipment-package status (`shipmentPackageStatus`). Every value below is
  * accepted by the `status` filter on prod; an unknown filter value answers 200
@@ -1117,7 +1160,9 @@ declare class OrdersResource {
      * shipped with a parcel carrier (Aras, Yurtiçi, …) fails with
      * `SELLER_API.orderItemInvalidForCollectionRequest`, and a store n11 has not
      * enabled fails with "Satıcı toplama talebi için uygun değil" (both
-     * `ValidationError`).
+     * `ValidationError`). The company is the package's, not the product's: on the
+     * test store a product on a Horoz-only template, bought in one cart with
+     * Aras products, shipped with Aras (2026-10-16).
      */
     createCollectionRequest(lines: readonly N11CollectionRequestLine[]): Promise<{
         code?: number;
@@ -1484,6 +1529,8 @@ interface N11Client {
     finance: FinanceResource;
     /** Price and stock updates (async tasks). */
     inventory: InventoryResource;
+    /** Cities, districts and neighborhoods (SOAP). */
+    locations: LocationsResource;
     orders: OrdersResource;
     products: ProductsResource;
     /** Product questions (SOAP). */
@@ -1498,7 +1545,7 @@ interface N11Client {
  *
  * **Unreleased** — private and unpublished. The reads (`categories`,
  * `orders.list`, `products.list` and the SOAP `questions`, `claims`,
- * `shipping`, `finance`) are verified on prod; the product writes (`products.create` /
+ * `shipping`, `finance`, `locations`) are verified on prod; the product writes (`products.create` /
  * `update` / `delete`, `inventory.update`) on n11's test store. See
  * `sdks/n11/RESEARCH.md`.
  *
@@ -1515,4 +1562,4 @@ interface N11Client {
  */
 declare function createN11Client(opts: CreateN11ClientOptions): N11Client;
 
-export { type CancelN11OrderItemParams, CatalogResource, CategoriesResource, ClaimsResource, createN11Client, type CreateN11ClientOptions, type DenyN11ReturnParams, FinanceResource, InventoryResource, type KnownN11PackageStatus, type ListN11CancelsParams, type ListN11OrdersParams, type ListN11ProductsParams, type ListN11QuestionsParams, type ListN11ReturnsParams, type ListN11SettlementsParams, type N11Address, type N11AttributeValue, type N11CancelClaim, type N11CancelStatus, n11Capabilities, type N11Capabilities, type N11CatalogProduct, type N11CatalogSearchResult, type N11Category, type N11CategoryAttribute, type N11CategoryAttributes, type N11ClaimExecuter, type N11ClaimSearchType, type N11Client, type N11CollectionRequestLine, type N11CurrencyType, type N11Deferment, type N11DefermentUsage, type N11Environment, type N11LaborCost, type N11LineResult, type N11OrderLine, type N11PackageHistory, type N11PackageStatus, type N11PriceStockUpdate, type N11Product, type N11ProductAttribute, type N11ProductAttributeInput, type N11ProductCreateItem, type N11ProductStatus, type N11ProductTask, type N11ProductUpdateItem, type N11Question, type N11QuestionDetail, type N11QuestionStatus, type N11ReasonType, type N11ReturnClaim, type N11ReturnStatus, type N11SaleStatus, type N11Sender, type N11Settlement, type N11SettlementDetail, type N11SettlementLine, type N11SettlementStatus, type N11SettlementSummary, type N11ShipmentCompany, type N11ShipmentDeferment, type N11ShipmentPackage, type N11SplitPackageItem, type N11SplitResult, type N11TaskDetails, type N11TaskItemResult, type N11TaskItemStatus, type N11TaskPollOptions, type N11TaskStatus, type N11TaskType, N11Transport, type N11VatRate, OrdersResource, type PostponeN11ReturnParams, ProductsResource, QuestionsResource, type SearchN11CatalogParams, type SendN11InvoiceLinkParams, ShippingResource, type SoapCallOptions, type SplitN11PackageByQuantityParams };
+export { type CancelN11OrderItemParams, CatalogResource, CategoriesResource, ClaimsResource, createN11Client, type CreateN11ClientOptions, type DenyN11ReturnParams, FinanceResource, InventoryResource, type KnownN11PackageStatus, type ListN11CancelsParams, type ListN11OrdersParams, type ListN11ProductsParams, type ListN11QuestionsParams, type ListN11ReturnsParams, type ListN11SettlementsParams, LocationsResource, type N11Address, type N11AttributeValue, type N11CancelClaim, type N11CancelStatus, n11Capabilities, type N11Capabilities, type N11CatalogProduct, type N11CatalogSearchResult, type N11Category, type N11CategoryAttribute, type N11CategoryAttributes, type N11City, type N11ClaimExecuter, type N11ClaimSearchType, type N11Client, type N11CollectionRequestLine, type N11CurrencyType, type N11Deferment, type N11DefermentUsage, type N11District, type N11Environment, type N11LaborCost, type N11LineResult, type N11Neighborhood, type N11OrderLine, type N11PackageHistory, type N11PackageStatus, type N11PriceStockUpdate, type N11Product, type N11ProductAttribute, type N11ProductAttributeInput, type N11ProductCreateItem, type N11ProductStatus, type N11ProductTask, type N11ProductUpdateItem, type N11Question, type N11QuestionDetail, type N11QuestionStatus, type N11ReasonType, type N11ReturnClaim, type N11ReturnStatus, type N11SaleStatus, type N11Sender, type N11Settlement, type N11SettlementDetail, type N11SettlementLine, type N11SettlementStatus, type N11SettlementSummary, type N11ShipmentCompany, type N11ShipmentDeferment, type N11ShipmentPackage, type N11SplitPackageItem, type N11SplitResult, type N11TaskDetails, type N11TaskItemResult, type N11TaskItemStatus, type N11TaskPollOptions, type N11TaskStatus, type N11TaskType, N11Transport, type N11VatRate, OrdersResource, type PostponeN11ReturnParams, ProductsResource, QuestionsResource, type SearchN11CatalogParams, type SendN11InvoiceLinkParams, ShippingResource, type SoapCallOptions, type SplitN11PackageByQuantityParams };

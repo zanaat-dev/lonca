@@ -19,6 +19,12 @@ export { CategoriesResource } from './resources/categories.js';
 export { ClaimsResource } from './resources/claims.js';
 export { FinanceResource } from './resources/finance.js';
 export { InventoryResource } from './resources/inventory.js';
+export {
+  LocationsResource,
+  type N11City,
+  type N11District,
+  type N11Neighborhood,
+} from './resources/locations.js';
 export { OrdersResource } from './resources/orders.js';
 export { ProductsResource } from './resources/products.js';
 export { QuestionsResource } from './resources/questions.js';
