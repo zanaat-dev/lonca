@@ -380,7 +380,9 @@ export class OrdersResource {
    * shipped with a parcel carrier (Aras, Yurtiçi, …) fails with
    * `SELLER_API.orderItemInvalidForCollectionRequest`, and a store n11 has not
    * enabled fails with "Satıcı toplama talebi için uygun değil" (both
-   * `ValidationError`).
+   * `ValidationError`). The company is the package's, not the product's: on the
+   * test store a product on a Horoz-only template, bought in one cart with
+   * Aras products, shipped with Aras (2026-10-16).
    */
   async createCollectionRequest(
     lines: readonly N11CollectionRequestLine[],

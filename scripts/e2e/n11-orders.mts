@@ -19,7 +19,8 @@
  *
  * The order the steps are written for: LONCA-ORDER-1 x3 + LONCA-ORDER-2 x2 in
  * one package, plus test-test001 x1 (the silver product n11 opened for us on
- * the `horozTest` template, so it ships in its own Horoz Lojistik package).
+ * the `horozTest` template). Ordered together, n11 sent the whole order with
+ * Aras (2026-10-16), so `collection` needs test-test001 ordered on its own.
  * `split-lines` gives one package per product; `split-quantity` turns the x3
  * package into x1 + x1 and cancels 1 (`UnSupplied`); `cancel-item` cancels 1
  * of the x2 LONCA-ORDER-2 line over SOAP; `collection` asks Horoz to collect
