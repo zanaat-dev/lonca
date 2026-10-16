@@ -17,6 +17,7 @@ export {
 } from './resources/catalog.js';
 export { CategoriesResource } from './resources/categories.js';
 export { ClaimsResource } from './resources/claims.js';
+export { FinanceResource } from './resources/finance.js';
 export { InventoryResource } from './resources/inventory.js';
 export { OrdersResource } from './resources/orders.js';
 export { ProductsResource } from './resources/products.js';
@@ -87,3 +88,14 @@ export type {
   N11TaskType,
   N11VatRate,
 } from './types/task.js';
+export type {
+  ListN11SettlementsParams,
+  N11Deferment,
+  N11DefermentUsage,
+  N11Settlement,
+  N11SettlementDetail,
+  N11SettlementLine,
+  N11SettlementStatus,
+  N11SettlementSummary,
+  N11ShipmentDeferment,
+} from './types/finance.js';

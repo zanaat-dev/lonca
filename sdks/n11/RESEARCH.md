@@ -173,7 +173,7 @@ product writes) is the safe design.
 | Returns (claims)              | SOAP `ReturnService` ([doc](https://developer.n11.com/documentation/iade-entgrasyonu/iade-talepleri-servisi/))                                                                                                                                                                                                           | `claims.*`                                        | `claims.*`                                        | Statuses: `REQUESTED`, `CANCELLED`, `DENIED`, `PENDING`, `PENDED`, `APPROVED`. Dates are `dd/mm/yyyy` strings.                                                                                                                           |
 | Partial cancel                | SOAP `ClaimCancelPartial` ([doc](https://developer.n11.com/documentation/iade-entgrasyonu/parcali-iptal-talebi/))                                                                                                                                                                                                        | `orders.cancelPackageItem`                        | `orders.cancelLineItem`                           |                                                                                                                                                                                                                                          |
 | Questions                     | SOAP `GetProductQuestionList/Detail`, `SaveProductAnswer` ([doc](https://developer.n11.com/documentation/n11-marketplace-entegrasyonu/urun-soru-cevap-servisi/))                                                                                                                                                         | `questions.*`                                     | `questions.*`                                     | One answer per question, 1 to 2048 characters. Listing is limited to once per minute.                                                                                                                                                    |
-| Settlements / finance         | **Not on the new portal.** The legacy SOAP `SettlementService` (`GetSettlementList/Detail`) appears in the 2020 .docx; n11 support (2026-10-13) says finance still runs over SOAP                                                                                                                                        | `finance.*`                                       | `accounting.*`                                    | **(unverified)** It may no longer be live. Order lines do carry `commissionRate`, `sellerCampaignCommissionRate`, `netMarketingFeeRate` and `netMarketplaceFeeRate`.                                                                     |
+| Settlements / finance         | **Not on the new portal.** The legacy SOAP `SettlementService` (`GetSettlementList/Detail`) appears in the 2020 .docx; n11 support (2026-10-13) says finance still runs over SOAP                                                                                                                                        | `finance.*`                                       | `accounting.*`                                    | Live on the test store (2026-10-16): `finance.listSettlements` / `getSettlementDetail`. Order lines also carry `commissionRate`, `sellerCampaignCommissionRate`, `netMarketingFeeRate` and `netMarketplaceFeeRate`.                      |
 | Shipment companies            | Order docs refer to a `GetShipmentCompanies` method ([order listing](https://developer.n11.com/documentation/n11-siparis-entegrasyonu/siparis-listeleme-servisi/)), but the new portal has no page for it. The legacy SOAP `ShipmentCompanyService` is in the .docx                                                      | — (`orders.changeCargoProvider` only)             | `shipping.getCargoFirms`                          | **(unverified)**                                                                                                                                                                                                                         |
 | Cargo labels                  | Not documented                                                                                                                                                                                                                                                                                                           | `labels.*`                                        | `orders.getPackageLabel`                          | No label service (n11, 2026-10-14). The label is `cargoTrackingNumber` (campaign code) as CODE-128.                                                                                                                                      |
 | Webhooks                      | Not documented                                                                                                                                                                                                                                                                                                           | `webhooks.*`                                      | —                                                 | Polling only.                                                                                                                                                                                                                            |
@@ -423,6 +423,28 @@ InternalServerException` naming `MissingRequestHeaderException` is an `AuthError
     WSDL.
   - **Date formats.** Claim dates are `DD/MM/YYYY`; question-detail dates are `YYYY-MM-DD`.
   - Every response carries `result.status`, including the question responses, whose WSDL omits it.
+- **Settlements** (`finance.listSettlements` / `getSettlementDetail`, SOAP `SettlementService`
+  `GetSettlementList` / `GetSettlementDetail`). Verified on n11's test store on 2026-10-16, which
+  holds four settlement days (2025-02 to 2026-08):
+  - **Dates are `YYYY-MM-DD`** in the request and the response, unlike the claim services:
+    `DD/MM/YYYY` fails with `SELLER_API.invalidDate`. A missing date is `SELLER_API.nullParam`.
+    A window from 2020 to today was accepted (no maximum range seen); a start after the end
+    gives an empty page. Deferment dates in the detail are `DD.MM.YYYY HH:mm`.
+  - **Paging:** `pagingData.pageSize` is honoured up to 100 (a larger value is answered with 100,
+    which is also the default). The list pages in `settlementListData.metadata`; the detail pages
+    only its order lines (`orderItemSettlementDataList.metadata`).
+  - **Shape:** live responses follow the WSDL's list wrappers (`orderItemSettlements` /
+    `orderItemSettlement`, `deferments` / `deferment`, `defermentSppUsages` /
+    `defermentSppUsage`), not the 2020 manual's examples (`orderItemSettlementList`,
+    `defermentSettlementUsageList`). Lines carry `taxDeduction` and `taxDeductionRate`, which are
+    in neither. Statuses seen: `Success`, `Failed` (the manual adds `Confirmed`,
+    `Wait_Remittance`).
+  - **Meaning, as observed:** `commission` on a line is a rate in percent (12.2 on a 649.90 TL and
+    on a 5,000 TL line), so the SDK names it `commissionRate`. `taxDeduction` equals the VAT in
+    `paymentAmount` − `sellerDiscount` at `taxDeductionRate` (100 TL at 20 % → 16.67).
+    `settlementAmount` = `paymentAmount` − `deductionAmount` − `defermentOfPayment` on every
+    line, and `deductionAmount` includes the `sellerDiscount`. A day without a settlement answers
+    `success` with zero totals and no lines.
 - **Product writes** (verified on n11's test store, 2026-10-13; see section 7):
   `products.create` / `update` / `delete` and `inventory.update` queue a task and return
   `{ taskId, type, status, reasons }`; `products.getTask` reads every page of task details and
@@ -537,6 +559,8 @@ totalPages, page, size, content }`, where `pageCount` equals the number of rows 
 8. **Finance.** Is the legacy `SettlementService` still live, or is there a REST replacement for
    settlements and commission invoices?
    **Answered, n11 (2026-10-13):** finance still runs over SOAP; there is no REST replacement.
+   `SettlementService` answers on the test store (2026-10-16) and is wrapped as `finance`
+   (section 10).
 9. **Shipment companies, cargo labels, city lists.** Are they still SOAP-only
    (`ShipmentCompanyService`, `CityService`), and is there any label service?
    **Partly answered:** `GetShipmentCompanies` works over SOAP. **n11 (2026-10-13):** cities
