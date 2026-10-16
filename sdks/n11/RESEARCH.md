@@ -301,6 +301,11 @@ stockCode, quantity }], code: 200, message: "success" }`. Each line gets a new p
       delivered to the seller (on request, with the campaign codes; n11 support: the seller
       cannot act before that). Then all three filters listed them, `approvalRemainingTime` "5
       Gün". `postponeReturn` (reason 3, 3 days) → `PENDING`; `approveReturn` → `APPROVED`.
+    - **A postponement asks the buyer.** n11 e-mails the buyer an "Ek Süre Talebi" to accept in
+      "Hesabım > İptal, Değişim, İade"; with no answer the return carries on after the extra
+      days. n11 cannot approve or deny a `PENDING` claim while the request is open. Neither the
+      website nor the mobile app showed the buyer a way to answer it (2026-10-16), so a postponed
+      claim waits for the extra days or for n11 support. Avoid `postponeReturn` in tests.
     - **`denyReturn` needs the empty elements.** With `returnShipmentType: CAMPAIGN` and the
       shipment fields left out, n11 answered "trackingNumber alanı geçersizdir"; with
       `shipmentCompanyId`, `trackingNumber` and `deliveryReceiptNumber` sent as empty elements
