@@ -447,16 +447,19 @@ a {
   border-style: dashed;
   border-color: #3a3d42;
 }
+/* Marketplace pills end where their line starts (x 98 of 470), whatever the label length. */
+.pill.trendyol,
+.pill.hepsiburada,
+.pill.n11 {
+  right: 79.15cqw;
+}
 .pill.trendyol {
-  left: 6.81cqw;
   top: 11.91cqw;
 }
 .pill.hepsiburada {
-  left: 2.34cqw;
   top: 26.17cqw;
 }
 .pill.n11 {
-  left: 2.13cqw;
   top: 40.85cqw;
 }
 .pill.code {
@@ -1195,9 +1198,13 @@ a {
   }
   .npm {
     justify-self: start;
-    height: 30px;
+    max-width: 100%;
+    height: auto;
+    min-height: 30px;
     font-size: 13px;
-    padding: 0 10px;
+    padding: 6px 10px;
+    white-space: normal;
+    text-align: left;
   }
   .hub {
     margin-top: 12px;
