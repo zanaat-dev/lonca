@@ -58,7 +58,7 @@ the public API surface:
 2. Commit the updated `etc/*.snapshot` files with your change and mention the surface diff in the
    PR description.
 3. If the change is a removal or an incompatible signature change, it is breaking — pick a major
-   bump in your changeset (minor while we are pre-1.0).
+   bump in your changeset.
 
 An unintentional diff usually means something leaked into the public surface — prefer narrowing
 the export over updating the snapshot. CI also runs `pnpm health:packages`

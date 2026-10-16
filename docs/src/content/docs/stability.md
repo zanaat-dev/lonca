@@ -10,7 +10,7 @@ This page is the contract between Lonca and your integration: what we promise to
 All packages follow [Semantic Versioning](https://semver.org/).
 
 :::note[All packages are 1.0+]
-`@lonca/core`, `@lonca/trendyol`, and `@lonca/hepsiburada` are at `1.0.0` or later, and the policy below applies to them. `@lonca/n11` is in beta (`0.x`): a minor version may still break, so pin a minor range (`~0.1.0`) until it reaches 1.0. The same held for the historical `0.x` releases of the other packages. [Migrating to 1.0](/migrating-to-1-0/) lists what changes when you upgrade.
+`@lonca/core`, `@lonca/trendyol`, `@lonca/hepsiburada` and `@lonca/n11` are at `1.0.0` or later, and the policy below applies to them. Their historical `0.x` releases could break in a minor version. [Migrating to 1.0](/migrating-to-1-0/) lists what changes when you upgrade.
 :::
 
 From `1.0.0` onwards:
@@ -30,13 +30,14 @@ The public API is everything exported from these entry points:
 | `@lonca/core`        | `.` (root)              |
 | `@lonca/trendyol`    | `.` (root), `./testing` |
 | `@lonca/hepsiburada` | `.` (root), `./testing` |
+| `@lonca/n11`         | `.` (root), `./testing` |
 
-That surface is locked in CI: the rolled-up type declarations of all five entry points are snapshotted in [`etc/*.snapshot`](https://github.com/zanaat-dev/lonca/tree/main/etc), and `pnpm api:check` fails any pull request that changes them without explicitly updating the snapshot. An API change is therefore always visible in review — never accidental.
+That surface is locked in CI: the rolled-up type declarations of all seven entry points are snapshotted in [`etc/*.snapshot`](https://github.com/zanaat-dev/lonca/tree/main/etc), and `pnpm api:check` fails any pull request that changes them without explicitly updating the snapshot. An API change is therefore always visible in review — never accidental.
 
 ## What does NOT count
 
 - **Wire-level details behind normalisers.** The contents of `raw` payload fields mirror whatever the marketplace returned. They are passed through for debugging, not normalised, and may change whenever the marketplace changes.
-- **Marketplace behaviour itself.** Trendyol and Hepsiburada can change their APIs without notice. The [contract-probe suite](https://github.com/zanaat-dev/lonca/tree/main/scripts/probe) (`pnpm probe:check`, run locally against live endpoints) detects that drift, but drift is not a Lonca breaking change.
+- **Marketplace behaviour itself.** Trendyol, Hepsiburada and n11 can change their APIs without notice. The [contract-probe suite](https://github.com/zanaat-dev/lonca/tree/main/scripts/probe) (`pnpm probe:check`, run locally against live endpoints) detects that drift, but drift is not a Lonca breaking change.
 - **Undocumented passthrough fields on inputs.** If a field is not in an input's type, sending it may happen to work — that is not covered by semver.
 
 ## How marketplace changes are caught

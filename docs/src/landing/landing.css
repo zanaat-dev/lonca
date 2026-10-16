@@ -883,10 +883,6 @@ a {
   background: #4fae7c;
   box-shadow: 0 0 0 3px rgba(79, 174, 124, 0.18);
 }
-.dot.half {
-  background: linear-gradient(90deg, var(--ink-3) 50%, transparent 50%);
-  border: 1px solid var(--ink-3);
-}
 .arrow {
   font-size: 14px;
   color: var(--accent-soft);

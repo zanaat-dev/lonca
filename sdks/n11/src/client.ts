@@ -61,11 +61,9 @@ export interface N11Client {
 /**
  * Create an n11 client.
  *
- * **Unreleased** — private and unpublished. The reads (`categories`,
- * `orders.list`, `products.list` and the SOAP `questions`, `claims`,
- * `shipping`, `finance`, `locations`) are verified on prod; the product writes (`products.create` /
- * `update` / `delete`, `inventory.update`) on n11's test store. See
- * `sdks/n11/RESEARCH.md`.
+ * The reads are verified on prod; the product writes, settlements, address
+ * lookups and order writes on n11's test store, the order writes on a paid
+ * test order. See `sdks/n11/RESEARCH.md`.
  *
  * @example
  * ```ts

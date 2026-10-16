@@ -2,10 +2,10 @@
 title: Migrating to 1.0
 # Without an explicit slug the dot is dropped and the URL becomes /migrating-to-10/.
 slug: migrating-to-1-0
-description: What changes when you upgrade @lonca/core, @lonca/trendyol and @lonca/hepsiburada from 0.x to 1.0 — and what 1.x has deprecated since.
+description: What changes when you upgrade @lonca/core, @lonca/trendyol, @lonca/hepsiburada and @lonca/n11 from 0.x to 1.0 — and what 1.x has deprecated since.
 ---
 
-`@lonca/core`, `@lonca/trendyol` and `@lonca/hepsiburada` reached 1.0 on 30 August 2026. This page collects what an upgrade from 0.x involves. Every item comes from the package changelogs and links to the release that made the change: 1.x releases to the [release notes](/en/changelog/), 0.x releases to each package's `CHANGELOG.md` on GitHub.
+`@lonca/core`, `@lonca/trendyol` and `@lonca/hepsiburada` reached 1.0 on 30 August 2026, `@lonca/n11` on N11_RELEASE_DATE. This page collects what an upgrade from 0.x involves. Every item comes from the package changelogs and links to the release that made the change: 1.x releases to the [release notes](/en/changelog/), 0.x releases to each package's `CHANGELOG.md` on GitHub.
 
 ## The short answer
 
@@ -16,6 +16,7 @@ If you are on the last 0.x release of each package, **nothing changes**. Each 1.
 | `@lonca/core`        | 0.7.0    | 1.0.0     | None         |
 | `@lonca/trendyol`    | 0.15.1   | 1.0.0     | None         |
 | `@lonca/hepsiburada` | 0.13.1   | 1.0.0     | None         |
+| `@lonca/n11`         | 0.4.0    | 1.0.0     | None         |
 
 One behaviour changed in [`@lonca/trendyol` 1.0.0](/en/changelog/#trendyol-1.0.0): `webhooks.*` now calls Trendyol's documented `/integration/webhook/sellers/{sellerId}/webhooks` path. The old `/integration/sellers/{sellerId}/webhooks` path is not routed on production (the gateway answers 556). You change nothing; webhook calls that failed on production now work.
 
@@ -93,6 +94,10 @@ If you skipped releases, these are the changes you could trip over, newest first
 
 - **Fixed 403 error message** ([0.9.2](https://github.com/zanaat-dev/lonca/blob/main/sdks/hepsiburada/CHANGELOG.md#092)). The `AuthError` for a 403 carries a fixed message instead of echoing the server's; the body stays on `error.data` / `cause`. Code that matched on the server's message text needs updating.
 - **Export cleanup** ([0.7.0](https://github.com/zanaat-dev/lonca/blob/main/sdks/hepsiburada/CHANGELOG.md#070)). `parseWebhookEvent` is the canonical name; `parseHepsiburadaWebhookEvent` is a deprecated alias. `HepsiburadaTransport`, `RequestOptions`, `TransportConfig` and `HepsiburadaService` are no longer exported.
+
+### `@lonca/n11`
+
+Every 0.x release only added to the API (resources, methods and fields), so code written against any 0.x release runs unchanged on 1.0. What 0.x added, release by release, is in [`CHANGELOG.md`](https://github.com/zanaat-dev/lonca/blob/main/sdks/n11/CHANGELOG.md).
 
 ## Deprecated in 1.x
 

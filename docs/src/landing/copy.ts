@@ -127,7 +127,6 @@ export const copy = {
       hbSurface: '12 kaynak · 95 metod',
       status: 'Pazaryeri durumu',
       verified: 'canlıda doğrulandı',
-      beta: 'beta (0.x)',
       vote: 'Sıradaki pazaryeri için oy ver',
       releases: 'Sürüm notları',
       independent:
@@ -193,7 +192,7 @@ export const copy = {
         },
         {
           q: 'Hangi pazaryerleri sırada?',
-          a: 'Trendyol ve Hepsiburada hazır, n11 beta olarak yayında. Sıradakini GitHub’daki ankette sen seçebilirsin.',
+          a: 'Trendyol, Hepsiburada ve n11 hazır. Sıradakini GitHub’daki ankette sen seçebilirsin.',
         },
         {
           q: 'Geliştiriciyim, nasıl başlarım?',
@@ -348,7 +347,6 @@ export const copy = {
       hbSurface: '12 resources · 95 methods',
       status: 'Marketplace status',
       verified: 'verified in production',
-      beta: 'beta (0.x)',
       vote: 'Vote for the next marketplace',
       releases: 'Release notes',
       independent:
@@ -414,7 +412,7 @@ export const copy = {
         },
         {
           q: 'Which marketplaces are next?',
-          a: 'Trendyol and Hepsiburada are ready, n11 is out in beta. You can pick the next one in the GitHub poll.',
+          a: 'Trendyol, Hepsiburada and n11 are ready. You can pick the next one in the GitHub poll.',
         },
         {
           q: 'I am a developer. How do I start?',
