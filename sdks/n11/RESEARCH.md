@@ -463,6 +463,16 @@ InternalServerException` naming `MissingRequestHeaderException` is an `AuthError
     WSDL.
   - **Date formats.** Claim dates are `DD/MM/YYYY`; question-detail dates are `YYYY-MM-DD`.
   - Every response carries `result.status`, including the question responses, whose WSDL omits it.
+- **Address lookups** (`locations.getCities` / `getCity` / `getDistricts` / `getNeighborhoods`,
+  SOAP `CityService`), verified on the test store on 2026-10-16:
+  - `GetCities` lists the 81 Turkish cities in Turkish alphabetical order, each with `cityCode`
+    (plate code), `cityId` (`2500` + plate code) and `cityName`.
+  - `GetDistrict` and `GetCity` take the plate code, not `cityId`: `cityId` 2581 gives no
+    districts. Unknown codes answer `success` with an empty list, except `GetCity`, which fails
+    with `SELLER_API.invalidAttributeValue`. `GetCity(99)` answered "Novosibirsk" (`cityId`
+    133052), a city `GetCities` does not list. A request without the code answers `systemError`;
+    the SDK always sends it.
+  - The WSDL puts `auth` after the request fields; n11 accepts it first, as the SDK sends it.
 - **Settlements** (`finance.listSettlements` / `getSettlementDetail`, SOAP `SettlementService`
   `GetSettlementList` / `GetSettlementDetail`). Verified on n11's test store on 2026-10-16, which
   holds four settlement days (2025-02 to 2026-08):
@@ -612,6 +622,8 @@ totalPages, page, size, content }`, where `pageCount` equals the number of rows 
    integration, so no PDF/ZPL over the API; it may be planned later but is not on the agenda
    (passed to their development team). The label is the campaign code from Seller Office or
    from `shipmentPackages` (`cargoTrackingNumber`), printed as a CODE-128 barcode.
+   **Cities (2026-10-16):** `CityService` answers on the test store and is wrapped as
+   `locations` (section 10).
 10. **Integrator identity.** Does n11 register integrators by name? Should `integrator` match
     anything configured in Seller Office? Is a `User-Agent` or IP allowlist ever required (both TY and HB
     needed a meaningful `User-Agent`)?

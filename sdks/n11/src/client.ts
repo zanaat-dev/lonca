@@ -4,6 +4,7 @@ import { CategoriesResource } from './resources/categories.js';
 import { ClaimsResource } from './resources/claims.js';
 import { FinanceResource } from './resources/finance.js';
 import { InventoryResource } from './resources/inventory.js';
+import { LocationsResource } from './resources/locations.js';
 import { OrdersResource } from './resources/orders.js';
 import { ProductsResource } from './resources/products.js';
 import { QuestionsResource } from './resources/questions.js';
@@ -45,6 +46,8 @@ export interface N11Client {
   finance: FinanceResource;
   /** Price and stock updates (async tasks). */
   inventory: InventoryResource;
+  /** Cities, districts and neighborhoods (SOAP). */
+  locations: LocationsResource;
   orders: OrdersResource;
   products: ProductsResource;
   /** Product questions (SOAP). */
@@ -60,7 +63,7 @@ export interface N11Client {
  *
  * **Unreleased** — private and unpublished. The reads (`categories`,
  * `orders.list`, `products.list` and the SOAP `questions`, `claims`,
- * `shipping`, `finance`) are verified on prod; the product writes (`products.create` /
+ * `shipping`, `finance`, `locations`) are verified on prod; the product writes (`products.create` /
  * `update` / `delete`, `inventory.update`) on n11's test store. See
  * `sdks/n11/RESEARCH.md`.
  *
@@ -97,6 +100,7 @@ export function buildClient(transport: N11Transport): N11Client {
     claims: new ClaimsResource(transport),
     finance: new FinanceResource(transport),
     inventory: new InventoryResource(transport),
+    locations: new LocationsResource(transport),
     orders: new OrdersResource(transport),
     products: new ProductsResource(transport),
     questions: new QuestionsResource(transport),

@@ -6,7 +6,7 @@
 
 [![npm version](https://img.shields.io/npm/v/@lonca/n11.svg)](https://www.npmjs.com/package/@lonca/n11)
 
-Type-safe TypeScript SDK for the [n11 seller API](https://developer.n11.com/documentation/). One client for n11's REST services and the SOAP services it still runs (questions, returns, partial cancels, invoice links, catalogue search, settlements) — **33 methods across 9 resources**, with no XML in your code and no SOAP dependency.
+Type-safe TypeScript SDK for the [n11 seller API](https://developer.n11.com/documentation/). One client for n11's REST services and the SOAP services it still runs (questions, returns, partial cancels, invoice links, catalogue search, settlements, address lookups) — **37 methods across 10 resources**, with no XML in your code and no SOAP dependency.
 
 > [!IMPORTANT]
 > **Unofficial.** This is an independent, community-maintained SDK. It is not affiliated with, endorsed by, or supported by n11. "n11" and related names are trademarks of their respective owners.
@@ -27,6 +27,7 @@ Type-safe TypeScript SDK for the [n11 seller API](https://developer.n11.com/docu
 | `claims`     |       8 | `listReturns`, `listCancels`, reason lists ×3, `approveReturn`, `denyReturn`, `postponeReturn`                                              |
 | `shipping`   |       1 | `getShipmentCompanies`                                                                                                                      |
 | `finance`    |       2 | `listSettlements`, `getSettlementDetail` (daily payouts, per-line commission and fees, deferments)                                          |
+| `locations`  |       4 | `getCities`, `getCity`, `getDistricts`, `getNeighborhoods`                                                                                  |
 
 Plus `normalizeStatus` (n11 package status → `@lonca/core` `NormalizedOrderStatus`), `n11Capabilities` and a fake client in `@lonca/n11/testing`.
 
