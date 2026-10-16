@@ -5,7 +5,7 @@ slug: migrating-to-1-0
 description: What changes when you upgrade @lonca/core, @lonca/trendyol, @lonca/hepsiburada and @lonca/n11 from 0.x to 1.0 — and what 1.x has deprecated since.
 ---
 
-`@lonca/core`, `@lonca/trendyol` and `@lonca/hepsiburada` reached 1.0 on 30 August 2026, `@lonca/n11` on N11_RELEASE_DATE. This page collects what an upgrade from 0.x involves. Every item comes from the package changelogs and links to the release that made the change: 1.x releases to the [release notes](/en/changelog/), 0.x releases to each package's `CHANGELOG.md` on GitHub.
+`@lonca/core`, `@lonca/trendyol` and `@lonca/hepsiburada` reached 1.0 on 30 August 2026, `@lonca/n11` on 16 October 2026. This page collects what an upgrade from 0.x involves. Every item comes from the package changelogs and links to the release that made the change: 1.x releases to the [release notes](/en/changelog/), 0.x releases to each package's `CHANGELOG.md` on GitHub.
 
 ## The short answer
 

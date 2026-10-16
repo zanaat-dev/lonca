@@ -12,7 +12,7 @@ Type-safe TypeScript SDK for the [n11 seller API](https://developer.n11.com/docu
 > **Unofficial.** This is an independent, community-maintained SDK. It is not affiliated with, endorsed by, or supported by n11. "n11" and related names are trademarks of their respective owners.
 
 > [!NOTE]
-> **Verified.** Reads are verified against a live seller account; product writes, settlements and order writes (approve, labour costs, both package splits, partial cancel, invoice link) against the test store n11 gives integrators, the order writes on a paid test order. Return decisions and the logistics collection request are verified up to n11's answer for a claim or package in the wrong state, so their success path follows n11's documentation. See [Stability & versioning](https://lonca.zanaat.dev/stability/).
+> **Verified.** Every method has run against n11: the reads on a live seller account, the writes on the test store n11 gives integrators, with order writes, the collection request and return decisions on real test orders (October 2026). See [Stability & versioning](https://lonca.zanaat.dev/stability/).
 
 ## Coverage
 

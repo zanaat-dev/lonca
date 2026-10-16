@@ -61,9 +61,9 @@ export interface N11Client {
 /**
  * Create an n11 client.
  *
- * The reads are verified on prod; the product writes, settlements, address
- * lookups and order writes on n11's test store, the order writes on a paid
- * test order. See `sdks/n11/RESEARCH.md`.
+ * Every method has run against n11: the reads on prod, the writes on n11's
+ * test store, the order writes and return decisions on real test orders. See
+ * `sdks/n11/RESEARCH.md`.
  *
  * @example
  * ```ts
