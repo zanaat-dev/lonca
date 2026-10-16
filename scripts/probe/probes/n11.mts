@@ -1,7 +1,8 @@
 /**
  * n11 read-only probes. The REST probes are GETs; the SOAP probes are `POST`s
  * by protocol but only call read operations (`Get*`, `*List`, reason-type
- * lists) — approved by the maintainer on 2026-10-10. The set never touches
+ * lists, settlements, cities) — approved by the maintainer on 2026-10-10,
+ * the settlement and city reads on 2026-10-16. The set never touches
  * the product tasks, order updates, question answers or claim actions. n11
  * documents no sandbox, so these run against prod.
  */
@@ -60,6 +61,35 @@ export const n11Probes: ProbeSet<N11Client> = {
     { name: 'claims.getReturnDenyReasons', call: (c) => c.claims.getReturnDenyReasons() },
     { name: 'claims.getReturnPendingReasons', call: (c) => c.claims.getReturnPendingReasons() },
     { name: 'claims.getCancelDenyReasons', call: (c) => c.claims.getCancelDenyReasons() },
+    {
+      name: 'finance.listSettlements(last 60d) → getSettlementDetail',
+      call: async (c) => {
+        const end = new Date();
+        const page = await c.finance.listSettlements({
+          startDate: new Date(end.getTime() - 60 * DAY_MS),
+          endDate: end,
+          limit: 10,
+        });
+        const day = page.items[0]?.settlementDate;
+        return {
+          page,
+          detail: day ? await c.finance.getSettlementDetail(day, { limit: 5 }) : undefined,
+        };
+      },
+    },
+    {
+      name: 'locations.getCities → getDistricts(34) → getNeighborhoods',
+      call: async (c) => {
+        const cities = await c.locations.getCities();
+        const districts = await c.locations.getDistricts(34);
+        const first = districts[0];
+        return {
+          cities,
+          districts,
+          neighborhoods: first ? await c.locations.getNeighborhoods(first.id) : undefined,
+        };
+      },
+    },
     {
       // n11 allows one question listing per minute; this is the set's only list call.
       name: 'questions.list(CLOSED, last 30d) → get',

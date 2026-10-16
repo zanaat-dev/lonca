@@ -634,7 +634,7 @@ totalPages, page, size, content }`, where `pageCount` equals the number of rows 
     `sellerintegration@n11.com`?
     **Answered, n11 (2026-10-13):** "using your own types would be healthier." The WSDLs stay
     out of the repo. `specs/n11/` covers the REST pages only, so `pnpm drift` keeps reporting the
-    four SOAP probe exchanges as unmatched.
+    SOAP probe exchanges (six since 2026-10-16) as unmatched.
 12. **Credential scope.** Can one key pair access everything (products, orders, returns), or are
     there per-service permissions?
     **Answered, n11 (2026-10-13):** the only per-store authorisation n11 named is the

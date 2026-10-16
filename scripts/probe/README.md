@@ -74,15 +74,16 @@ list of barcodes to look up (max 10).
 The probes below the original twelve / nine were added to verify SDK fields that the
 SDK-types-vs-spec check (`pnpm drift:types`) could not confirm from the earlier sample.
 
-n11 (`@lonca/n11`, the private research SDK) has four REST probes, all `GET`: `categories.list`,
+n11 (`@lonca/n11`) has four REST probes, all `GET`: `categories.list`,
 `categories.getAttributes` (→ the category of the first listed product), `products.list` and
-`orders.list`. It also has seven SOAP probes. SOAP sends every call as a `POST` envelope, but these
+`orders.list`. It also has nine SOAP probes. SOAP sends every call as a `POST` envelope, but these
 only call read operations: shipment companies, return and cancel claim lists, the three reason-type
-lists, and the question list → detail (once per run, since n11 allows one listing per minute). The
-maintainer approved them on 2026-10-10. SOAP bodies are XML, so their `wire` entries record
+lists, the question list → detail (once per run, since n11 allows one listing per minute), the
+settlement list → detail of its first day, and cities → İstanbul's districts → neighborhoods. The
+maintainer approved them on 2026-10-10 (the settlement and city reads on 2026-10-16). SOAP bodies are XML, so their `wire` entries record
 `non-json` and the shape comes from the SDK's normalised return value. n11 documents no sandbox, so its credentials are prod ones and only belong in
 `.env.prod`. The four REST operations match the hand-compiled
-[`specs/n11/`](../../specs/n11/README.md); the four SOAP endpoints have no spec (SOAP is out of
+[`specs/n11/`](../../specs/n11/README.md); the six SOAP endpoints have no spec (SOAP is out of
 scope for `specs/`), so `pnpm drift` reports them as "no spec match" warnings.
 
 Add a probe by appending `{ name, call }` to the registry in `probes/<marketplace>.mts`; the

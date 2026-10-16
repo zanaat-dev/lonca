@@ -1569,6 +1569,1062 @@
         }
       ]
     },
+    "finance.listSettlements(last 60d) → getSettlementDetail": {
+      "status": "ok",
+      "shape": {
+        "types": [
+          "object"
+        ],
+        "keys": {
+          "detail": {
+            "types": [
+              "object"
+            ],
+            "keys": {
+              "date": {
+                "types": [
+                  "string"
+                ]
+              },
+              "defermentUsages": {
+                "types": [
+                  "array"
+                ]
+              },
+              "deferments": {
+                "types": [
+                  "array"
+                ]
+              },
+              "items": {
+                "types": [
+                  "array"
+                ],
+                "items": {
+                  "types": [
+                    "object"
+                  ],
+                  "keys": {
+                    "adFee": {
+                      "types": [
+                        "object"
+                      ],
+                      "keys": {
+                        "amount": {
+                          "types": [
+                            "number"
+                          ]
+                        },
+                        "currency": {
+                          "types": [
+                            "string"
+                          ]
+                        }
+                      }
+                    },
+                    "adFeeVat": {
+                      "types": [
+                        "object"
+                      ],
+                      "keys": {
+                        "amount": {
+                          "types": [
+                            "number"
+                          ]
+                        },
+                        "currency": {
+                          "types": [
+                            "string"
+                          ]
+                        }
+                      }
+                    },
+                    "buyerEmail": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "buyerName": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "cargoPrice": {
+                      "types": [
+                        "object"
+                      ],
+                      "keys": {
+                        "amount": {
+                          "types": [
+                            "number"
+                          ]
+                        },
+                        "currency": {
+                          "types": [
+                            "string"
+                          ]
+                        }
+                      }
+                    },
+                    "commissionRate": {
+                      "types": [
+                        "number"
+                      ]
+                    },
+                    "completedDate": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "deductionAmount": {
+                      "types": [
+                        "object"
+                      ],
+                      "keys": {
+                        "amount": {
+                          "types": [
+                            "number"
+                          ]
+                        },
+                        "currency": {
+                          "types": [
+                            "string"
+                          ]
+                        }
+                      }
+                    },
+                    "defermentOfPayment": {
+                      "types": [
+                        "object"
+                      ],
+                      "keys": {
+                        "amount": {
+                          "types": [
+                            "number"
+                          ]
+                        },
+                        "currency": {
+                          "types": [
+                            "string"
+                          ]
+                        }
+                      }
+                    },
+                    "lineId": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "orderNumber": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "paymentAmount": {
+                      "types": [
+                        "object"
+                      ],
+                      "keys": {
+                        "amount": {
+                          "types": [
+                            "number"
+                          ]
+                        },
+                        "currency": {
+                          "types": [
+                            "string"
+                          ]
+                        }
+                      }
+                    },
+                    "paymentDate": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "productId": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "productName": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "raw": {
+                      "types": [
+                        "object"
+                      ],
+                      "keys": {
+                        "adFee": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "adFeeVat": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "buyerEmail": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "buyerName": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "cargoPrice": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "commission": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "completedDate": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "deductionAmount": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "defermentOfPayment": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "orderItemId": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "orderNumber": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "paymentAmount": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "paymentDate": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "productId": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "productName": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "remittanceDate": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "sellerCouponDiscount": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "sellerDiscount": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "serviceFee": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "serviceFeeVat": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "settlementAmount": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "settlementDate": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "shippingDate": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "taxDeduction": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "taxDeductionRate": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "trackingNumber": {
+                          "types": [
+                            "string"
+                          ]
+                        }
+                      }
+                    },
+                    "remittanceDate": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "sellerCouponDiscount": {
+                      "types": [
+                        "object"
+                      ],
+                      "keys": {
+                        "amount": {
+                          "types": [
+                            "number"
+                          ]
+                        },
+                        "currency": {
+                          "types": [
+                            "string"
+                          ]
+                        }
+                      }
+                    },
+                    "sellerDiscount": {
+                      "types": [
+                        "object"
+                      ],
+                      "keys": {
+                        "amount": {
+                          "types": [
+                            "number"
+                          ]
+                        },
+                        "currency": {
+                          "types": [
+                            "string"
+                          ]
+                        }
+                      }
+                    },
+                    "serviceFee": {
+                      "types": [
+                        "object"
+                      ],
+                      "keys": {
+                        "amount": {
+                          "types": [
+                            "number"
+                          ]
+                        },
+                        "currency": {
+                          "types": [
+                            "string"
+                          ]
+                        }
+                      }
+                    },
+                    "serviceFeeVat": {
+                      "types": [
+                        "object"
+                      ],
+                      "keys": {
+                        "amount": {
+                          "types": [
+                            "number"
+                          ]
+                        },
+                        "currency": {
+                          "types": [
+                            "string"
+                          ]
+                        }
+                      }
+                    },
+                    "settlementAmount": {
+                      "types": [
+                        "object"
+                      ],
+                      "keys": {
+                        "amount": {
+                          "types": [
+                            "number"
+                          ]
+                        },
+                        "currency": {
+                          "types": [
+                            "string"
+                          ]
+                        }
+                      }
+                    },
+                    "settlementDate": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "shippingDate": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "taxDeduction": {
+                      "types": [
+                        "object"
+                      ],
+                      "keys": {
+                        "amount": {
+                          "types": [
+                            "number"
+                          ]
+                        },
+                        "currency": {
+                          "types": [
+                            "string"
+                          ]
+                        }
+                      }
+                    },
+                    "taxDeductionRate": {
+                      "types": [
+                        "number"
+                      ]
+                    },
+                    "trackingNumber": {
+                      "types": [
+                        "string"
+                      ]
+                    }
+                  }
+                }
+              },
+              "nextCursor": {
+                "types": [
+                  "string"
+                ]
+              },
+              "raw": {
+                "types": [
+                  "object"
+                ],
+                "keys": {
+                  "defermentSettlementUsageDataList": {
+                    "types": [
+                      "object"
+                    ],
+                    "keys": {
+                      "defermentSettlementUsages": {
+                        "types": [
+                          "string"
+                        ]
+                      },
+                      "defermentSppUsages": {
+                        "types": [
+                          "object"
+                        ],
+                        "keys": {
+                          "defermentSppUsage": {
+                            "types": [
+                              "array"
+                            ],
+                            "items": {
+                              "types": [
+                                "object"
+                              ],
+                              "depthCapped": true
+                            }
+                          }
+                        }
+                      },
+                      "deferments": {
+                        "types": [
+                          "string"
+                        ]
+                      },
+                      "financialTotalDeferment": {
+                        "types": [
+                          "string"
+                        ]
+                      },
+                      "totalReturnDefermentAmount": {
+                        "types": [
+                          "string"
+                        ]
+                      }
+                    }
+                  },
+                  "orderItemSettlementDataList": {
+                    "types": [
+                      "object"
+                    ],
+                    "keys": {
+                      "metadata": {
+                        "types": [
+                          "object"
+                        ],
+                        "keys": {
+                          "currentPage": {
+                            "types": [
+                              "string"
+                            ]
+                          },
+                          "pageCount": {
+                            "types": [
+                              "string"
+                            ]
+                          },
+                          "pageSize": {
+                            "types": [
+                              "string"
+                            ]
+                          },
+                          "totalCount": {
+                            "types": [
+                              "string"
+                            ]
+                          }
+                        }
+                      },
+                      "orderItemSettlements": {
+                        "types": [
+                          "object"
+                        ],
+                        "keys": {
+                          "orderItemSettlement": {
+                            "types": [
+                              "array"
+                            ],
+                            "items": {
+                              "types": [
+                                "object"
+                              ],
+                              "depthCapped": true
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "settlement": {
+                    "types": [
+                      "object"
+                    ],
+                    "keys": {
+                      "deductionAmount": {
+                        "types": [
+                          "string"
+                        ]
+                      },
+                      "defermentOfPayment": {
+                        "types": [
+                          "string"
+                        ]
+                      },
+                      "paymentToECash": {
+                        "types": [
+                          "string"
+                        ]
+                      },
+                      "releaseDeferment": {
+                        "types": [
+                          "string"
+                        ]
+                      },
+                      "remittance": {
+                        "types": [
+                          "string"
+                        ]
+                      },
+                      "salesAmount": {
+                        "types": [
+                          "string"
+                        ]
+                      },
+                      "sellerWithdraw": {
+                        "types": [
+                          "string"
+                        ]
+                      }
+                    }
+                  }
+                }
+              },
+              "shipmentDeferments": {
+                "types": [
+                  "array"
+                ],
+                "items": {
+                  "types": [
+                    "object"
+                  ],
+                  "keys": {
+                    "amount": {
+                      "types": [
+                        "object"
+                      ],
+                      "keys": {
+                        "amount": {
+                          "types": [
+                            "number"
+                          ]
+                        },
+                        "currency": {
+                          "types": [
+                            "string"
+                          ]
+                        }
+                      }
+                    },
+                    "campaignNumber": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "cargoWeight": {
+                      "types": [
+                        "number"
+                      ]
+                    },
+                    "createdDate": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "orderNumber": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "shipmentCompanyName": {
+                      "types": [
+                        "string"
+                      ]
+                    }
+                  }
+                }
+              },
+              "summary": {
+                "types": [
+                  "object"
+                ],
+                "keys": {
+                  "deductionAmount": {
+                    "types": [
+                      "object"
+                    ],
+                    "keys": {
+                      "amount": {
+                        "types": [
+                          "number"
+                        ]
+                      },
+                      "currency": {
+                        "types": [
+                          "string"
+                        ]
+                      }
+                    }
+                  },
+                  "defermentOfPayment": {
+                    "types": [
+                      "object"
+                    ],
+                    "keys": {
+                      "amount": {
+                        "types": [
+                          "number"
+                        ]
+                      },
+                      "currency": {
+                        "types": [
+                          "string"
+                        ]
+                      }
+                    }
+                  },
+                  "paymentToECash": {
+                    "types": [
+                      "object"
+                    ],
+                    "keys": {
+                      "amount": {
+                        "types": [
+                          "number"
+                        ]
+                      },
+                      "currency": {
+                        "types": [
+                          "string"
+                        ]
+                      }
+                    }
+                  },
+                  "releaseDeferment": {
+                    "types": [
+                      "object"
+                    ],
+                    "keys": {
+                      "amount": {
+                        "types": [
+                          "number"
+                        ]
+                      },
+                      "currency": {
+                        "types": [
+                          "string"
+                        ]
+                      }
+                    }
+                  },
+                  "remittance": {
+                    "types": [
+                      "object"
+                    ],
+                    "keys": {
+                      "amount": {
+                        "types": [
+                          "number"
+                        ]
+                      },
+                      "currency": {
+                        "types": [
+                          "string"
+                        ]
+                      }
+                    }
+                  },
+                  "salesAmount": {
+                    "types": [
+                      "object"
+                    ],
+                    "keys": {
+                      "amount": {
+                        "types": [
+                          "number"
+                        ]
+                      },
+                      "currency": {
+                        "types": [
+                          "string"
+                        ]
+                      }
+                    }
+                  },
+                  "sellerWithdraw": {
+                    "types": [
+                      "object"
+                    ],
+                    "keys": {
+                      "amount": {
+                        "types": [
+                          "number"
+                        ]
+                      },
+                      "currency": {
+                        "types": [
+                          "string"
+                        ]
+                      }
+                    }
+                  }
+                }
+              },
+              "totalDeferment": {
+                "types": [
+                  "object"
+                ],
+                "keys": {
+                  "amount": {
+                    "types": [
+                      "number"
+                    ]
+                  },
+                  "currency": {
+                    "types": [
+                      "string"
+                    ]
+                  }
+                }
+              },
+              "totalReturnDeferment": {
+                "types": [
+                  "object"
+                ],
+                "keys": {
+                  "amount": {
+                    "types": [
+                      "number"
+                    ]
+                  },
+                  "currency": {
+                    "types": [
+                      "string"
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "page": {
+            "types": [
+              "object"
+            ],
+            "keys": {
+              "items": {
+                "types": [
+                  "array"
+                ],
+                "items": {
+                  "types": [
+                    "object"
+                  ],
+                  "keys": {
+                    "deductionAmount": {
+                      "types": [
+                        "object"
+                      ],
+                      "keys": {
+                        "amount": {
+                          "types": [
+                            "number"
+                          ]
+                        },
+                        "currency": {
+                          "types": [
+                            "string"
+                          ]
+                        }
+                      }
+                    },
+                    "paymentAmount": {
+                      "types": [
+                        "object"
+                      ],
+                      "keys": {
+                        "amount": {
+                          "types": [
+                            "number"
+                          ]
+                        },
+                        "currency": {
+                          "types": [
+                            "string"
+                          ]
+                        }
+                      }
+                    },
+                    "raw": {
+                      "types": [
+                        "object"
+                      ],
+                      "keys": {
+                        "deductionAmount": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "paymentAmount": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "remittanceDate": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "settlementAmount": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "settlementDate": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "status": {
+                          "types": [
+                            "string"
+                          ]
+                        }
+                      }
+                    },
+                    "remittanceDate": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "settlementAmount": {
+                      "types": [
+                        "object"
+                      ],
+                      "keys": {
+                        "amount": {
+                          "types": [
+                            "number"
+                          ]
+                        },
+                        "currency": {
+                          "types": [
+                            "string"
+                          ]
+                        }
+                      }
+                    },
+                    "settlementDate": {
+                      "types": [
+                        "string"
+                      ]
+                    },
+                    "status": {
+                      "types": [
+                        "string"
+                      ]
+                    }
+                  }
+                }
+              },
+              "nextCursor": {
+                "types": [
+                  "string"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "wire": [
+        {
+          "operation": {
+            "key": "POST api.n11.com/ws/settlementService",
+            "unmatched": true,
+            "method": "POST",
+            "host": "api.n11.com",
+            "path": "/ws/settlementService"
+          },
+          "status": 200,
+          "contentType": "text/xml",
+          "body": "non-json"
+        }
+      ]
+    },
+    "locations.getCities → getDistricts(34) → getNeighborhoods": {
+      "status": "ok",
+      "shape": {
+        "types": [
+          "object"
+        ],
+        "keys": {
+          "cities": {
+            "types": [
+              "array"
+            ],
+            "items": {
+              "types": [
+                "object"
+              ],
+              "keys": {
+                "code": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "id": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "name": {
+                  "types": [
+                    "string"
+                  ]
+                }
+              }
+            }
+          },
+          "districts": {
+            "types": [
+              "array"
+            ],
+            "items": {
+              "types": [
+                "object"
+              ],
+              "keys": {
+                "id": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "name": {
+                  "types": [
+                    "string"
+                  ]
+                }
+              }
+            }
+          },
+          "neighborhoods": {
+            "types": [
+              "array"
+            ],
+            "items": {
+              "types": [
+                "object"
+              ],
+              "keys": {
+                "id": {
+                  "types": [
+                    "string"
+                  ]
+                },
+                "name": {
+                  "types": [
+                    "string"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "wire": [
+        {
+          "operation": {
+            "key": "POST api.n11.com/ws/cityService",
+            "unmatched": true,
+            "method": "POST",
+            "host": "api.n11.com",
+            "path": "/ws/cityService"
+          },
+          "status": 200,
+          "contentType": "text/xml",
+          "body": "non-json"
+        }
+      ]
+    },
     "orders.list": {
       "status": "ok",
       "shape": {
@@ -1714,6 +2770,23 @@
                     "string"
                   ]
                 },
+                "installmentCharge": {
+                  "types": [
+                    "object"
+                  ],
+                  "keys": {
+                    "amount": {
+                      "types": [
+                        "number"
+                      ]
+                    },
+                    "currency": {
+                      "types": [
+                        "string"
+                      ]
+                    }
+                  }
+                },
                 "isReturned": {
                   "types": [
                     "boolean"
@@ -1738,7 +2811,46 @@
                           "number"
                         ]
                       },
+                      "deliveryFeeType": {
+                        "types": [
+                          "number"
+                        ]
+                      },
                       "dueAmount": {
+                        "types": [
+                          "object"
+                        ],
+                        "keys": {
+                          "amount": {
+                            "types": [
+                              "number"
+                            ]
+                          },
+                          "currency": {
+                            "types": [
+                              "string"
+                            ]
+                          }
+                        }
+                      },
+                      "installmentCharge": {
+                        "types": [
+                          "object"
+                        ],
+                        "keys": {
+                          "amount": {
+                            "types": [
+                              "number"
+                            ]
+                          },
+                          "currency": {
+                            "types": [
+                              "string"
+                            ]
+                          }
+                        }
+                      },
+                      "laborCostExcludingVat": {
                         "types": [
                           "object"
                         ],
@@ -1776,6 +2888,16 @@
                             ]
                           }
                         }
+                      },
+                      "marketingFeeRate": {
+                        "types": [
+                          "number"
+                        ]
+                      },
+                      "marketplaceFeeRate": {
+                        "types": [
+                          "number"
+                        ]
                       },
                       "price": {
                         "types": [
@@ -1968,6 +3090,28 @@
                           }
                         }
                       },
+                      "sellerCampaignCommissionDiscount": {
+                        "types": [
+                          "object"
+                        ],
+                        "keys": {
+                          "amount": {
+                            "types": [
+                              "number"
+                            ]
+                          },
+                          "currency": {
+                            "types": [
+                              "string"
+                            ]
+                          }
+                        }
+                      },
+                      "sellerCampaignCommissionRate": {
+                        "types": [
+                          "number"
+                        ]
+                      },
                       "sellerCouponDiscount": {
                         "types": [
                           "object"
@@ -2002,6 +3146,23 @@
                           }
                         }
                       },
+                      "sellerDiscountedPrice": {
+                        "types": [
+                          "object"
+                        ],
+                        "keys": {
+                          "amount": {
+                            "types": [
+                              "number"
+                            ]
+                          },
+                          "currency": {
+                            "types": [
+                              "string"
+                            ]
+                          }
+                        }
+                      },
                       "sellerInvoiceAmount": {
                         "types": [
                           "object"
@@ -2019,6 +3180,11 @@
                           }
                         }
                       },
+                      "sender": {
+                        "types": [
+                          "string"
+                        ]
+                      },
                       "status": {
                         "types": [
                           "string"
@@ -2028,6 +3194,45 @@
                         "types": [
                           "string"
                         ]
+                      },
+                      "taxDeductionRate": {
+                        "types": [
+                          "number"
+                        ]
+                      },
+                      "totalMallDiscount": {
+                        "types": [
+                          "object"
+                        ],
+                        "keys": {
+                          "amount": {
+                            "types": [
+                              "number"
+                            ]
+                          },
+                          "currency": {
+                            "types": [
+                              "string"
+                            ]
+                          }
+                        }
+                      },
+                      "totalSellerDiscount": {
+                        "types": [
+                          "object"
+                        ],
+                        "keys": {
+                          "amount": {
+                            "types": [
+                              "number"
+                            ]
+                          },
+                          "currency": {
+                            "types": [
+                              "string"
+                            ]
+                          }
+                        }
                       },
                       "variantAttributes": {
                         "types": [
@@ -2514,6 +3719,11 @@
                       ]
                     }
                   }
+                },
+                "sellerId": {
+                  "types": [
+                    "string"
+                  ]
                 },
                 "shipmentCompanyId": {
                   "types": [
