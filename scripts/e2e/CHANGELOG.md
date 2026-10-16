@@ -1,5 +1,12 @@
 # @lonca/e2e
 
+## 0.0.5
+
+### Patch Changes
+
+- Updated dependencies [[`6748495`](https://github.com/zanaat-dev/lonca/commit/67484951630fe4a86c49256c31995f29f04b69b2)]:
+  - @lonca/n11@0.4.0
+
 ## 0.0.4
 
 ### Patch Changes
