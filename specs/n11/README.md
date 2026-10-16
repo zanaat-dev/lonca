@@ -190,7 +190,8 @@ Known prod facts from `sdks/n11/RESEARCH.md` (section 11) and where they are ref
   purpose; see the licence above).
 - `pnpm drift`: the 4 REST probe exchanges match `getCategories`,
   `getCategoryAttributesList`, `getSellerProducts` and `getShipmentPackages` with 0 breaking,
-  0 additive and 0 warning findings. The 4 SOAP `POST` exchanges stay unmatched (warnings).
+  0 additive and 0 warning findings. The SOAP `POST` exchanges stay unmatched (warnings; 6 since the
+  2026-10-16 baseline).
 
 ## Known gaps
 
