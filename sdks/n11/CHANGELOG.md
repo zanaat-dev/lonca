@@ -1,5 +1,23 @@
 # @lonca/n11
 
+## 1.0.0
+
+### Major Changes
+
+- [#259](https://github.com/zanaat-dev/lonca/pull/259) [`3ce5d3f`](https://github.com/zanaat-dev/lonca/commit/3ce5d3fc48d5d7b6799b1c19922d59bcb069867a) Thanks [@keparlak](https://github.com/keparlak)! - `@lonca/n11` 1.0.0: the n11 SDK leaves beta. The public API is the same as the last 0.x release, so no code changes are needed; from now on breaking changes ship only in major versions (see Stability & versioning). Every method has run against n11: the reads on a live seller account, the writes on n11's test store, with order writes, the collection request and return decisions on real test orders.
+  
+  <!-- tr
+  `@lonca/n11` 1.0.0: n11 SDK'sı beta aşamasından çıktı. Genel API son 0.x sürümüyle aynı, kodda değişiklik gerekmiyor; bundan sonra kırıcı değişiklikler yalnızca büyük sürümlerde gelecek (Kararlılık ve sürümleme sayfasına bakın). Her metot n11'e karşı çalıştırıldı: okumalar canlı bir satıcı hesabında, yazmalar n11'in test mağazasında; sipariş yazmaları, toplama talebi ve iade kararları gerçek test siparişlerinde.
+  -->
+
+### Patch Changes
+
+- [#257](https://github.com/zanaat-dev/lonca/pull/257) [`9856c01`](https://github.com/zanaat-dev/lonca/commit/9856c01222174e66e3dacdbaabb3bd2f4d8de4ee) Thanks [@keparlak](https://github.com/keparlak)! - `claims.denyReturn()` always sends `returnShipmentType`, `shipmentCompanyId`, `trackingNumber` and `deliveryReceiptNumber`, as empty elements when unset. n11 refused a `CAMPAIGN` denial without them ("trackingNumber alanı geçersizdir"), although its docs say to leave them empty; with the empty elements it was accepted (test store, 2026-10-16). Docs: `claims.listReturns()` lists a `REQUESTED` claim only once its return shipment has reached the seller.
+  
+  <!-- tr
+  `claims.denyReturn()` artık `returnShipmentType`, `shipmentCompanyId`, `trackingNumber` ve `deliveryReceiptNumber` alanlarını her zaman gönderiyor; verilmediklerinde boş öğe olarak. n11, dokümanı bu alanların boş bırakılmasını söylese de onlarsız gönderilen bir `CAMPAIGN` reddini kabul etmiyordu ("trackingNumber alanı geçersizdir"); boş öğelerle kabul etti (test mağazası, 16 Ekim 2026). Dokümantasyon: `claims.listReturns()` `REQUESTED` durumundaki bir talebi ancak iade kargosu satıcıya ulaştıktan sonra listeliyor.
+  -->
+
 ## 0.4.0
 
 ### Minor Changes
