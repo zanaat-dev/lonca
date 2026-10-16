@@ -310,8 +310,36 @@ describe('ClaimsResource writes', () => {
       imageSecondUrl: 'https://example.invalid/2.jpg',
       imageThirdUrl: undefined,
     });
-    await claims.denyReturn({ claimReturnId: 1, denyReasonId: 1, note: 'x' });
-    expect(soap.mock.calls[1]![0].fields.shipmentCompanyId).toBeUndefined();
+    // n11 refuses a CAMPAIGN denial whose shipment fields are missing, so unset
+    // ones go out as empty elements (as in n11's example request).
+    await claims.denyReturn({
+      claimReturnId: 1,
+      denyReasonId: 1,
+      note: 'x',
+      returnShipmentType: 'CAMPAIGN',
+    });
+    expect(soap.mock.calls[1]![0].fields).toMatchObject({
+      returnShipmentType: 'CAMPAIGN',
+      shipmentCompanyId: '',
+      trackingNumber: '',
+      deliveryReceiptNumber: '',
+      imageFirstUrl: undefined,
+    });
+  });
+
+  it('denyReturn sends an empty returnShipmentType when none is given', async () => {
+    const { transport, soap } = mockTransport(xml(success));
+    await new ClaimsResource(transport).denyReturn({
+      claimReturnId: 1,
+      denyReasonId: 4,
+      note: 'x',
+    });
+    expect(soap.mock.calls[0]![0].fields).toMatchObject({
+      returnShipmentType: '',
+      shipmentCompanyId: '',
+      trackingNumber: '',
+      deliveryReceiptNumber: '',
+    });
   });
 
   it('postponeReturn sends reason, day count and note', async () => {
