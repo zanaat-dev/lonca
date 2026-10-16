@@ -9,20 +9,26 @@
  *   pnpm e2e:n11:orders -- --order <orderNumber> --step split-lines
  *   pnpm e2e:n11:orders -- --order <orderNumber> --step split-quantity
  *   pnpm e2e:n11:orders -- --order <orderNumber> --step cancel-item
+ *   pnpm e2e:n11:orders -- --order <orderNumber> --step collection
+ *   pnpm e2e:n11:orders -- --order <orderNumber> --step labor-cost
  *   pnpm e2e:n11:orders -- --order <orderNumber> --step invoice-link
  *   pnpm e2e:n11:orders -- --order <orderNumber> --step returns
  *   pnpm e2e:n11:orders -- --order <orderNumber> --step returns --postpone <claimId>
  *   pnpm e2e:n11:orders -- --order <orderNumber> --step returns --approve <claimId>
  *   pnpm e2e:n11:orders -- --order <orderNumber> --step returns --deny <claimId>
  *
- * The order the steps are written for: LONCA-ORDER-1 x4 + LONCA-ORDER-2 x2 in
- * one package. `split-lines` gives one package per product; `split-quantity`
- * turns the x4 package into x1 + x2 and cancels 1 (`UnSupplied`);
- * `cancel-item` cancels 1 of the x2 LONCA-ORDER-2 line over SOAP.
+ * The order the steps are written for: LONCA-ORDER-1 x3 + LONCA-ORDER-2 x2 in
+ * one package, plus test-test001 x1 (the silver product n11 opened for us on
+ * the `horozTest` template, so it ships in its own Horoz Lojistik package).
+ * `split-lines` gives one package per product; `split-quantity` turns the x3
+ * package into x1 + x1 and cancels 1 (`UnSupplied`); `cancel-item` cancels 1
+ * of the x2 LONCA-ORDER-2 line over SOAP; `collection` asks Horoz to collect
+ * the test-test001 package; `labor-cost` puts a labour cost on its line.
  *
  * Guards: the key must belong to the test store, and every line of the order
- * must be one of our `LONCA-ORDER-*` products, so other developers' orders on
- * the shared store are never touched. Every write is followed by a read-back.
+ * must be one of our test products (`LONCA-ORDER-*`, test-test001), so other
+ * developers' orders on the shared store are never touched. Every write is
+ * followed by a read-back.
  */
 import { LoncaError } from '@lonca/core';
 import {
@@ -34,9 +40,11 @@ import {
 import { parseArgs } from 'node:util';
 
 const SPACING_MS = 1500;
-const OUR_SKU = /^LONCA-ORDER-\d+$/;
+const OUR_SKU = /^(LONCA-ORDER-\d+|test-test001)$/;
 const SPLIT_SKU = 'LONCA-ORDER-1';
 const CANCEL_SKU = 'LONCA-ORDER-2';
+/** n11's test product in a labour-cost category (1104101 Gümüş Aksesuar), shipped by Horoz. */
+const HOROZ_SKU = 'test-test001';
 /** 61 "Stokta Kalmayan Ürün", valid for both the REST split-cancel and SOAP partial cancel. */
 const CANCEL_REASON = 61;
 /** A long-lived public test PDF (W3C); n11 only stores the link. */
@@ -48,6 +56,8 @@ const STEPS = [
   'split-lines',
   'split-quantity',
   'cancel-item',
+  'collection',
+  'labor-cost',
   'invoice-link',
   'returns',
 ] as const;
@@ -212,6 +222,45 @@ switch (step) {
     });
     console.log(
       `claims.listCancels for the order: ${cancels.items.map((c) => `${c.id}:${c.status}`).join(', ') || 'none'}`,
+    );
+    break;
+  }
+
+  case 'collection': {
+    const pkg = linesOf(before, HOROZ_SKU).find((x) => x.pkg.status === 'Picking')?.pkg;
+    if (!pkg) fail(`no Picking package with ${HOROZ_SKU}`);
+    await write('orders.createCollectionRequest (Horoz)', () =>
+      client.orders.createCollectionRequest(
+        pkg.lines.map((l) => ({
+          packageId: pkg.id,
+          lineId: l.lineId,
+          boxQuantity: 1,
+          desi: 1,
+          shipmentCompany: 'HLZ',
+        })),
+      ),
+    );
+    break;
+  }
+
+  case 'labor-cost': {
+    const target = linesOf(before, HOROZ_SKU)[0];
+    if (!target) fail(`no line of ${HOROZ_SKU}`);
+    const lines = await (async () => {
+      await sleep(SPACING_MS);
+      try {
+        return await client.orders.updateLaborCosts([
+          { lineId: target.line.lineId, amountExcludingVat: 5 },
+        ]);
+      } catch (error) {
+        fail(`orders.updateLaborCosts — ${describeError(error)}`);
+      }
+    })();
+    console.log(`orders.updateLaborCosts — ${JSON.stringify(lines)}`);
+    if (!lines.every((l) => l.status === 'SUCCESS')) fail('a line was not accepted');
+    const after = linesOf(await packages(), HOROZ_SKU)[0];
+    console.log(
+      `read-back laborCostExcludingVat: ${JSON.stringify(after?.line.laborCostExcludingVat)}`,
     );
     break;
   }
