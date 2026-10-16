@@ -14,13 +14,13 @@
  * - Reads: every read method, including pagination and status mapping.
  * - Products: creates one `LONCA-E2E-<time>` SKU, suspends it at once, changes
  *   price, stock and limits, reads every change back, then deletes it.
- * - Orders, returns, questions: the store has no paid orders (we do not place
- *   any), so each write is sent for a package, claim or question in a state
- *   that does not allow it, and n11 must refuse it with a failure the SDK maps
- *   to `ValidationError` / `NotFoundError` or a `FAIL` line. That checks the
- *   request shape and error mapping, not the success path. With
- *   `N11_E2E_ORDER_WRITES=1` and a `Created` package on the store, `approve`
- *   runs for real on it.
+ * - Orders, returns, questions: each write is sent for a package, claim or
+ *   question in a state that does not allow it, and n11 must refuse it with a
+ *   failure the SDK maps to `ValidationError` / `NotFoundError` or a `FAIL`
+ *   line. That checks the request shape and error mapping, not the success
+ *   path; the success path runs on a paid test order with
+ *   `scripts/e2e/n11-orders.mts`. With `N11_E2E_ORDER_WRITES=1` and a
+ *   `Created` package on the store, `approve` runs for real on it.
  *
  * Exit codes: 0 every check passed, 1 a check failed, 2 setup error.
  */

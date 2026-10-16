@@ -617,7 +617,7 @@ totalPages, page, size, content }`, where `pageCount` equals the number of rows 
    (section 10).
 9. **Shipment companies, cargo labels, city lists.** Are they still SOAP-only
    (`ShipmentCompanyService`, `CityService`), and is there any label service?
-   **Partly answered:** `GetShipmentCompanies` works over SOAP. **n11 (2026-10-13):** cities
+   **Answered:** `GetShipmentCompanies` works over SOAP. **n11 (2026-10-13):** cities
    and the rest stay on SOAP. **Cargo labels, n11 (2026-10-14):** there is no label
    integration, so no PDF/ZPL over the API; it may be planned later but is not on the agenda
    (passed to their development team). The label is the campaign code from Seller Office or
