@@ -248,6 +248,15 @@ The CONTRIBUTING minimum of orders, products and inventory is reachable over RES
       silver, diamond, …). Creating a 10 TL test product in one of them (category 1104101,
       `Gümüş Aksesuar`) failed twice over: the category is restricted (n11 asks for supply
       invoices) and its minimum price is 32.23 TL. `updateLaborCosts` needs n11 to open such a category.
+  - **n11's reply of 2026-10-16.** The shipping company comes from the product's shipment
+    template (Seller Office › Hesabım › Teslimat Bilgileri). n11 authorised the store for the
+    labour-cost category and added product 792925531 (stock code `test-test001`, "Diğer Marka
+    Test Ürünü Takı Test Ürünü-1 Gümüş", category 1104101, 32.23 TL) on a `horozTest` template
+    whose only company is Horoz Lojistik, so one product serves both `createCollectionRequest`
+    (on its approved, `Picking` package) and `updateLaborCosts`. We raised its stock from 1 to 3
+    (n11: "add stock as needed"). n11 also turned off automatic approval on the store, so new
+    orders stay `Created`; n11 can switch automatic approval on per seller on request. The
+    `collection` and `labor-cost` steps of `pnpm e2e:n11:orders` run on that product's line.
 - **End-to-end run** (`pnpm e2e:n11`, `scripts/e2e/n11.mts`, 2026-10-14): all 31 methods against
   the test store. 20 verified on the success path; the order writes, return decisions and
   `questions.answer` only up to n11's refusal for a package, claim or question in the wrong state
@@ -561,7 +570,9 @@ totalPages, page, size, content }`, where `pageCount` equals the number of rows 
     quantity-based package split (`splitPackageByQuantity`); n11 grants it on the seller's
     request. **n11 (2026-10-15):** on the test store the quantity split is enabled, the store
     was made eligible for collection requests, and the labour-cost category list was added to
-    the docs page (section 7).
+    the docs page (section 7). **n11 (2026-10-16):** the store was authorised for the labour-cost
+    category (product 792925531 / `test-test001`), and automatic order approval, which n11 can
+    enable per seller, was turned off on the test store.
 
 ## 12. Next steps (proposed)
 
@@ -583,6 +594,6 @@ totalPages, page, size, content }`, where `pageCount` equals the number of rows 
    scoped package has to be done by hand (see the release notes in the PR).
 6. Still open: verify order writes and return decisions on a real order (needs an order in
    `Created` / `Picking` on the test store; per n11's 2026-10-15 reply we place and pay for it
-   ourselves, and n11 sets `Delivered`), `createCollectionRequest` (needs a logistics-company
-   shipment) and `updateLaborCosts` (needs a jewellery category opened for the test store), and a
-   settlements resource over SOAP if users ask for it.
+   ourselves, and n11 sets `Delivered`), plus `createCollectionRequest` and `updateLaborCosts`
+   on the same order through n11's `test-test001` product (Horoz template, labour-cost category;
+   n11's 2026-10-16 reply), and a settlements resource over SOAP if users ask for it.
