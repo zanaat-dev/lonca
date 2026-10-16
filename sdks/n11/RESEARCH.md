@@ -625,4 +625,6 @@ totalPages, page, size, content }`, where `pageCount` equals the number of rows 
    `Created` / `Picking` on the test store; per n11's 2026-10-15 reply we place and pay for it
    ourselves, and n11 sets `Delivered`), plus `createCollectionRequest` and `updateLaborCosts`
    on the same order through n11's `test-test001` product (Horoz template, labour-cost category;
-   n11's 2026-10-16 reply), and a settlements resource over SOAP if users ask for it.
+   n11's 2026-10-16 reply).
+7. ~~A settlements resource over SOAP.~~ Done on 2026-10-16: `finance.listSettlements` /
+   `getSettlementDetail` (section 10), verified on the test store.
