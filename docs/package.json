@@ -18,12 +18,12 @@
     "@lonca/core": "workspace:*",
     "@lonca/hepsiburada": "workspace:*",
     "@lonca/trendyol": "workspace:*",
-    "astro": "^7.3.8",
-    "marked": "^18.1.0",
+    "astro": "^7.4.0",
+    "marked": "^18.1.1",
     "sharp": "^0.35.5",
     "shiki": "4.5.0",
     "starlight-typedoc": "^0.23.1",
     "typedoc": "^0.28.20",
-    "typedoc-plugin-markdown": "^4.13.1"
+    "typedoc-plugin-markdown": "^4.14.0"
   }
 }
