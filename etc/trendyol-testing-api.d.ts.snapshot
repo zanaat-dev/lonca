@@ -1,4 +1,4 @@
-import { BatchRequestStatus, TrendyolClient } from './client.js';
+import { BatchRequestStatus, TrendyolClient } from './index.js';
 import '@lonca/core';
 
 /** A request the fake client received, normalized for matching in a `handler`. */
@@ -43,4 +43,5 @@ interface TrendyolFakeSeed {
  */
 declare function createFakeTrendyolClient(seed?: TrendyolFakeSeed): TrendyolClient;
 
-export { createFakeTrendyolClient, type FakeTrendyolRequest, type TrendyolFakeSeed };
+export { createFakeTrendyolClient };
+export type { FakeTrendyolRequest, TrendyolFakeSeed };

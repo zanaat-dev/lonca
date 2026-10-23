@@ -151,4 +151,5 @@ declare function parseHepsiburadaWebhookEvent<E extends HepsiburadaWebhookEvent>
  */
 declare const parseWebhookEvent: typeof parseHepsiburadaWebhookEvent;
 
-export { CLAIM_WEBHOOK_EVENTS, type ClaimWebhookEvent, HEPSIBURADA_WEBHOOK_EVENTS, type HepsiburadaWebhookEvent, type KnownHepsiburadaOrderStatus, normalizeStatus, ORDER_WEBHOOK_EVENTS, type OrderWebhookEvent, type ParsedHepsiburadaWebhookEvent, parseHepsiburadaWebhookEvent, parseWebhookEvent, statusMap };
+export { CLAIM_WEBHOOK_EVENTS, HEPSIBURADA_WEBHOOK_EVENTS, normalizeStatus, ORDER_WEBHOOK_EVENTS, parseHepsiburadaWebhookEvent, parseWebhookEvent, statusMap };
+export type { ClaimWebhookEvent, HepsiburadaWebhookEvent, KnownHepsiburadaOrderStatus, OrderWebhookEvent, ParsedHepsiburadaWebhookEvent };

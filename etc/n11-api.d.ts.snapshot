@@ -103,4 +103,5 @@ declare const statusMap: Record<KnownN11PackageStatus, NormalizedOrderStatus>;
  */
 declare const normalizeStatus: (raw: string) => _lonca_core.NormalizedStatusResult;
 
-export { KnownN11PackageStatus, mapHttpError, mapSoapFailure, mapSoapHttpError, normalizeStatus, type SoapResultInfo, statusMap };
+export { KnownN11PackageStatus, mapHttpError, mapSoapFailure, mapSoapHttpError, normalizeStatus, statusMap };
+export type { SoapResultInfo };

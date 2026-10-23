@@ -1,4 +1,4 @@
-import { HepsiburadaClient } from './client.js';
+import { HepsiburadaClient } from './index.js';
 import '@lonca/core';
 
 /** A request the fake client received, normalized for matching in a `handler`. */
@@ -41,4 +41,5 @@ interface HepsiburadaFakeSeed {
  */
 declare function createFakeHepsiburadaClient(seed?: HepsiburadaFakeSeed): HepsiburadaClient;
 
-export { createFakeHepsiburadaClient, type FakeHepsiburadaRequest, type HepsiburadaFakeSeed };
+export { createFakeHepsiburadaClient };
+export type { FakeHepsiburadaRequest, HepsiburadaFakeSeed };
