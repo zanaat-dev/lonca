@@ -1,4 +1,4 @@
-import { N11Client } from './client.js';
+import { N11Client } from './index.js';
 import '@lonca/core';
 
 /** A request the fake client received, normalized for matching in a `handler`. */
@@ -48,4 +48,5 @@ interface N11FakeSeed {
  */
 declare function createFakeN11Client(seed?: N11FakeSeed): N11Client;
 
-export { createFakeN11Client, type FakeN11Request, type N11FakeSeed };
+export { createFakeN11Client };
+export type { FakeN11Request, N11FakeSeed };

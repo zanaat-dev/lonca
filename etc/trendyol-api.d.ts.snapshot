@@ -111,4 +111,5 @@ declare const statusMap: Record<KnownShipmentPackageStatus, NormalizedOrderStatu
  */
 declare const normalizeStatus: (raw: string) => _lonca_core.NormalizedStatusResult;
 
-export { KnownShipmentPackageStatus, normalizeStatus, type PackageCreatedBy, parseWebhookEvent, ShipmentPackage, statusMap, type WebhookEvent, type WebhookEventStatus };
+export { KnownShipmentPackageStatus, normalizeStatus, parseWebhookEvent, ShipmentPackage, statusMap };
+export type { PackageCreatedBy, WebhookEvent, WebhookEventStatus };
