@@ -42,7 +42,10 @@ packageExtensions:
 # copy is resolved any more (changesets 3.x dropped it), so no 3.x pin is needed.
 overrides:
   esbuild: ^0.28.1
-  vite: ^8.0.16
+  # Floored at 8.1.6 to close GHSA-9jrq-w75r-8gcw / GHSA-rq7h-c2jc-7f22 and the
+  # launch-editor advisories vite bundles (GHSA-r825-w8mm-5pxw,
+  # GHSA-587h-7wmj-h5pm, GHSA-698v-4r3x-3vcv).
+  vite: ^8.1.6
   js-yaml@4: ^4.3.1
   # Security pins for transitive deps that upstream has not bumped yet. Each
   # entry is range-scoped to the affected major so unrelated lines are
