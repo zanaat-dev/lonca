@@ -1,5 +1,12 @@
 # @lonca/docs
 
+## 0.0.30
+
+### Patch Changes
+
+- Updated dependencies [[`8c76653`](https://github.com/zanaat-dev/lonca/commit/8c76653e5de99664adf679091922575e82908e48), [`0dfad69`](https://github.com/zanaat-dev/lonca/commit/0dfad69c5a1b7033dee190472f9082f2700ee173), [`0dfad69`](https://github.com/zanaat-dev/lonca/commit/0dfad69c5a1b7033dee190472f9082f2700ee173)]:
+  - @lonca/hepsiburada@1.4.0
+
 ## 0.0.29
 
 ### Patch Changes
