@@ -2019,11 +2019,6 @@
                   }
                 }
               },
-              "nextCursor": {
-                "types": [
-                  "string"
-                ]
-              },
               "raw": {
                 "types": [
                   "object"
@@ -2046,13 +2041,39 @@
                         "keys": {
                           "defermentSppUsage": {
                             "types": [
-                              "array"
+                              "object"
                             ],
-                            "items": {
-                              "types": [
-                                "object"
-                              ],
-                              "depthCapped": true
+                            "keys": {
+                              "campaignNumber": {
+                                "types": [
+                                  "string"
+                                ]
+                              },
+                              "cargoWeightFromShipmentCompany": {
+                                "types": [
+                                  "string"
+                                ]
+                              },
+                              "createdDate": {
+                                "types": [
+                                  "string"
+                                ]
+                              },
+                              "deferredAmount": {
+                                "types": [
+                                  "string"
+                                ]
+                              },
+                              "orderNumber": {
+                                "types": [
+                                  "string"
+                                ]
+                              },
+                              "shipmentCompanyName": {
+                                "types": [
+                                  "string"
+                                ]
+                              }
                             }
                           }
                         }
@@ -2113,13 +2134,139 @@
                         "keys": {
                           "orderItemSettlement": {
                             "types": [
-                              "array"
+                              "object"
                             ],
-                            "items": {
-                              "types": [
-                                "object"
-                              ],
-                              "depthCapped": true
+                            "keys": {
+                              "adFee": {
+                                "types": [
+                                  "string"
+                                ]
+                              },
+                              "adFeeVat": {
+                                "types": [
+                                  "string"
+                                ]
+                              },
+                              "buyerEmail": {
+                                "types": [
+                                  "string"
+                                ]
+                              },
+                              "buyerName": {
+                                "types": [
+                                  "string"
+                                ]
+                              },
+                              "cargoPrice": {
+                                "types": [
+                                  "string"
+                                ]
+                              },
+                              "commission": {
+                                "types": [
+                                  "string"
+                                ]
+                              },
+                              "completedDate": {
+                                "types": [
+                                  "string"
+                                ]
+                              },
+                              "deductionAmount": {
+                                "types": [
+                                  "string"
+                                ]
+                              },
+                              "defermentOfPayment": {
+                                "types": [
+                                  "string"
+                                ]
+                              },
+                              "orderItemId": {
+                                "types": [
+                                  "string"
+                                ]
+                              },
+                              "orderNumber": {
+                                "types": [
+                                  "string"
+                                ]
+                              },
+                              "paymentAmount": {
+                                "types": [
+                                  "string"
+                                ]
+                              },
+                              "paymentDate": {
+                                "types": [
+                                  "string"
+                                ]
+                              },
+                              "productId": {
+                                "types": [
+                                  "string"
+                                ]
+                              },
+                              "productName": {
+                                "types": [
+                                  "string"
+                                ]
+                              },
+                              "remittanceDate": {
+                                "types": [
+                                  "string"
+                                ]
+                              },
+                              "sellerCouponDiscount": {
+                                "types": [
+                                  "string"
+                                ]
+                              },
+                              "sellerDiscount": {
+                                "types": [
+                                  "string"
+                                ]
+                              },
+                              "serviceFee": {
+                                "types": [
+                                  "string"
+                                ]
+                              },
+                              "serviceFeeVat": {
+                                "types": [
+                                  "string"
+                                ]
+                              },
+                              "settlementAmount": {
+                                "types": [
+                                  "string"
+                                ]
+                              },
+                              "settlementDate": {
+                                "types": [
+                                  "string"
+                                ]
+                              },
+                              "shippingDate": {
+                                "types": [
+                                  "string"
+                                ]
+                              },
+                              "taxDeduction": {
+                                "types": [
+                                  "string"
+                                ]
+                              },
+                              "taxDeductionRate": {
+                                "types": [
+                                  "string"
+                                ]
+                              },
+                              "trackingNumber": {
+                                "types": [
+                                  "string"
+                                ]
+                              }
                             }
                           }
                         }
@@ -2687,16 +2834,6 @@
                       ]
                     },
                     "postalCode": {
-                      "types": [
-                        "string"
-                      ]
-                    },
-                    "taxHouse": {
-                      "types": [
-                        "string"
-                      ]
-                    },
-                    "taxId": {
                       "types": [
                         "string"
                       ]
@@ -3320,14 +3457,12 @@
                         },
                         "taxHouse": {
                           "types": [
-                            "null",
-                            "string"
+                            "null"
                           ]
                         },
                         "taxId": {
                           "types": [
-                            "null",
-                            "string"
+                            "null"
                           ]
                         },
                         "tcId": {
@@ -3344,7 +3479,6 @@
                     },
                     "cargoSenderNumber": {
                       "types": [
-                        "null",
                         "string"
                       ]
                     },
@@ -3693,14 +3827,12 @@
                     },
                     "taxId": {
                       "types": [
-                        "null",
-                        "string"
+                        "null"
                       ]
                     },
                     "taxOffice": {
                       "types": [
-                        "null",
-                        "string"
+                        "null"
                       ]
                     },
                     "tcIdentityNumber": {
@@ -3787,16 +3919,6 @@
                     "string"
                   ]
                 },
-                "taxId": {
-                  "types": [
-                    "string"
-                  ]
-                },
-                "taxOffice": {
-                  "types": [
-                    "string"
-                  ]
-                },
                 "tcIdentityNumber": {
                   "types": [
                     "string"
@@ -3838,11 +3960,6 @@
                 }
               }
             }
-          },
-          "nextCursor": {
-            "types": [
-              "string"
-            ]
           }
         }
       },
@@ -3931,14 +4048,12 @@
                         },
                         "taxHouse": {
                           "types": [
-                            "null",
-                            "string"
+                            "null"
                           ]
                         },
                         "taxId": {
                           "types": [
-                            "null",
-                            "string"
+                            "null"
                           ]
                         },
                         "tcId": {
@@ -3955,7 +4070,6 @@
                     },
                     "cargoSenderNumber": {
                       "types": [
-                        "null",
                         "string"
                       ]
                     },
@@ -4314,14 +4428,12 @@
                     },
                     "taxId": {
                       "types": [
-                        "null",
-                        "string"
+                        "null"
                       ]
                     },
                     "taxOffice": {
                       "types": [
-                        "null",
-                        "string"
+                        "null"
                       ]
                     },
                     "tcIdentityNumber": {
@@ -5011,11 +5123,6 @@
                 ]
               },
               "email": {
-                "types": [
-                  "string"
-                ]
-              },
-              "fullName": {
                 "types": [
                   "string"
                 ]

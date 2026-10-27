@@ -370,11 +370,6 @@
                 }
               }
             }
-          },
-          "nextCursor": {
-            "types": [
-              "string"
-            ]
           }
         }
       },
@@ -1546,6 +1541,11 @@
                         "number"
                       ]
                     },
+                    "orderLineItemId": {
+                      "types": [
+                        "number"
+                      ]
+                    },
                     "orderNumber": {
                       "types": [
                         "string"
@@ -1568,7 +1568,6 @@
                     },
                     "receiptId": {
                       "types": [
-                        "null",
                         "number"
                       ]
                     },
@@ -1616,7 +1615,6 @@
                 },
                 "receiptId": {
                   "types": [
-                    "null",
                     "number"
                   ]
                 },
@@ -1749,6 +1747,11 @@
                         "number"
                       ]
                     },
+                    "orderLineItemId": {
+                      "types": [
+                        "number"
+                      ]
+                    },
                     "orderNumber": {
                       "types": [
                         "string"
@@ -1771,7 +1774,6 @@
                     },
                     "receiptId": {
                       "types": [
-                        "null",
                         "number"
                       ]
                     },
@@ -2283,11 +2285,6 @@
                   ]
                 },
                 "cargoProviderName": {
-                  "types": [
-                    "string"
-                  ]
-                },
-                "cargoSenderNumber": {
                   "types": [
                     "string"
                   ]
@@ -2955,22 +2952,7 @@
                         "number"
                       ]
                     },
-                    "cargoDeci": {
-                      "types": [
-                        "number"
-                      ]
-                    },
                     "cargoProviderName": {
-                      "types": [
-                        "string"
-                      ]
-                    },
-                    "cargoSenderNumber": {
-                      "types": [
-                        "string"
-                      ]
-                    },
-                    "cargoTrackingLink": {
                       "types": [
                         "string"
                       ]
@@ -3044,28 +3026,6 @@
                       "types": [
                         "string"
                       ]
-                    },
-                    "discountDisplays": {
-                      "types": [
-                        "array"
-                      ],
-                      "items": {
-                        "types": [
-                          "object"
-                        ],
-                        "keys": {
-                          "discountAmount": {
-                            "types": [
-                              "number"
-                            ]
-                          },
-                          "displayName": {
-                            "types": [
-                              "string"
-                            ]
-                          }
-                        }
-                      }
                     },
                     "estimatedDeliveryEndDate": {
                       "types": [
@@ -3955,22 +3915,7 @@
                         "number"
                       ]
                     },
-                    "cargoDeci": {
-                      "types": [
-                        "number"
-                      ]
-                    },
                     "cargoProviderName": {
-                      "types": [
-                        "string"
-                      ]
-                    },
-                    "cargoSenderNumber": {
-                      "types": [
-                        "string"
-                      ]
-                    },
-                    "cargoTrackingLink": {
                       "types": [
                         "string"
                       ]
@@ -4044,28 +3989,6 @@
                       "types": [
                         "string"
                       ]
-                    },
-                    "discountDisplays": {
-                      "types": [
-                        "array"
-                      ],
-                      "items": {
-                        "types": [
-                          "object"
-                        ],
-                        "keys": {
-                          "discountAmount": {
-                            "types": [
-                              "number"
-                            ]
-                          },
-                          "displayName": {
-                            "types": [
-                              "string"
-                            ]
-                          }
-                        }
-                      }
                     },
                     "estimatedDeliveryEndDate": {
                       "types": [
@@ -4805,11 +4728,6 @@
                     "string"
                   ]
                 },
-                "cargoSenderNumber": {
-                  "types": [
-                    "string"
-                  ]
-                },
                 "cargoTrackingNumber": {
                   "types": [
                     "string"
@@ -5483,11 +5401,6 @@
                         "string"
                       ]
                     },
-                    "cargoSenderNumber": {
-                      "types": [
-                        "string"
-                      ]
-                    },
                     "cargoTrackingLink": {
                       "types": [
                         "string"
@@ -5722,6 +5635,11 @@
                             "number"
                           ]
                         },
+                        "isEInvoiceAvailable": {
+                          "types": [
+                            "boolean"
+                          ]
+                        },
                         "lastName": {
                           "types": [
                             "string"
@@ -5758,6 +5676,16 @@
                           ]
                         },
                         "stateName": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "taxNumber": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "taxOffice": {
                           "types": [
                             "string"
                           ]
@@ -6163,6 +6091,16 @@
                           ]
                         },
                         "lastName": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "latitude": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "longitude": {
                           "types": [
                             "string"
                           ]
@@ -6483,11 +6421,6 @@
                         "string"
                       ]
                     },
-                    "cargoSenderNumber": {
-                      "types": [
-                        "string"
-                      ]
-                    },
                     "cargoTrackingLink": {
                       "types": [
                         "string"
@@ -6722,6 +6655,11 @@
                             "number"
                           ]
                         },
+                        "isEInvoiceAvailable": {
+                          "types": [
+                            "boolean"
+                          ]
+                        },
                         "lastName": {
                           "types": [
                             "string"
@@ -6758,6 +6696,16 @@
                           ]
                         },
                         "stateName": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "taxNumber": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "taxOffice": {
                           "types": [
                             "string"
                           ]
@@ -7177,6 +7125,16 @@
                             "string"
                           ]
                         },
+                        "latitude": {
+                          "types": [
+                            "string"
+                          ]
+                        },
+                        "longitude": {
+                          "types": [
+                            "string"
+                          ]
+                        },
                         "neighborhood": {
                           "types": [
                             "string"
@@ -7319,11 +7277,6 @@
                   ]
                 },
                 "cargoProviderName": {
-                  "types": [
-                    "string"
-                  ]
-                },
-                "cargoSenderNumber": {
                   "types": [
                     "string"
                   ]
@@ -7991,22 +7944,7 @@
                         "number"
                       ]
                     },
-                    "cargoDeci": {
-                      "types": [
-                        "number"
-                      ]
-                    },
                     "cargoProviderName": {
-                      "types": [
-                        "string"
-                      ]
-                    },
-                    "cargoSenderNumber": {
-                      "types": [
-                        "string"
-                      ]
-                    },
-                    "cargoTrackingLink": {
                       "types": [
                         "string"
                       ]
@@ -8080,28 +8018,6 @@
                       "types": [
                         "string"
                       ]
-                    },
-                    "discountDisplays": {
-                      "types": [
-                        "array"
-                      ],
-                      "items": {
-                        "types": [
-                          "object"
-                        ],
-                        "keys": {
-                          "discountAmount": {
-                            "types": [
-                              "number"
-                            ]
-                          },
-                          "displayName": {
-                            "types": [
-                              "string"
-                            ]
-                          }
-                        }
-                      }
                     },
                     "estimatedDeliveryEndDate": {
                       "types": [
@@ -8991,22 +8907,7 @@
                         "number"
                       ]
                     },
-                    "cargoDeci": {
-                      "types": [
-                        "number"
-                      ]
-                    },
                     "cargoProviderName": {
-                      "types": [
-                        "string"
-                      ]
-                    },
-                    "cargoSenderNumber": {
-                      "types": [
-                        "string"
-                      ]
-                    },
-                    "cargoTrackingLink": {
                       "types": [
                         "string"
                       ]
@@ -9080,28 +8981,6 @@
                       "types": [
                         "string"
                       ]
-                    },
-                    "discountDisplays": {
-                      "types": [
-                        "array"
-                      ],
-                      "items": {
-                        "types": [
-                          "object"
-                        ],
-                        "keys": {
-                          "discountAmount": {
-                            "types": [
-                              "number"
-                            ]
-                          },
-                          "displayName": {
-                            "types": [
-                              "string"
-                            ]
-                          }
-                        }
-                      }
                     },
                     "estimatedDeliveryEndDate": {
                       "types": [

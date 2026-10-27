@@ -18,10 +18,13 @@ pnpm probe:check                 # run, compare with the committed snapshots, ex
 pnpm probe -- --only trendyol    # one marketplace (repeatable)
 pnpm probe:hosts                 # Hepsiburada host-discrepancy report (SIT only, see below)
 pnpm probe:prod                  # same as `pnpm probe`, but reads `.env.prod` instead of `.env`
+pnpm probe:prod:check            # same as `pnpm probe:check`, but reads `.env.prod`
 ```
 
 The committed baselines are production captures. Keep `.env` on stage / SIT and regenerate them
-with `pnpm probe:prod`, which loads a separate gitignored `.env.prod` (see
+with `pnpm probe:prod`, which loads a separate gitignored `.env.prod`. Check them with
+`pnpm probe:prod:check`: `pnpm probe:check` reads `.env`, so against the prod baselines it only
+reports an environment mismatch (see
 [`probe-snapshots/README.md`](../../probe-snapshots/README.md#regenerating)).
 
 Credentials are read from the environment; the root scripts load `.env` when it exists
@@ -269,11 +272,16 @@ supported way to check for drift is local:
 
 ```bash
 pnpm build               # the probes import the built SDKs and @lonca/drift
-pnpm probe:check         # exits 1 and prints a structural diff when the API drifted
-pnpm probe -- --update   # accept the new shape after reviewing the diff
+pnpm probe:prod:check    # exits 1 and prints a structural diff when the API drifted
+pnpm probe:prod          # accept the new shape after reviewing the diff
 pnpm drift               # compare the committed wire shapes with specs/ (no network)
 ```
 
-Run it before releases (`pnpm probe && pnpm drift`) and whenever an SDK behaves unexpectedly. To automate it
-on your own machine, schedule `pnpm probe:check` (e.g. Windows Task Scheduler /
-cron) from a checkout that has a valid .env.
+Run it before releases and once a month, and whenever an SDK behaves unexpectedly. To automate
+it on your own machine, schedule `pnpm probe:prod:check` (e.g. Windows Task Scheduler / cron)
+from a checkout that has a valid `.env.prod`.
+
+Before treating a `removed` key as a marketplace change, read a wider sample: the probes look
+at 10 rows, and some keys are only sent on a few rows. On 2026-10-27, Trendyol's
+`cargoSenderNumber` was missing from all three order samples, but a 600-row read found it on
+about 3% of rows, so it was sample churn, not a removal.

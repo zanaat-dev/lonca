@@ -39,6 +39,7 @@ Keep `.env` on stage / SIT and put production credentials in a separate, gitigno
 
 ```bash
 pnpm build
+pnpm probe:prod:check  # compare a fresh prod run with these files first (no writes)
 pnpm probe:prod    # = tsx --env-file=.env.prod scripts/probe/run.mts — rewrites every file
 pnpm drift         # compare the wire shapes with specs/, review drift-output/report.md
 ```

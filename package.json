@@ -48,6 +48,7 @@
     "probe": "tsx --env-file-if-exists=.env scripts/probe/run.mts",
     "probe:check": "tsx --env-file-if-exists=.env scripts/probe/run.mts --check",
     "probe:prod": "tsx --env-file=.env.prod scripts/probe/run.mts",
+    "probe:prod:check": "tsx --env-file=.env.prod scripts/probe/run.mts --check",
     "e2e:hepsiburada": "tsx --env-file=.env scripts/e2e/hepsiburada.mts",
     "e2e:n11": "tsx --env-file=.env.n11-test scripts/e2e/n11.mts",
     "e2e:n11:orders": "tsx --env-file=.env.n11-test scripts/e2e/n11-orders.mts",
