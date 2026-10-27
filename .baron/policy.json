@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "providers": {
+    "issues": "github",
+    "scm": "github"
+  },
+  "roleMap": {
+    "github": {
+      "stateKey": "label",
+      "states": {
+        "in_progress": {
+          "label": "in-progress"
+        },
+        "in_review": {
+          "label": "in-review"
+        },
+        "done": {
+          "state": "closed",
+          "label": "done"
+        }
+      }
+    }
+  },
+  "typeMap": {
+    "github": {
+      "epic": "Feature",
+      "task": "Task",
+      "bug": "Bug",
+      "initiative": "issue",
+      "story": "issue",
+      "subtask": "issue"
+    }
+  },
+  "gapPolicy": {
+    "github": {
+      "hierarchy": "emulate:labels",
+      "arbitraryStates": "emulate:labels",
+      "issueLinks": "emulate:labels",
+      "sprints": "degrade",
+      "typeFiltering": "emulate:post-filter"
+    }
+  }
+}

@@ -43,3 +43,5 @@ docs/.impeccable/questions/
 docs/.impeccable/hook.cache.json
 docs/.impeccable/mocks/decision/
 docs/.impeccable/lonca-marks-ref.png
+.baron/credentials
+.baron/runs/
