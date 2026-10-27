@@ -75,7 +75,7 @@ describe('categories.getAttributeValues', () => {
 describe('orders package reads', () => {
   const r = (t: HepsiburadaTransport) => new OrdersResource(t, fastLimiter());
 
-  it('maps the PascalCase PackageNumber / OrderNumber of the delivered list', async () => {
+  it('maps the PascalCase PackageNumber / OrderNumber / HasInvoice of the delivered list', async () => {
     const row = {
       Id: 'd0000000-0000-0000-0000-000000000001',
       Barcode: '88850000000001',
@@ -93,6 +93,7 @@ describe('orders package reads', () => {
     expect(page.items[0]).toEqual({
       packageNumber: '5000000001',
       orderNumber: '4100000001',
+      hasInvoice: false,
       raw: row,
     });
   });
