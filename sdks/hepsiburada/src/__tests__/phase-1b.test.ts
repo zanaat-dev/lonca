@@ -245,7 +245,11 @@ describe('ClaimsResource', () => {
           method: 'POST',
           service: 'oms',
           path,
-          body: { foo: 'bar' },
+          // preApprovalConfirm adds the one reason Hepsiburada accepts.
+          body:
+            action === 'preApprovalConfirm'
+              ? { preApprovalReason: 'ProductInvestigation', foo: 'bar' }
+              : { foo: 'bar' },
         }),
       );
     },

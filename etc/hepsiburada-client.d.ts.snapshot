@@ -875,10 +875,11 @@ declare class CategoriesResource {
  *   - `talep-listeleme` (oms-external)        — list + accept / reject / preApproval
  *   - `talep-olusturma` (claim-stub-external) — create
  *
- * Like Shipping, the portal's OpenAPI for both is path-only; body shapes
- * are documented in the rendered doc pages. The SDK accepts loose
- * `Record<string, unknown>` bodies and surfaces responses with a typed
- * envelope + a `raw` escape hatch.
+ * The developer portal publishes both definitions (`talep-listeleme`,
+ * `talep-olusturma`); they are not in `specs/hepsiburada`. The SDK types the
+ * documented body fields as hints, keeps the bodies open
+ * (`Record<string, unknown>`) and surfaces responses with a typed envelope +
+ * a `raw` escape hatch.
  */
 /**
  * Allowed values for `claims.listByStatus(status)`. The published OpenAPI
@@ -918,23 +919,78 @@ interface ListClaimsByStatusParams extends ListClaimsParams {
     statusEndDate?: string;
 }
 /**
- * Payload for `claims.create()`. Common fields are typed as hints; the
- * `& Record<string, unknown>` keeps Hepsiburada's full `createClaimRequest` body
- * open so undocumented/extra fields still pass through verbatim.
+ * Payload for `claims.create()` — the portal's `CreateClaim` (`talep-olusturma`,
+ * a test-environment helper): `{ orderNumber, type, reason, newSKU }`. The
+ * `& Record<string, unknown>` keeps the body open so extra fields still pass
+ * through verbatim.
  */
 type CreateClaimInput = {
+    /** Order to open the claim on. */
     orderNumber?: string;
-    /** Line items being claimed (shape per Hepsiburada's portal docs). */
+    /**
+     * Claim type: `change`, `missingitem`, `missingpart`, `missinginvoice`,
+     * `extraproduct`, `return` or `renewproduct`.
+     */
+    type?: 'change' | 'missingitem' | 'missingpart' | 'missinginvoice' | 'extraproduct' | 'return' | 'renewproduct' | (string & {});
+    /** Claim reason: `ProductIsBroken`, `ProductIsDamaged` or `WrongProductSentByMerchant`. */
+    reason?: 'ProductIsBroken' | 'ProductIsDamaged' | 'WrongProductSentByMerchant' | (string & {});
+    /** SKU requested in exchange (`change` / `renewproduct`). */
+    newSKU?: string;
+    /** @deprecated Not part of Hepsiburada's `CreateClaim` body. Will be removed in the next major. */
     lines?: unknown[];
 } & Record<string, unknown>;
 /**
- * Payload for `claims.accept()` / `claims.reject()` / `claims.preApprovalConfirm()`.
- * Common fields typed as hints; open for the rest.
+ * Payload for `claims.accept()` / `claims.reject()` / `claims.preApprovalConfirm()`
+ * — the portal's `AcceptClaimRequest`, `RejectClaimRequest` and
+ * `PreApprovalConfirmRequest` (`talep-listeleme`). The fields are typed as
+ * hints and the body stays open for the rest.
  */
 type ClaimActionInput = {
-    /** Reason code for accept/reject. */
+    /**
+     * `accept`: how the claim is settled — `Refund` (pay the money back) or
+     * `Change` (send a new product). An exchange claim accepted without a body
+     * is settled as `Change`.
+     */
+    FinalizedWith?: 'Refund' | 'Change' | (string & {});
+    /**
+     * `accept`: reason for settling a new-product claim with a refund —
+     * `StockProblem`, `ProductNotDefective` or `Other`.
+     */
+    AcceptionReason?: string;
+    /** `accept`: invoice link. */
+    InvoiceLink?: string;
+    /**
+     * `reject`: rejection reason from Hepsiburada's list, e.g.
+     * `CustomerReturnedWrongItem`, `ProductIsDamaged`, `MissingQuantity`,
+     * `ProductNotDefective` (returns and renewals) or `ProductSentComplete`,
+     * `MissingItemOrPartCannotBeSupplied`, `Other` (missing item / part).
+     */
+    ClaimRejectionReason?: string;
+    /**
+     * `reject`: the merchant's statement. A reject with only this field was
+     * accepted (`204`, SIT 2026-10-27); an empty body is refused.
+     */
+    MerchantStatement?: string;
+    /** `reject`: report references. */
+    Reports?: string[];
+    /** `reject`: URLs of uploaded reports. */
+    UploadedReportsUrls?: string[];
+    /**
+     * `preApprovalConfirm`: the only accepted value is `ProductInvestigation`
+     * ("send the product to me, I will inspect it"); the SDK sends it when the
+     * input has none.
+     */
+    preApprovalReason?: 'ProductInvestigation' | (string & {});
+    /**
+     * @deprecated Hepsiburada reads no `reasonCode`. Use `ClaimRejectionReason`
+     *   (`reject`) or `AcceptionReason` (`accept`). Will be removed in the next major.
+     */
     reasonCode?: string;
-    /** Pre-approval confirmation flag (`preApprovalConfirm`). */
+    /**
+     * @deprecated Hepsiburada reads no `confirmed` flag; `preApprovalConfirm`
+     *   needs `preApprovalReason` (the SDK fills it in). Will be removed in the
+     *   next major.
+     */
     confirmed?: boolean;
 } & Record<string, unknown>;
 
@@ -949,8 +1005,10 @@ type ClaimActionInput = {
  *   - Create: `claim-stub-external[-sit].hepsiburada.com` (`talep-olusturma`)
  *
  * Body shapes for `accept`, `reject`, `preApprovalConfirm`, and `create`
- * are documented on the developer portal — the SDK passes them through
- * as `Record<string, unknown>` so future field additions don't break callers.
+ * are documented on the developer portal (`talep-listeleme`,
+ * `talep-olusturma`) and typed as hints on `ClaimActionInput` /
+ * `CreateClaimInput`; the SDK passes them through so future field additions
+ * don't break callers.
  */
 declare class ClaimsResource {
     private readonly transport;
@@ -974,20 +1032,41 @@ declare class ClaimsResource {
      */
     listByStatus(status: ClaimStatus, params?: ListClaimsByStatusParams): Promise<Claim[]>;
     /**
-     * Accept (approve) a customer claim. Hepsiburada expects a body —
-     * pass the documented `c` payload via `input`.
+     * Accept (approve) a customer claim — the portal's `AcceptClaimRequest`:
+     * `FinalizedWith` (`Refund` / `Change`), `AcceptionReason`, `InvoiceLink`.
      */
     accept(claimNumber: string, input?: ClaimActionInput): Promise<MutationResult>;
-    /** Reject a customer claim. */
+    /**
+     * Reject a customer claim (the claim goes to `InDispute`) — the portal's
+     * `RejectClaimRequest`: `ClaimRejectionReason` (a value from Hepsiburada's
+     * list, see `ClaimActionInput`), `MerchantStatement`, `Reports`,
+     * `UploadedReportsUrls`. Send at least the reason and the statement.
+     *
+     * @throws {ValidationError} when `claimNumber` is missing or `input` is
+     *   empty (Hepsiburada refuses an empty body with a bare `400`).
+     */
     reject(claimNumber: string, input?: ClaimActionInput): Promise<MutationResult>;
     /**
-     * Confirm a "pre-approval" — a Hepsiburada-specific second-step
-     * approval flow for certain claim categories.
+     * Confirm an `AwaitingPreApproval` claim with "send the product to me, I
+     * will inspect it" — the portal's `PreApprovalConfirmRequest`
+     * (`{ preApprovalReason: 'ProductInvestigation' }`, the only accepted
+     * value). The SDK sends that reason when `input` carries none, so
+     * `preApprovalConfirm(claimNumber)` is enough. A claim in another status is
+     * refused with `400 "Claim is not in AwaitingPreApproval status"`.
      */
     preApprovalConfirm(claimNumber: string, input?: ClaimActionInput): Promise<MutationResult>;
     /**
-     * Create a new claim against an order. Routes to the `claim-stub`
-     * backend service.
+     * Create a claim on an order — a test-environment helper (`claim-stub`
+     * service) taking the portal's `CreateClaim` body
+     * (`{ orderNumber, type, reason, newSKU }`).
+     *
+     * Hepsiburada answers a failed create with `200` and puts the failure text
+     * where the claim number belongs (`{ ClaimList: [{ claimNumber: "Claim
+     * oluşturulamadı.", type: "" }] }`, SIT 2026-10-27); the SDK throws that as
+     * a `ValidationError` (`status` 200, the body on `error.data.body`).
+     *
+     * @throws {ValidationError} when `input` is missing, or when a `ClaimList`
+     *   entry carries no claim number.
      */
     create(input: CreateClaimInput): Promise<MutationResult>;
 }
@@ -1521,14 +1600,49 @@ interface CargoCompanyOption {
     /** Untouched raw row. */
     raw: Record<string, unknown>;
 }
-/** Package label (PDF / image URL or base64 payload). */
+/**
+ * Output format of `orders.getPackageLabel()` (sent as `?format=`). The
+ * developer portal ("Ortak Barkod Oluşturma") lists `zpl`, `base64zpl`,
+ * `pdf`, `png` and `jpg`.
+ */
+type PackageLabelFormat = 'zpl' | 'base64zpl' | 'pdf' | 'png' | 'jpg' | (string & {});
+/** Options for `orders.getPackageLabel()`. */
+interface GetPackageLabelParams {
+    /** Label output format; Hepsiburada picks its default when omitted. */
+    format?: PackageLabelFormat;
+}
+/**
+ * The shared ("ortak") cargo label of a package — the spec's
+ * `deliveryinternal.BarcodeData`: `{ data: string[], format,
+ * hasMerchantMutualBarcode }`.
+ *
+ * Not yet confirmed on the wire: on SIT the label endpoint refuses stub
+ * packages (`400 "Cargo company does not provide mutual barcodes."` for the
+ * merchant's own cargo, `500 "Delivery not found"` for HepsiJet and Aras,
+ * 2026-10-27). Hepsiburada documents shared labels for HepsiJet and Aras only.
+ */
 interface PackageLabel {
-    /** When Hepsiburada returns a downloadable URL. */
-    url?: string;
-    /** When Hepsiburada returns a base64-encoded inline payload. */
-    base64?: string;
-    /** Label format (PDF / ZPL / etc.) if surfaced. */
+    /**
+     * Label data, one entry per label (spec `data`; the encoding follows
+     * {@link format}, e.g. ZPL text or base64).
+     */
+    data?: string[];
+    /** Label format (spec `format`). */
     format?: string;
+    /** Whether the label is the merchant's shared barcode (spec `hasMerchantMutualBarcode`). */
+    hasMerchantMutualBarcode?: boolean;
+    /**
+     * @deprecated Not part of Hepsiburada's label response (`BarcodeData`); only
+     *   set if a `url` string ever arrives. Use {@link data}. Will be removed in
+     *   the next major.
+     */
+    url?: string;
+    /**
+     * @deprecated Not part of Hepsiburada's label response (`BarcodeData`); only
+     *   set if a `base64` string ever arrives. Use {@link data} with
+     *   `format: 'base64zpl'`. Will be removed in the next major.
+     */
+    base64?: string;
     /** Untouched raw response. */
     raw: Record<string, unknown>;
 }
@@ -1607,11 +1721,34 @@ type CancelLineItemInput = {
     reasonId?: number;
 } & Record<string, unknown>;
 /**
+ * A date of a package status transition: a `Date`, or an RFC 3339 string
+ * with a time zone, e.g. `'2026-10-27T10:00:00Z'`,
+ * `'2026-10-27T13:00:00+03:00'` (fractional seconds are fine). A `Date` is
+ * sent as `date.toISOString()`. Any other spelling — no zone
+ * (`'2026-10-27T10:00:00'`), `'2026-10-27 10:00'`, `'2026-10-27'`, an offset
+ * without a colon (`+0300`) — is refused with `400 "Bad Request <body>"`
+ * (verified on SIT, 2026-10-27).
+ */
+type PackageStatusDate = string | Date;
+/**
+ * `undeliveredReason` of `orders.markPackageUndelivered()`. Hepsiburada
+ * publishes no list of values. `CustomerUnreachable` is accepted (SIT,
+ * 2026-10-27); every other value tried — `AddressNotFound`, `WrongAddress`,
+ * `CustomerRefused`, `CustomerNotAtAddress`, `Other`, … — is refused with
+ * `400 "incorrect undeliveredReason value"`. The value is case-sensitive.
+ */
+type UndeliveredReason = 'CustomerUnreachable' | (string & {});
+/**
  * Body for the deliver / intransit / undeliver status transitions — the
  * spec's `ExternalInfoRequest` (in transit), `ExternalDeliverRequest`
  * (delivered) and `ExternalUnDeliverRequest` (not delivered). An undelivered
  * transition needs `undeliveredReason`; a `reason` field is not read
  * (`400 "incorrect undeliveredReason value"`, SIT 2026-10-14).
+ *
+ * These transitions are for packages shipped with the merchant's own cargo
+ * ("alternative cargo"); a HepsiJet or Aras package is refused with
+ * `400 "Package does not have an alternative cargo."` (SIT, 2026-10-27).
+ * Dates: see {@link PackageStatusDate}.
  */
 type PackageStatusInput = {
     /** In transit: cargo tracking number. */
@@ -1620,10 +1757,10 @@ type PackageStatusInput = {
     trackingUrl?: string;
     /** In transit: tracking phone number. */
     trackingPhoneNumber?: string;
-    /** In transit: when the package was handed to the carrier. */
-    shippedDate?: string;
-    /** In transit: estimated arrival. */
-    estimatedArrivalDate?: string;
+    /** In transit: when the package was handed to the carrier (RFC 3339 with a zone, or a `Date`). */
+    shippedDate?: PackageStatusDate;
+    /** In transit: estimated arrival (RFC 3339 with a zone, or a `Date`). */
+    estimatedArrivalDate?: PackageStatusDate;
     /** In transit: volumetric weight. */
     deci?: number;
     /** In transit: shipping cost. */
@@ -1632,14 +1769,14 @@ type PackageStatusInput = {
     tax?: number;
     /** Delivered: who received the package. */
     receivedBy?: string;
-    /** Delivered: when it was received. */
-    receivedDate?: string;
+    /** Delivered: when it was received (RFC 3339 with a zone, or a `Date`). */
+    receivedDate?: PackageStatusDate;
     /** Delivered: codes of digital products. */
     digitalCodes?: string[];
-    /** Not delivered: Hepsiburada's undelivered-reason value. */
-    undeliveredReason?: string;
-    /** Not delivered: when delivery failed. */
-    undeliveredDate?: string;
+    /** Not delivered: Hepsiburada's undelivered-reason value; see {@link UndeliveredReason}. */
+    undeliveredReason?: UndeliveredReason;
+    /** Not delivered: when delivery failed (RFC 3339 with a zone, or a `Date`). */
+    undeliveredDate?: PackageStatusDate;
 } & Record<string, unknown>;
 /**
  * Body for cargo-company-change updates (line item or package level) — the
@@ -1661,13 +1798,21 @@ type LaborCostInput = {
 } & Record<string, unknown>;
 /** One invoice entry in {@link InvoiceLinkInput}'s `invoices` list. */
 type InvoiceLinkItem = {
-    /** Invoice issue date. */
+    /** Invoice issue date, e.g. `'2026-10-27'`. */
     arrangementDate?: string;
-    /** Invoice content type (`pdf` / `html`); when set the link is not re-queried. */
+    /**
+     * Invoice content type (`pdf` / `html`). The spec says a set value stops
+     * Hepsiburada from fetching the link again, but SIT still fetched it and
+     * refused a link served as `application/json` (2026-10-27): the link itself
+     * must answer with `application/pdf` or `text/html`.
+     */
     contentType?: string;
-    /** Invoice URL. */
+    /** Invoice URL; it must be served as `application/pdf` or `text/html`. */
     invoiceLink?: string;
-    /** Order number the invoice belongs to. */
+    /**
+     * Order number the invoice belongs to. Needed: without it Hepsiburada
+     * answers `500 "order number not found in the package"` (SIT, 2026-10-27).
+     */
     orderNumber?: string;
     /** Invoice row number. */
     rowNumber?: string;
@@ -1678,11 +1823,17 @@ type InvoiceLinkItem = {
  * Body for `orders.sendInvoiceLink()` — the spec's `AddInvoiceOfPackageRequest`:
  * either a single link (`invoiceLink` + `serialNumber` / `rowNumber`) or a
  * multi-invoice `invoices` list.
+ *
+ * Hepsiburada downloads every link and accepts it only when it is served as
+ * `application/pdf` or `text/html`; otherwise it answers `400` code `2003`
+ * ("Url must be pdf or html link … ContentType: <what it got>"). The single
+ * link form with a PDF link was accepted on SIT (2026-10-27). A top-level
+ * `contentType` is not read.
  */
 type InvoiceLinkInput = {
-    /** Invoice issue date. */
+    /** Invoice issue date, e.g. `'2026-10-27'`. */
     arrangementDate?: string;
-    /** Invoice URL. */
+    /** Invoice URL; it must be served as `application/pdf` or `text/html`. */
     invoiceLink?: string;
     /** Multiple invoices for the package. */
     invoices?: InvoiceLinkItem[];
@@ -1762,11 +1913,18 @@ declare class OrdersResource {
      */
     getPackage(packageNumber: string): Promise<ShippingPackage>;
     /**
-     * Get the shared label (barcode / PDF) for a package.
+     * Get the shared ("ortak") cargo label of a package — the spec's
+     * `BarcodeData` (`data`, `format`, `hasMerchantMutualBarcode`). Pass
+     * `params.format` (`zpl`, `base64zpl`, `pdf`, `png`, `jpg`) to choose the
+     * output.
+     *
+     * Hepsiburada documents shared labels for HepsiJet and Aras only; a package
+     * on another cargo company is refused with `400 "Cargo company does not
+     * provide mutual barcodes."` (`ValidationError`).
      *
      * @throws {ValidationError} when `packageNumber` is missing.
      */
-    getPackageLabel(packageNumber: string): Promise<PackageLabel>;
+    getPackageLabel(packageNumber: string, params?: GetPackageLabelParams): Promise<PackageLabel>;
     /**
      * List cargo firms a line item (still un-packaged) can be moved to.
      *
@@ -1806,7 +1964,11 @@ declare class OrdersResource {
     markPackageInTransit(packageNumber: string, input?: PackageStatusInput): Promise<MutationResult>;
     /** Mark a package as delivered. */
     markPackageDelivered(packageNumber: string, input?: PackageStatusInput): Promise<MutationResult>;
-    /** Mark a package as undelivered (failed delivery). */
+    /**
+     * Mark a package as undelivered (failed delivery). Needs `undeliveredReason`
+     * (`'CustomerUnreachable'` is the one value known to be accepted; see
+     * `UndeliveredReason`) and `undeliveredDate`.
+     */
     markPackageUndelivered(packageNumber: string, input?: PackageStatusInput): Promise<MutationResult>;
     /** Cancel a single line item before it has been packaged. */
     cancelLineItem(lineId: string, input: CancelLineItemInput): Promise<MutationResult>;
@@ -1816,7 +1978,18 @@ declare class OrdersResource {
     updateLineItemLaborCost(orderLineId: string, input: LaborCostInput): Promise<MutationResult>;
     /** Change the cargo company on a packaged shipment. */
     updatePackageCargoCompany(packageNumber: string, input: ChangeCargoCompanyInput): Promise<MutationResult>;
-    /** Attach an invoice URL / number to a shipped package. */
+    /**
+     * Attach an invoice link to a package: `{ invoiceLink, serialNumber,
+     * rowNumber, arrangementDate }`, or an `invoices` list whose entries each
+     * carry their `orderNumber`.
+     *
+     * Hepsiburada downloads the link and accepts it only when the server
+     * answers with `Content-Type: application/pdf` or `text/html`; any other
+     * type, or a link it cannot fetch, is refused with `400` code `2003` ("Url
+     * must be pdf or html link", `ValidationError`). Setting `contentType` on an
+     * `invoices` entry does not skip that check. A package takes one invoice; a
+     * second is `409` code `1997` (verified on SIT, 2026-10-27).
+     */
     sendInvoiceLink(packageNumber: string, input: InvoiceLinkInput): Promise<MutationResult>;
     /** Update parcel dimensions / `desi` info on a package. */
     updateParcelInfo(packageNumber: string, input: ParcelInfoInput): Promise<MutationResult>;
@@ -2331,12 +2504,36 @@ declare class QuestionsResource {
  * (input/output declared as `Record<string, unknown>`) and points at the
  * portal doc for full field rules.
  */
-/** One cargo firm row returned by `shipping.getCargoFirms()`. */
+/**
+ * One cargo firm row returned by `shipping.getCargoFirms()`.
+ *
+ * Hepsiburada sends the firms grouped by label (`{ labelId, labelName,
+ * labelDisplayName, cargoFirms: [{ cargoFirmId, cargoFirmName, … }] }`,
+ * verified on SIT, 2026-10-27); the SDK returns one row per firm and label.
+ */
 interface CargoFirm {
+    /** Cargo firm id (wire `cargoFirmId`, e.g. `21` for HepsiJet, `2` for Aras Kargo). */
     id?: string | number;
+    /** Cargo firm name (wire `cargoFirmName`). */
     name?: string;
+    /**
+     * @deprecated Hepsiburada sends no code for a cargo firm here, so this is
+     *   never set by the label-grouped response. Use {@link id}; the short name
+     *   `update*CargoCompany` takes is the `code` of
+     *   `orders.getChangeableCargoCompaniesFor*()`. Will be removed in the next
+     *   major.
+     */
     code?: string;
-    /** Untouched raw row — pull undocumented fields from here. */
+    /** Id of the label the firm is listed under (wire `labelId`). */
+    labelId?: number;
+    /** Label key, e.g. `LowDeci`, `HighDeci`, `SpecialDelivery` (wire `labelName`). */
+    labelName?: string;
+    /** Turkish display name of the label, e.g. `Düşük Desili Kargo Firmaları`. */
+    labelDisplayName?: string;
+    /**
+     * Untouched raw firm entry (`cargoFirmId`, `cargoFirmName`,
+     * `cargoFirmDisplayOrder`, `isExceptional`, `isVisible`, …).
+     */
     raw: Record<string, unknown>;
 }
 /**
@@ -2387,7 +2584,15 @@ declare class ShippingResource {
     private readonly transport;
     private readonly limiter;
     constructor(transport: HepsiburadaTransport, limiter?: TokenBucketRateLimiter);
-    /** List the cargo firms Hepsiburada supports for the merchant. */
+    /**
+     * List the cargo firms Hepsiburada supports for the merchant, one row per
+     * firm and label.
+     *
+     * Hepsiburada groups the firms by label (`LowDeci`, `HighDeci`,
+     * `SpecialDelivery`, `International`, `ExpressDelivery`, …), so a firm in
+     * two labels (HepsiJet is in `LowDeci` and `SpecialDelivery` on SIT)
+     * appears twice, once with each `labelId`.
+     */
     getCargoFirms(): Promise<CargoFirm[]>;
     /** List the merchant's configured shipping profiles. */
     listProfiles(): Promise<ShippingProfile[]>;
@@ -2866,4 +3071,4 @@ interface HepsiburadaClient {
 declare function createHepsiburadaClient(opts: CreateClientOptions): HepsiburadaClient;
 
 export { AccountingResource, CatalogResource, CategoriesResource, ClaimsResource, createHepsiburadaClient, hepsiburadaCapabilities, ListingsResource, OrdersResource, ProductUpdatesResource, PromotionsResource, QuestionsResource, ShippingResource, SuppliersResource, TestOrdersResource };
-export type { AccountingAmount, AccountingTransaction, AdditionalInfoUploadItem, AnswerQuestionInput, BulkUnlockInput, BuyboxOrderRow, CancelDiscountInput, CancelLineItemInput, CargoCompanyOption, CargoFirm, CatalogAttributePair, CatalogField, CatalogMatchedHbProduct, CatalogPage, CatalogPagingParams, CatalogProduct, CatalogProductAttribute, CatalogProductLifecycleStatus, CatalogProductStatus, CatalogResult, CatalogTaskDetail, CatalogTrackingReceipt, CatalogUploadProduct, CatalogValidationResult, Category, CategoryAttribute, CategoryAttributeValue, ChangeCargoCompanyInput, CheckProductStatusInput, Claim, ClaimActionInput, ClaimStatus, CommissionRow, CreateClaimInput, CreateClientOptions, CreateListingUpdateRequestInput, CreateListingUpdateRequestItem, CreatePackagesInput, CreatePercentDiscountInput, CreateQuestionInput, CreateTestOrderInput, CreateTlDiscountInput, CreateXyDiscountInput, CustomizableProperty, DeleteBySkuInput, DeleteBySkuItem, Discount, DiscountBudgets, DiscountLimits, DiscountReceipt, FastListingInput, GetAttributesParams, HepsiburadaCapabilities, HepsiburadaClient, HepsiburadaEnvironment, InventoryUploadItem, InvoiceLinkInput, InvoiceLinkItem, LaborCostInput, ListCatalogProductsParams, ListCategoriesParams, ListClaimsByStatusParams, ListClaimsParams, ListDiscountsParams, Listing, ListingPricing, ListingsPage, ListingUpdateRequestDetail, ListingUpdateRequestItem, ListingUpdateRequestReceipt, ListingUpdateRequestSearchInput, ListingUpdateRequestSummary, ListListingsParams, ListOrdersParams, ListPackagesParams, ListProductsByStatusParams, ListQuestionsParams, ListTransactionsParams, MerchantSkuGroup, OpenPurchaseOrder, OpenPurchaseOrderSearchInput, OpenPurchaseOrderStatus, Order, OrderPrice, OrdersPage, PackageLabel, PackageReceipt, PackageStatusInput, ParcelInfoInput, PreMatchActionInput, PriceUploadItem, PriceUploadResult, PriceValidation, ProductUpdateHistoryEntry, ProductUpdateInput, ProductUpdateItem, ProductUpdateReceipt, ProductUpdateStatus, PromotionCategory, PurchaseOrderLineRef, PurchaseOrderType, Question, QuestionConversation, QuestionCountSummary, QuestionProduct, QuestionSubject, RejectQuestionInput, ShippingInfoUploadItem, ShippingPackage, ShippingProfile, ShippingProfileInput, SplitPackageDetail, SplitPackageInput, StockUploadItem, SupplierApprovalStatus, SupplierEnvelope, SupplierListing, SupplierListingSearchInput, SupplierListingStatus, SupplierListingType, SupplierSearchResult, TrackingIdHistoryEntry, UpdateListingInput, UploadError, UploadProductsInput, UploadReceipt, UploadResult, UploadStatus, WarehouseInput };
+export type { AccountingAmount, AccountingTransaction, AdditionalInfoUploadItem, AnswerQuestionInput, BulkUnlockInput, BuyboxOrderRow, CancelDiscountInput, CancelLineItemInput, CargoCompanyOption, CargoFirm, CatalogAttributePair, CatalogField, CatalogMatchedHbProduct, CatalogPage, CatalogPagingParams, CatalogProduct, CatalogProductAttribute, CatalogProductLifecycleStatus, CatalogProductStatus, CatalogResult, CatalogTaskDetail, CatalogTrackingReceipt, CatalogUploadProduct, CatalogValidationResult, Category, CategoryAttribute, CategoryAttributeValue, ChangeCargoCompanyInput, CheckProductStatusInput, Claim, ClaimActionInput, ClaimStatus, CommissionRow, CreateClaimInput, CreateClientOptions, CreateListingUpdateRequestInput, CreateListingUpdateRequestItem, CreatePackagesInput, CreatePercentDiscountInput, CreateQuestionInput, CreateTestOrderInput, CreateTlDiscountInput, CreateXyDiscountInput, CustomizableProperty, DeleteBySkuInput, DeleteBySkuItem, Discount, DiscountBudgets, DiscountLimits, DiscountReceipt, FastListingInput, GetAttributesParams, GetPackageLabelParams, HepsiburadaCapabilities, HepsiburadaClient, HepsiburadaEnvironment, InventoryUploadItem, InvoiceLinkInput, InvoiceLinkItem, LaborCostInput, ListCatalogProductsParams, ListCategoriesParams, ListClaimsByStatusParams, ListClaimsParams, ListDiscountsParams, Listing, ListingPricing, ListingsPage, ListingUpdateRequestDetail, ListingUpdateRequestItem, ListingUpdateRequestReceipt, ListingUpdateRequestSearchInput, ListingUpdateRequestSummary, ListListingsParams, ListOrdersParams, ListPackagesParams, ListProductsByStatusParams, ListQuestionsParams, ListTransactionsParams, MerchantSkuGroup, OpenPurchaseOrder, OpenPurchaseOrderSearchInput, OpenPurchaseOrderStatus, Order, OrderPrice, OrdersPage, PackageLabel, PackageLabelFormat, PackageReceipt, PackageStatusDate, PackageStatusInput, ParcelInfoInput, PreMatchActionInput, PriceUploadItem, PriceUploadResult, PriceValidation, ProductUpdateHistoryEntry, ProductUpdateInput, ProductUpdateItem, ProductUpdateReceipt, ProductUpdateStatus, PromotionCategory, PurchaseOrderLineRef, PurchaseOrderType, Question, QuestionConversation, QuestionCountSummary, QuestionProduct, QuestionSubject, RejectQuestionInput, ShippingInfoUploadItem, ShippingPackage, ShippingProfile, ShippingProfileInput, SplitPackageDetail, SplitPackageInput, StockUploadItem, SupplierApprovalStatus, SupplierEnvelope, SupplierListing, SupplierListingSearchInput, SupplierListingStatus, SupplierListingType, SupplierSearchResult, TrackingIdHistoryEntry, UndeliveredReason, UpdateListingInput, UploadError, UploadProductsInput, UploadReceipt, UploadResult, UploadStatus, WarehouseInput };

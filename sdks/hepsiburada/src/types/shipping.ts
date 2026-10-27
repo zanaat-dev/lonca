@@ -11,12 +11,36 @@
  * portal doc for full field rules.
  */
 
-/** One cargo firm row returned by `shipping.getCargoFirms()`. */
+/**
+ * One cargo firm row returned by `shipping.getCargoFirms()`.
+ *
+ * Hepsiburada sends the firms grouped by label (`{ labelId, labelName,
+ * labelDisplayName, cargoFirms: [{ cargoFirmId, cargoFirmName, … }] }`,
+ * verified on SIT, 2026-10-27); the SDK returns one row per firm and label.
+ */
 export interface CargoFirm {
+  /** Cargo firm id (wire `cargoFirmId`, e.g. `21` for HepsiJet, `2` for Aras Kargo). */
   id?: string | number;
+  /** Cargo firm name (wire `cargoFirmName`). */
   name?: string;
+  /**
+   * @deprecated Hepsiburada sends no code for a cargo firm here, so this is
+   *   never set by the label-grouped response. Use {@link id}; the short name
+   *   `update*CargoCompany` takes is the `code` of
+   *   `orders.getChangeableCargoCompaniesFor*()`. Will be removed in the next
+   *   major.
+   */
   code?: string;
-  /** Untouched raw row — pull undocumented fields from here. */
+  /** Id of the label the firm is listed under (wire `labelId`). */
+  labelId?: number;
+  /** Label key, e.g. `LowDeci`, `HighDeci`, `SpecialDelivery` (wire `labelName`). */
+  labelName?: string;
+  /** Turkish display name of the label, e.g. `Düşük Desili Kargo Firmaları`. */
+  labelDisplayName?: string;
+  /**
+   * Untouched raw firm entry (`cargoFirmId`, `cargoFirmName`,
+   * `cargoFirmDisplayOrder`, `isExceptional`, `isVisible`, …).
+   */
   raw: Record<string, unknown>;
 }
 

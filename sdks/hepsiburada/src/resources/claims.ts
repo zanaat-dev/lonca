@@ -67,8 +67,10 @@ function unwrapClaims(data: unknown): WireClaim[] {
  *   - Create: `claim-stub-external[-sit].hepsiburada.com` (`talep-olusturma`)
  *
  * Body shapes for `accept`, `reject`, `preApprovalConfirm`, and `create`
- * are documented on the developer portal — the SDK passes them through
- * as `Record<string, unknown>` so future field additions don't break callers.
+ * are documented on the developer portal (`talep-listeleme`,
+ * `talep-olusturma`) and typed as hints on `ClaimActionInput` /
+ * `CreateClaimInput`; the SDK passes them through so future field additions
+ * don't break callers.
  */
 export class ClaimsResource {
   private readonly limiter: TokenBucketRateLimiter;
@@ -135,8 +137,8 @@ export class ClaimsResource {
   }
 
   /**
-   * Accept (approve) a customer claim. Hepsiburada expects a body —
-   * pass the documented `c` payload via `input`.
+   * Accept (approve) a customer claim — the portal's `AcceptClaimRequest`:
+   * `FinalizedWith` (`Refund` / `Change`), `AcceptionReason`, `InvoiceLink`.
    */
   async accept(claimNumber: string, input: ClaimActionInput = {}): Promise<MutationResult> {
     if (!claimNumber) {
@@ -153,10 +155,24 @@ export class ClaimsResource {
     };
   }
 
-  /** Reject a customer claim. */
+  /**
+   * Reject a customer claim (the claim goes to `InDispute`) — the portal's
+   * `RejectClaimRequest`: `ClaimRejectionReason` (a value from Hepsiburada's
+   * list, see `ClaimActionInput`), `MerchantStatement`, `Reports`,
+   * `UploadedReportsUrls`. Send at least the reason and the statement.
+   *
+   * @throws {ValidationError} when `claimNumber` is missing or `input` is
+   *   empty (Hepsiburada refuses an empty body with a bare `400`).
+   */
   async reject(claimNumber: string, input: ClaimActionInput = {}): Promise<MutationResult> {
     if (!claimNumber) {
       throw new ValidationError({ message: 'claims.reject: claimNumber is required' });
+    }
+    if (!input || typeof input !== 'object' || Object.keys(input).length === 0) {
+      throw new ValidationError({
+        message:
+          'claims.reject: input is required — send ClaimRejectionReason and MerchantStatement (Hepsiburada refuses an empty body)',
+      });
     }
     return {
       raw: await this.transport.request<unknown>({
@@ -170,8 +186,12 @@ export class ClaimsResource {
   }
 
   /**
-   * Confirm a "pre-approval" — a Hepsiburada-specific second-step
-   * approval flow for certain claim categories.
+   * Confirm an `AwaitingPreApproval` claim with "send the product to me, I
+   * will inspect it" — the portal's `PreApprovalConfirmRequest`
+   * (`{ preApprovalReason: 'ProductInvestigation' }`, the only accepted
+   * value). The SDK sends that reason when `input` carries none, so
+   * `preApprovalConfirm(claimNumber)` is enough. A claim in another status is
+   * refused with `400 "Claim is not in AwaitingPreApproval status"`.
    */
   async preApprovalConfirm(
     claimNumber: string,
@@ -182,33 +202,76 @@ export class ClaimsResource {
         message: 'claims.preApprovalConfirm: claimNumber is required',
       });
     }
+    const hasReason = Object.keys(input ?? {}).some((k) => k.toLowerCase() === 'preapprovalreason');
     return {
       raw: await this.transport.request<unknown>({
         method: 'POST',
         service: SERVICE_LIST,
         path: `/claims/number/${encodeURIComponent(claimNumber)}/preapprovalconfirm`,
-        body: input,
+        body: hasReason ? input : { preApprovalReason: DEFAULT_PRE_APPROVAL_REASON, ...input },
         rateLimiter: this.limiter,
       }),
     };
   }
 
   /**
-   * Create a new claim against an order. Routes to the `claim-stub`
-   * backend service.
+   * Create a claim on an order — a test-environment helper (`claim-stub`
+   * service) taking the portal's `CreateClaim` body
+   * (`{ orderNumber, type, reason, newSKU }`).
+   *
+   * Hepsiburada answers a failed create with `200` and puts the failure text
+   * where the claim number belongs (`{ ClaimList: [{ claimNumber: "Claim
+   * oluşturulamadı.", type: "" }] }`, SIT 2026-10-27); the SDK throws that as
+   * a `ValidationError` (`status` 200, the body on `error.data.body`).
+   *
+   * @throws {ValidationError} when `input` is missing, or when a `ClaimList`
+   *   entry carries no claim number.
    */
   async create(input: CreateClaimInput): Promise<MutationResult> {
     if (!input || typeof input !== 'object') {
       throw new ValidationError({ message: 'claims.create: input is required' });
     }
-    return {
-      raw: await this.transport.request<unknown>({
-        method: 'POST',
-        service: SERVICE_CREATE,
-        path: `/claims/merchant/${encodeURIComponent(this.transport.merchantId)}/create`,
-        body: input,
-        rateLimiter: this.limiter,
-      }),
-    };
+    const raw = await this.transport.request<unknown>({
+      method: 'POST',
+      service: SERVICE_CREATE,
+      path: `/claims/merchant/${encodeURIComponent(this.transport.merchantId)}/create`,
+      body: input,
+      rateLimiter: this.limiter,
+    });
+    const failure = createFailure(raw);
+    if (failure !== undefined) {
+      throw new ValidationError({
+        message: `claims.create: Hepsiburada did not create the claim: ${failure}`,
+        status: 200,
+        data: { body: raw },
+      });
+    }
+    return { raw };
   }
+}
+
+/** The only `preApprovalReason` the portal documents and SIT accepts. */
+const DEFAULT_PRE_APPROVAL_REASON = 'ProductInvestigation';
+
+/** A claim number as Hepsiburada issues them: digits only (e.g. `060630739`). */
+const CLAIM_NUMBER = /^\d+$/;
+
+/**
+ * The failure text of a `claims.create` response, or `undefined` when every
+ * `ClaimList` entry carries a claim number (or the body has no `ClaimList`
+ * to judge by). A failed entry has a non-numeric `claimNumber` — Hepsiburada
+ * writes the failure text there.
+ */
+function createFailure(raw: unknown): string | undefined {
+  const list = (raw as { ClaimList?: unknown } | undefined)?.ClaimList;
+  if (!Array.isArray(list)) return undefined;
+  for (const entry of list) {
+    const claimNumber = (entry as { claimNumber?: unknown } | null)?.claimNumber;
+    if (typeof claimNumber !== 'string' || !CLAIM_NUMBER.test(claimNumber)) {
+      return typeof claimNumber === 'string' && claimNumber
+        ? JSON.stringify(claimNumber)
+        : 'the response carries no claim number';
+    }
+  }
+  return undefined;
 }

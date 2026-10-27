@@ -29,6 +29,47 @@ interface WireCargoFirm {
   [key: string]: unknown;
 }
 
+/**
+ * A label group as `/cargoFirms/{merchantId}` sends it (verified on SIT,
+ * 2026-10-27): `{ labelId, labelName, labelDisplayName, labelDisplayOrder,
+ * cargoFirms: [{ cargoFirmId, cargoFirmName, … }] }`.
+ */
+interface WireCargoFirmLabel {
+  labelId?: number;
+  labelName?: string;
+  labelDisplayName?: string;
+  cargoFirms?: unknown;
+  [key: string]: unknown;
+}
+
+/**
+ * Map one `getCargoFirms` row. A label group becomes one row per nested
+ * firm, carrying the label's id and names; a flat row (an older or
+ * different shape) is mapped as it is.
+ */
+function normalizeCargoFirmRows(row: unknown): CargoFirm[] {
+  const r = (row && typeof row === 'object' ? row : {}) as WireCargoFirmLabel & WireCargoFirm;
+  if (Array.isArray(r.cargoFirms)) {
+    return r.cargoFirms.map((f) => {
+      const firm = (f && typeof f === 'object' ? f : {}) as Record<string, unknown>;
+      const out: CargoFirm = { raw: firm };
+      if (typeof firm.cargoFirmId === 'number' || typeof firm.cargoFirmId === 'string') {
+        out.id = firm.cargoFirmId;
+      }
+      if (typeof firm.cargoFirmName === 'string') out.name = firm.cargoFirmName;
+      if (typeof r.labelId === 'number') out.labelId = r.labelId;
+      if (typeof r.labelName === 'string') out.labelName = r.labelName;
+      if (typeof r.labelDisplayName === 'string') out.labelDisplayName = r.labelDisplayName;
+      return out;
+    });
+  }
+  const out: CargoFirm = { raw: r as Record<string, unknown> };
+  if (r.id !== undefined) out.id = r.id;
+  if (r.name !== undefined) out.name = r.name;
+  if (r.code !== undefined) out.code = r.code;
+  return [out];
+}
+
 interface WireProfile {
   profileName?: string;
   /** The profile name as `listProfiles` sends it (verified on SIT, 2026-10-14). */
@@ -57,7 +98,15 @@ export class ShippingResource {
     this.limiter = limiter ?? new TokenBucketRateLimiter({ capacity: 60, intervalMs: 60_000 });
   }
 
-  /** List the cargo firms Hepsiburada supports for the merchant. */
+  /**
+   * List the cargo firms Hepsiburada supports for the merchant, one row per
+   * firm and label.
+   *
+   * Hepsiburada groups the firms by label (`LowDeci`, `HighDeci`,
+   * `SpecialDelivery`, `International`, `ExpressDelivery`, …), so a firm in
+   * two labels (HepsiJet is in `LowDeci` and `SpecialDelivery` on SIT)
+   * appears twice, once with each `labelId`.
+   */
   async getCargoFirms(): Promise<CargoFirm[]> {
     const data = await this.transport.request<unknown>({
       method: 'GET',
@@ -67,15 +116,7 @@ export class ShippingResource {
     });
     // Hepsiburada returns this list under a `cargoFirms` key (verified live),
     // not a bare array / `items` / `data` — so include it in the unwrap.
-    const rows = unwrapShippingRows(data, 'cargoFirms');
-    return rows.map((r) => {
-      const row = r as WireCargoFirm;
-      const out: CargoFirm = { raw: row as Record<string, unknown> };
-      if (row.id !== undefined) out.id = row.id;
-      if (row.name !== undefined) out.name = row.name;
-      if (row.code !== undefined) out.code = row.code;
-      return out;
-    });
+    return unwrapShippingRows(data, 'cargoFirms').flatMap(normalizeCargoFirmRows);
   }
 
   /** List the merchant's configured shipping profiles. */

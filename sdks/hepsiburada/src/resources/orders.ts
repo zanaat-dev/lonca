@@ -5,6 +5,7 @@ import type {
   CargoCompanyOption,
   ChangeCargoCompanyInput,
   CreatePackagesInput,
+  GetPackageLabelParams,
   InvoiceLinkInput,
   LaborCostInput,
   ListOrdersParams,
@@ -160,11 +161,21 @@ export class OrdersResource {
   }
 
   /**
-   * Get the shared label (barcode / PDF) for a package.
+   * Get the shared ("ortak") cargo label of a package — the spec's
+   * `BarcodeData` (`data`, `format`, `hasMerchantMutualBarcode`). Pass
+   * `params.format` (`zpl`, `base64zpl`, `pdf`, `png`, `jpg`) to choose the
+   * output.
+   *
+   * Hepsiburada documents shared labels for HepsiJet and Aras only; a package
+   * on another cargo company is refused with `400 "Cargo company does not
+   * provide mutual barcodes."` (`ValidationError`).
    *
    * @throws {ValidationError} when `packageNumber` is missing.
    */
-  async getPackageLabel(packageNumber: string): Promise<PackageLabel> {
+  async getPackageLabel(
+    packageNumber: string,
+    params: GetPackageLabelParams = {},
+  ): Promise<PackageLabel> {
     if (!packageNumber) {
       throw new ValidationError({ message: 'orders.getPackageLabel: packageNumber is required' });
     }
@@ -172,14 +183,10 @@ export class OrdersResource {
       method: 'GET',
       service: SERVICE,
       path: `/packages/merchantId/${this.merchantSegment()}/packagenumber/${encodeURIComponent(packageNumber)}/labels`,
+      query: params.format ? { format: params.format } : undefined,
       rateLimiter: this.limiter,
     });
-    const obj = (data && typeof data === 'object' ? data : {}) as Record<string, unknown>;
-    const out: PackageLabel = { raw: obj };
-    if (typeof obj.url === 'string') out.url = obj.url;
-    if (typeof obj.base64 === 'string') out.base64 = obj.base64;
-    if (typeof obj.format === 'string') out.format = obj.format;
-    return out;
+    return normalizePackageLabel(data);
   }
 
   // ─── Cargo company change discovery ──────────────────────────────────────
@@ -312,7 +319,9 @@ export class OrdersResource {
 
   // ─── Package status transitions ──────────────────────────────────────────
   // All three resolve to a `MutationResult`: the API acknowledges with a bare
-  // string (`raw`), no structured body.
+  // string (`raw`), no structured body. They apply to packages on the
+  // merchant's own cargo; date fields take a `Date` or an RFC 3339 string with
+  // a zone (see `PackageStatusDate`).
 
   /** Mark a package as in transit (handed to the cargo firm). */
   async markPackageInTransit(
@@ -330,7 +339,11 @@ export class OrdersResource {
     return this.packageStatusAction(packageNumber, 'deliver', input, 'markPackageDelivered');
   }
 
-  /** Mark a package as undelivered (failed delivery). */
+  /**
+   * Mark a package as undelivered (failed delivery). Needs `undeliveredReason`
+   * (`'CustomerUnreachable'` is the one value known to be accepted; see
+   * `UndeliveredReason`) and `undeliveredDate`.
+   */
   async markPackageUndelivered(
     packageNumber: string,
     input: PackageStatusInput = {},
@@ -427,7 +440,18 @@ export class OrdersResource {
     };
   }
 
-  /** Attach an invoice URL / number to a shipped package. */
+  /**
+   * Attach an invoice link to a package: `{ invoiceLink, serialNumber,
+   * rowNumber, arrangementDate }`, or an `invoices` list whose entries each
+   * carry their `orderNumber`.
+   *
+   * Hepsiburada downloads the link and accepts it only when the server
+   * answers with `Content-Type: application/pdf` or `text/html`; any other
+   * type, or a link it cannot fetch, is refused with `400` code `2003` ("Url
+   * must be pdf or html link", `ValidationError`). Setting `contentType` on an
+   * `invoices` entry does not skip that check. A package takes one invoice; a
+   * second is `409` code `1997` (verified on SIT, 2026-10-27).
+   */
   async sendInvoiceLink(packageNumber: string, input: InvoiceLinkInput): Promise<MutationResult> {
     if (!packageNumber) {
       throw new ValidationError({ message: 'orders.sendInvoiceLink: packageNumber is required' });
@@ -563,7 +587,7 @@ export class OrdersResource {
         method: 'POST',
         service: SERVICE,
         path: `/packages/merchantId/${this.merchantSegment()}/packagenumber/${encodeURIComponent(packageNumber)}/${action}`,
-        body: input,
+        body: serializeStatusDates(input, methodLabel),
         rateLimiter: this.limiter,
       }),
     };
@@ -576,7 +600,53 @@ export class OrdersResource {
   }
 }
 
+// ─── Request helpers ───────────────────────────────────────────────────────
+
+/** The date fields of {@link PackageStatusInput}. */
+const STATUS_DATE_FIELDS = [
+  'shippedDate',
+  'estimatedArrivalDate',
+  'receivedDate',
+  'undeliveredDate',
+] as const;
+
+/**
+ * Send every `Date` in a status-transition body as an RFC 3339 string
+ * (`toISOString()`, UTC with `Z`), the form Hepsiburada parses; strings and
+ * other fields pass through unchanged.
+ */
+function serializeStatusDates(input: PackageStatusInput, methodLabel: string): PackageStatusInput {
+  if (!input || typeof input !== 'object') return input;
+  let out: PackageStatusInput | undefined;
+  for (const field of STATUS_DATE_FIELDS) {
+    const value: unknown = input[field];
+    if (!(value instanceof Date)) continue;
+    if (Number.isNaN(value.getTime())) {
+      throw new ValidationError({ message: `orders.${methodLabel}: ${field} is an invalid Date` });
+    }
+    out ??= { ...input };
+    out[field] = value.toISOString();
+  }
+  return out ?? input;
+}
+
 // ─── Normalizers ───────────────────────────────────────────────────────────
+
+/** Map the label response (spec `BarcodeData`) onto {@link PackageLabel}. */
+function normalizePackageLabel(data: unknown): PackageLabel {
+  const obj = (data && typeof data === 'object' ? data : {}) as Record<string, unknown>;
+  const out: PackageLabel = { raw: obj };
+  if (Array.isArray(obj.data) && obj.data.every((d) => typeof d === 'string')) {
+    out.data = obj.data as string[];
+  }
+  if (typeof obj.format === 'string') out.format = obj.format;
+  if (typeof obj.hasMerchantMutualBarcode === 'boolean') {
+    out.hasMerchantMutualBarcode = obj.hasMerchantMutualBarcode;
+  }
+  if (typeof obj.url === 'string') out.url = obj.url;
+  if (typeof obj.base64 === 'string') out.base64 = obj.base64;
+  return out;
+}
 
 /**
  * Map the `createPackages` response onto {@link PackageReceipt}. The spec's
