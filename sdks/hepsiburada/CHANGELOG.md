@@ -1,5 +1,57 @@
 # @lonca/hepsiburada
 
+## 1.4.0
+
+### Minor Changes
+
+- [#279](https://github.com/zanaat-dev/lonca/pull/279) [`8c76653`](https://github.com/zanaat-dev/lonca/commit/8c76653e5de99664adf679091922575e82908e48) Thanks [@keparlak](https://github.com/keparlak)! - Typed fields for what Hepsiburada sends on order lines and packages beyond its spec (found by the 2026-10-27 drift run; checked read-only on prod and on SIT):
+  
+  - `Order` (the rows of `orders.list()` and the other line feeds) gains `deci` (volumetric weight of one unit), `totalDeci` (`deci` × `quantity`) and `hasInvoice` (`true` once an invoice link was sent for the line's package).
+  - `ShippingPackage` gains `totalDeci` (the sum of its lines' `deci` × `quantity`) and `warehouse` (`{ shippingAddressLabel, shippingModel }`, the new `PackageWarehouse` type) from `orders.listPackages()`, and `hasInvoice` from the `HasInvoice` of the delivered list.
+  
+  <!-- tr
+  Hepsiburada'nın sipariş satırlarında ve paketlerde spec dışında gönderdiği alanlar artık tipli (27 Ekim 2026 drift koşusunda bulundu; prod'da salt okuma ve SIT'te doğrulandı):
+  
+  - `Order` (`orders.list()` ve diğer satır akışlarının satırları) `deci` (bir birimin desisi), `totalDeci` (`deci` × `quantity`) ve `hasInvoice` (satırın paketi için fatura linki gönderildiğinde `true`) alanlarını kazandı.
+  - `ShippingPackage`, `orders.listPackages()` yanıtından `totalDeci` (satırların `deci` × `quantity` toplamı) ve `warehouse` (`{ shippingAddressLabel, shippingModel }`, yeni `PackageWarehouse` tipi), teslim edilenler listesindeki `HasInvoice` değerinden de `hasInvoice` alanını kazandı.
+  -->
+
+- [#276](https://github.com/zanaat-dev/lonca/pull/276) [`0dfad69`](https://github.com/zanaat-dev/lonca/commit/0dfad69c5a1b7033dee190472f9082f2700ee173) Thanks [@keparlak](https://github.com/keparlak)! - Types and inputs for the open findings of the Hepsiburada SIT run ([#270](https://github.com/zanaat-dev/lonca/issues/270)), checked on SIT on 2026-10-27:
+  
+  - `shipping.getCargoFirms()` returns one row per cargo firm: `id` and `name` come from the nested `cargoFirmId` / `cargoFirmName`, and the new `labelId`, `labelName` and `labelDisplayName` tell which label (`LowDeci`, `HighDeci`, `SpecialDelivery`, …) it is listed under. The rows were label groups, so `id` and `name` were always empty; code that read `raw.cargoFirms` should read the rows themselves now (`raw` is the firm entry). `code` is deprecated: Hepsiburada sends no code here.
+  - `orders.getPackageLabel(packageNumber, { format })` takes the output format (`zpl`, `base64zpl`, `pdf`, `png`, `jpg`), and `PackageLabel` gains the spec's `data` and `hasMerchantMutualBarcode`. `url` and `base64` are deprecated; they are not in Hepsiburada's `BarcodeData`. SIT could not produce a label (shared labels are for HepsiJet and Aras, and stub packages have no delivery record), so the response shape follows the spec only.
+  - The date fields of `orders.markPackageInTransit()` / `markPackageDelivered()` / `markPackageUndelivered()` take a `Date` as well as a string; a `Date` is sent as an RFC 3339 string. The new `PackageStatusDate` type documents the string form Hepsiburada accepts (RFC 3339 with a zone, `…Z` or `…+03:00`; `yyyy-MM-dd HH:mm` and `yyyy-MM-dd` are refused).
+  - `UndeliveredReason` hints `CustomerUnreachable`, the one `undeliveredReason` value SIT accepts; Hepsiburada publishes no list.
+  - `ClaimActionInput` types the documented bodies of the claim actions: `FinalizedWith`, `AcceptionReason`, `InvoiceLink` (accept), `ClaimRejectionReason`, `MerchantStatement`, `Reports`, `UploadedReportsUrls` (reject) and `preApprovalReason` (pre-approval). `reasonCode` and `confirmed` are deprecated; Hepsiburada reads neither. `CreateClaimInput` types `type`, `reason` and `newSKU`; `lines` is deprecated.
+  
+  <!-- tr
+  Hepsiburada SIT çalıştırmasında açık kalan bulgular ([#270](https://github.com/zanaat-dev/lonca/issues/270)) için tipler ve girdiler; SIT'te 27 Ekim 2026'da doğrulandı:
+  
+  - `shipping.getCargoFirms()` artık her kargo firması için bir satır döndürüyor: `id` ve `name` iç içe gelen `cargoFirmId` / `cargoFirmName` alanlarından geliyor; yeni `labelId`, `labelName` ve `labelDisplayName` alanları firmanın hangi etiket (`LowDeci`, `HighDeci`, `SpecialDelivery`, …) altında listelendiğini söylüyor. Satırlar etiket gruplarıydı, bu yüzden `id` ve `name` hep boştu; `raw.cargoFirms` okuyan kod artık satırların kendisini okumalı (`raw` firma kaydı). `code` artık önerilmiyor: Hepsiburada burada kod göndermiyor.
+  - `orders.getPackageLabel(packageNumber, { format })` çıktı biçimini (`zpl`, `base64zpl`, `pdf`, `png`, `jpg`) alıyor; `PackageLabel` tipine spec'teki `data` ve `hasMerchantMutualBarcode` alanları eklendi. `url` ve `base64` artık önerilmiyor; Hepsiburada'nın `BarcodeData` tipinde yoklar. SIT etiket üretemedi (ortak barkod HepsiJet ve Aras için, stub paketlerin teslimat kaydı yok), bu yüzden yanıt şekli yalnızca spec'e dayanıyor.
+  - `orders.markPackageInTransit()` / `markPackageDelivered()` / `markPackageUndelivered()` tarih alanları string'in yanında `Date` de alıyor; `Date` RFC 3339 string olarak gönderiliyor. Yeni `PackageStatusDate` tipi, Hepsiburada'nın kabul ettiği string biçimini belgeliyor (saat dilimli RFC 3339, `…Z` veya `…+03:00`; `yyyy-MM-dd HH:mm` ve `yyyy-MM-dd` reddediliyor).
+  - `UndeliveredReason`, SIT'in kabul ettiği tek `undeliveredReason` değeri olan `CustomerUnreachable` değerini öneriyor; Hepsiburada bir liste yayımlamıyor.
+  - `ClaimActionInput`, talep aksiyonlarının dokümante edilmiş gövdelerini tipliyor: `FinalizedWith`, `AcceptionReason`, `InvoiceLink` (kabul), `ClaimRejectionReason`, `MerchantStatement`, `Reports`, `UploadedReportsUrls` (red) ve `preApprovalReason` (ön onay). `reasonCode` ve `confirmed` artık önerilmiyor; Hepsiburada ikisini de okumuyor. `CreateClaimInput` tipine `type`, `reason` ve `newSKU` eklendi; `lines` artık önerilmiyor.
+  -->
+
+### Patch Changes
+
+- [#276](https://github.com/zanaat-dev/lonca/pull/276) [`0dfad69`](https://github.com/zanaat-dev/lonca/commit/0dfad69c5a1b7033dee190472f9082f2700ee173) Thanks [@keparlak](https://github.com/keparlak)! - Claim and invoice fixes from the Hepsiburada SIT run ([#270](https://github.com/zanaat-dev/lonca/issues/270)), checked on SIT on 2026-10-27:
+  
+  - `claims.preApprovalConfirm()` sends `preApprovalReason: 'ProductInvestigation'` when the input has none. It is the only value Hepsiburada accepts (`400 "PreApprovalReason must be ProductInvestigation"`), and without it every call was refused with `400 "PreApprovalReason cannot be empty"`, including the README's `{ confirmed: true }` example. A reason you pass is sent unchanged.
+  - `claims.reject()` throws a `ValidationError` for an empty body before sending it; Hepsiburada refuses one with a bare `400`. A reject with `MerchantStatement` was accepted; send it with a `ClaimRejectionReason` from Hepsiburada's list.
+  - `claims.create()` throws a `ValidationError` (`status` 200, the body on `error.data.body`) when Hepsiburada reports a failed create inside a `200`: the failure text (`"Claim oluşturulamadı."`) sat where the claim number belongs, and the call resolved as if the claim had been created.
+  - Docs: `orders.sendInvoiceLink()` works with the plain `invoiceLink` form when the link is served as `application/pdf` or `text/html`; Hepsiburada downloads it and refuses any other content type (`400` code `2003`), even with `contentType` set. `invoices[]` entries need their `orderNumber`. The README and the guide use the documented claim, status and invoice bodies.
+  
+  <!-- tr
+  Hepsiburada SIT çalıştırmasından ([#270](https://github.com/zanaat-dev/lonca/issues/270)) talep ve fatura düzeltmeleri; SIT'te 27 Ekim 2026'da doğrulandı:
+  
+  - `claims.preApprovalConfirm()`, girdide neden yoksa `preApprovalReason: 'ProductInvestigation'` gönderiyor. Hepsiburada'nın kabul ettiği tek değer bu (`400 "PreApprovalReason must be ProductInvestigation"`); onsuz her çağrı, README'deki `{ confirmed: true }` örneği de dahil, `400 "PreApprovalReason cannot be empty"` ile reddediliyordu. Sizin verdiğiniz neden değiştirilmeden gönderiliyor.
+  - `claims.reject()`, boş gövdeyi göndermeden `ValidationError` atıyor; Hepsiburada boş gövdeyi gövdesiz bir `400` ile reddediyor. `MerchantStatement` içeren bir red kabul edildi; Hepsiburada'nın listesinden bir `ClaimRejectionReason` ile birlikte gönderin.
+  - `claims.create()`, Hepsiburada başarısız bir oluşturmayı `200` içinde bildirdiğinde `ValidationError` atıyor (`status` 200, gövde `error.data.body` üzerinde): hata metni (`"Claim oluşturulamadı."`) talep numarasının yerinde duruyordu ve çağrı talep oluşturulmuş gibi sonuçlanıyordu.
+  - Dokümantasyon: `orders.sendInvoiceLink()`, bağlantı `application/pdf` veya `text/html` olarak sunulduğunda düz `invoiceLink` biçimiyle çalışıyor; Hepsiburada bağlantıyı indiriyor ve başka içerik tiplerini, `contentType` verilse bile, reddediyor (`400`, kod `2003`). `invoices[]` girdileri kendi `orderNumber` alanını istiyor. README ve rehber, dokümante edilmiş talep, durum ve fatura gövdelerini kullanıyor.
+  -->
+
 ## 1.3.5
 
 ### Patch Changes
