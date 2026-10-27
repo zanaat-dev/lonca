@@ -127,6 +127,19 @@ export interface Order {
   /** VAT rate (percent). */
   vatRate?: number;
   /**
+   * Volumetric weight (desi) of one unit of the line (wire `deci`; not in the
+   * spec, seen on prod and SIT 2026-10-27).
+   */
+  deci?: number;
+  /** Volumetric weight of the whole line: {@link deci} × {@link quantity} (wire `totalDeci`). */
+  totalDeci?: number;
+  /**
+   * Whether the line's package has an invoice: `true` once an invoice link was
+   * sent with `orders.sendInvoiceLink()` (wire `hasInvoice`; not in the spec,
+   * seen on prod and SIT 2026-10-27).
+   */
+  hasInvoice?: boolean;
+  /**
    * ISO 8601 creation date-time. Documented only on the order-detail root
    * (`orders.getByOrderNumber()`); `orders.list()` rows carry
    * {@link orderDate} instead and leave this unset.
@@ -154,6 +167,17 @@ export interface Order {
   raw: Record<string, unknown>;
 }
 
+/**
+ * The warehouse a package ships from, as the package reads send it (not in
+ * the spec, seen on prod 2026-10-27).
+ */
+export interface PackageWarehouse {
+  /** Label of the merchant's shipping address the package leaves from. */
+  shippingAddressLabel?: string;
+  /** Shipping model, e.g. `Standard`. */
+  shippingModel?: string;
+}
+
 /** One shipping-package row. */
 export interface ShippingPackage {
   packageNumber?: string;
@@ -162,6 +186,20 @@ export interface ShippingPackage {
   cargoCompany?: string;
   trackingNumber?: string;
   createdDate?: string;
+  /**
+   * Volumetric weight (desi) of the package: the sum of its lines' `deci` ×
+   * `quantity` (wire `totalDeci`, sent by `orders.listPackages()`; not in the
+   * spec, seen on prod 2026-10-27).
+   */
+  totalDeci?: number;
+  /** Warehouse the package ships from (wire `warehouse`, `orders.listPackages()`). */
+  warehouse?: PackageWarehouse;
+  /**
+   * Whether the package has an invoice (wire `HasInvoice` in the PascalCase
+   * rows of `orders.listDeliveredPackages()`, SIT 2026-10-14; `hasInvoice`
+   * if a camelCase row carries it).
+   */
+  hasInvoice?: boolean;
   /** Untouched raw row. */
   raw: Record<string, unknown>;
 }

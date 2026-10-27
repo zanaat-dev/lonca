@@ -101,6 +101,7 @@ export type {
   PackageReceipt,
   PackageStatusDate,
   PackageStatusInput,
+  PackageWarehouse,
   ParcelInfoInput,
   ShippingPackage,
   SplitPackageDetail,

@@ -16,6 +16,7 @@ import type {
   PackageLabel,
   PackageReceipt,
   PackageStatusInput,
+  PackageWarehouse,
   ParcelInfoInput,
   ShippingPackage,
   SplitPackageInput,
@@ -713,9 +714,13 @@ const ORDER_STRING_FIELDS = [
   'modifiedDate',
 ] as const satisfies ReadonlyArray<keyof Order>;
 
-const ORDER_NUMBER_FIELDS = ['quantity', 'vat', 'vatRate'] as const satisfies ReadonlyArray<
-  keyof Order
->;
+const ORDER_NUMBER_FIELDS = [
+  'quantity',
+  'vat',
+  'vatRate',
+  'deci',
+  'totalDeci',
+] as const satisfies ReadonlyArray<keyof Order>;
 
 /**
  * Map an order line (`orders.list*()` `items[]`) or the order-detail root
@@ -734,6 +739,7 @@ function normalizeOrder(row: unknown): Order {
     const value = r[key];
     if (typeof value === 'number' && Number.isFinite(value)) out[key] = value;
   }
+  if (typeof r.hasInvoice === 'boolean') out.hasInvoice = r.hasInvoice;
   const merchantSku = typeof r.merchantSKU === 'string' ? r.merchantSKU : r.merchantSku;
   if (typeof merchantSku === 'string') out.merchantSku = merchantSku;
   out.customerName = extractCustomerName(r);
@@ -790,6 +796,21 @@ function normalizePackage(row: unknown): ShippingPackage {
   if (typeof r.cargoCompany === 'string') out.cargoCompany = r.cargoCompany;
   if (typeof r.trackingNumber === 'string') out.trackingNumber = r.trackingNumber;
   if (typeof r.createdDate === 'string') out.createdDate = r.createdDate;
+  if (typeof r.totalDeci === 'number' && Number.isFinite(r.totalDeci)) out.totalDeci = r.totalDeci;
+  const warehouse = toPackageWarehouse(r.warehouse);
+  if (warehouse) out.warehouse = warehouse;
+  const hasInvoice = r.hasInvoice ?? r.HasInvoice;
+  if (typeof hasInvoice === 'boolean') out.hasInvoice = hasInvoice;
+  return out;
+}
+
+/** `{ shippingAddressLabel, shippingModel }` with each string kept; `undefined` for a non-object. */
+function toPackageWarehouse(value: unknown): PackageWarehouse | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const v = value as Record<string, unknown>;
+  const out: PackageWarehouse = {};
+  if (typeof v.shippingAddressLabel === 'string') out.shippingAddressLabel = v.shippingAddressLabel;
+  if (typeof v.shippingModel === 'string') out.shippingModel = v.shippingModel;
   return out;
 }
 

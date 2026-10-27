@@ -162,6 +162,9 @@ const orderLine = {
   totalPrice: price(100),
   vat: 16.67,
   vatRate: 20,
+  deci: 1.5,
+  totalDeci: 3,
+  hasInvoice: false,
   commission: price(10),
   shippingAddress: { name: 'Test Customer', city: 'Ankara' },
   pickUpTime: null,
@@ -195,6 +198,9 @@ describe('orders.list — prod wire order line', () => {
       totalPrice: { amount: 100, currency: 'TRY' },
       vat: 16.67,
       vatRate: 20,
+      deci: 1.5,
+      totalDeci: 3,
+      hasInvoice: false,
     });
     expect(order!.raw).toBe(orderLine);
   });
@@ -213,7 +219,15 @@ describe('orders.list — prod wire order line', () => {
   it('drops mistyped prices and numbers', async () => {
     const page = await new OrdersResource(
       mockTransport({
-        items: [{ unitPrice: 50, totalPrice: { amount: '100', currency: 'TRY' }, quantity: '2' }],
+        items: [
+          {
+            unitPrice: 50,
+            totalPrice: { amount: '100', currency: 'TRY' },
+            quantity: '2',
+            deci: '1',
+            hasInvoice: 'true',
+          },
+        ],
       }),
       fastLimiter(),
     ).list();
@@ -221,6 +235,8 @@ describe('orders.list — prod wire order line', () => {
     expect(order).not.toHaveProperty('unitPrice');
     expect(order!.totalPrice).toEqual({ currency: 'TRY' });
     expect(order).not.toHaveProperty('quantity');
+    expect(order).not.toHaveProperty('deci');
+    expect(order).not.toHaveProperty('hasInvoice');
   });
 
   it('reads the lower-case merchantSku of the cancelled feed', async () => {
@@ -250,6 +266,49 @@ describe('orders.list — prod wire order line', () => {
       createdDate: '2026-09-01T10:00:05',
       customerName: 'Test Customer',
     });
+  });
+});
+
+describe('orders.listPackages — prod wire package', () => {
+  // Key set of a `GET /packages/merchantid/{merchantId}` row (prod, 2026-10-27).
+  const packageRow = {
+    packageNumber: 'pkg-0001',
+    status: 'Packaged',
+    cargoCompany: 'Test Kargo',
+    totalDeci: 3,
+    warehouse: { shippingAddressLabel: 'Depo 1', shippingModel: 'Standard' },
+    items: [
+      {
+        orderNumber: '0000000001',
+        quantity: 2,
+        deci: 1.5,
+        warehouse: { shippingAddressLabel: 'Depo 1', shippingModel: 'Standard' },
+      },
+    ],
+  };
+
+  it('maps totalDeci and warehouse', async () => {
+    const [pkg] = await new OrdersResource(
+      mockTransport([packageRow]),
+      fastLimiter(),
+    ).listPackages();
+    expect(pkg).toEqual({
+      packageNumber: 'pkg-0001',
+      status: 'Packaged',
+      cargoCompany: 'Test Kargo',
+      totalDeci: 3,
+      warehouse: { shippingAddressLabel: 'Depo 1', shippingModel: 'Standard' },
+      raw: packageRow,
+    });
+  });
+
+  it('drops a mistyped totalDeci and warehouse', async () => {
+    const [pkg] = await new OrdersResource(
+      mockTransport([{ packageNumber: 'pkg-0002', totalDeci: '3', warehouse: 'Depo 1' }]),
+      fastLimiter(),
+    ).listPackages();
+    expect(pkg).not.toHaveProperty('totalDeci');
+    expect(pkg).not.toHaveProperty('warehouse');
   });
 });
 
