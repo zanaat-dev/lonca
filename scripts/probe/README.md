@@ -285,3 +285,8 @@ Before treating a `removed` key as a marketplace change, read a wider sample: th
 at 10 rows, and some keys are only sent on a few rows. On 2026-10-27, Trendyol's
 `cargoSenderNumber` was missing from all three order samples, but a 600-row read found it on
 about 3% of rows, so it was sample churn, not a removal.
+
+The same goes for refreshing: `pnpm probe:prod` rewrites each file from one sample, so it can
+drop such keys from the baseline (and `specs/n11` is rebuilt from `probe-snapshots/n11.json`, so
+it loses their observed types too). Review the diff per marketplace and keep the committed file
+where the fresh one only loses keys (`git checkout -- probe-snapshots/<marketplace>.json`).
