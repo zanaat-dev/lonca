@@ -87,6 +87,7 @@ export type {
   CargoCompanyOption,
   ChangeCargoCompanyInput,
   CreatePackagesInput,
+  GetPackageLabelParams,
   InvoiceLinkInput,
   InvoiceLinkItem,
   LaborCostInput,
@@ -96,12 +97,15 @@ export type {
   OrderPrice,
   OrdersPage,
   PackageLabel,
+  PackageLabelFormat,
   PackageReceipt,
+  PackageStatusDate,
   PackageStatusInput,
   ParcelInfoInput,
   ShippingPackage,
   SplitPackageDetail,
   SplitPackageInput,
+  UndeliveredReason,
   WarehouseInput,
 } from './types/order.js';
 export type {

@@ -174,14 +174,51 @@ export interface CargoCompanyOption {
   raw: Record<string, unknown>;
 }
 
-/** Package label (PDF / image URL or base64 payload). */
+/**
+ * Output format of `orders.getPackageLabel()` (sent as `?format=`). The
+ * developer portal ("Ortak Barkod Oluşturma") lists `zpl`, `base64zpl`,
+ * `pdf`, `png` and `jpg`.
+ */
+export type PackageLabelFormat = 'zpl' | 'base64zpl' | 'pdf' | 'png' | 'jpg' | (string & {});
+
+/** Options for `orders.getPackageLabel()`. */
+export interface GetPackageLabelParams {
+  /** Label output format; Hepsiburada picks its default when omitted. */
+  format?: PackageLabelFormat;
+}
+
+/**
+ * The shared ("ortak") cargo label of a package — the spec's
+ * `deliveryinternal.BarcodeData`: `{ data: string[], format,
+ * hasMerchantMutualBarcode }`.
+ *
+ * Not yet confirmed on the wire: on SIT the label endpoint refuses stub
+ * packages (`400 "Cargo company does not provide mutual barcodes."` for the
+ * merchant's own cargo, `500 "Delivery not found"` for HepsiJet and Aras,
+ * 2026-10-27). Hepsiburada documents shared labels for HepsiJet and Aras only.
+ */
 export interface PackageLabel {
-  /** When Hepsiburada returns a downloadable URL. */
-  url?: string;
-  /** When Hepsiburada returns a base64-encoded inline payload. */
-  base64?: string;
-  /** Label format (PDF / ZPL / etc.) if surfaced. */
+  /**
+   * Label data, one entry per label (spec `data`; the encoding follows
+   * {@link format}, e.g. ZPL text or base64).
+   */
+  data?: string[];
+  /** Label format (spec `format`). */
   format?: string;
+  /** Whether the label is the merchant's shared barcode (spec `hasMerchantMutualBarcode`). */
+  hasMerchantMutualBarcode?: boolean;
+  /**
+   * @deprecated Not part of Hepsiburada's label response (`BarcodeData`); only
+   *   set if a `url` string ever arrives. Use {@link data}. Will be removed in
+   *   the next major.
+   */
+  url?: string;
+  /**
+   * @deprecated Not part of Hepsiburada's label response (`BarcodeData`); only
+   *   set if a `base64` string ever arrives. Use {@link data} with
+   *   `format: 'base64zpl'`. Will be removed in the next major.
+   */
+  base64?: string;
   /** Untouched raw response. */
   raw: Record<string, unknown>;
 }
@@ -255,11 +292,36 @@ export type CancelLineItemInput = {
 } & Record<string, unknown>;
 
 /**
+ * A date of a package status transition: a `Date`, or an RFC 3339 string
+ * with a time zone, e.g. `'2026-10-27T10:00:00Z'`,
+ * `'2026-10-27T13:00:00+03:00'` (fractional seconds are fine). A `Date` is
+ * sent as `date.toISOString()`. Any other spelling — no zone
+ * (`'2026-10-27T10:00:00'`), `'2026-10-27 10:00'`, `'2026-10-27'`, an offset
+ * without a colon (`+0300`) — is refused with `400 "Bad Request <body>"`
+ * (verified on SIT, 2026-10-27).
+ */
+export type PackageStatusDate = string | Date;
+
+/**
+ * `undeliveredReason` of `orders.markPackageUndelivered()`. Hepsiburada
+ * publishes no list of values. `CustomerUnreachable` is accepted (SIT,
+ * 2026-10-27); every other value tried — `AddressNotFound`, `WrongAddress`,
+ * `CustomerRefused`, `CustomerNotAtAddress`, `Other`, … — is refused with
+ * `400 "incorrect undeliveredReason value"`. The value is case-sensitive.
+ */
+export type UndeliveredReason = 'CustomerUnreachable' | (string & {});
+
+/**
  * Body for the deliver / intransit / undeliver status transitions — the
  * spec's `ExternalInfoRequest` (in transit), `ExternalDeliverRequest`
  * (delivered) and `ExternalUnDeliverRequest` (not delivered). An undelivered
  * transition needs `undeliveredReason`; a `reason` field is not read
  * (`400 "incorrect undeliveredReason value"`, SIT 2026-10-14).
+ *
+ * These transitions are for packages shipped with the merchant's own cargo
+ * ("alternative cargo"); a HepsiJet or Aras package is refused with
+ * `400 "Package does not have an alternative cargo."` (SIT, 2026-10-27).
+ * Dates: see {@link PackageStatusDate}.
  */
 export type PackageStatusInput = {
   /** In transit: cargo tracking number. */
@@ -268,10 +330,10 @@ export type PackageStatusInput = {
   trackingUrl?: string;
   /** In transit: tracking phone number. */
   trackingPhoneNumber?: string;
-  /** In transit: when the package was handed to the carrier. */
-  shippedDate?: string;
-  /** In transit: estimated arrival. */
-  estimatedArrivalDate?: string;
+  /** In transit: when the package was handed to the carrier (RFC 3339 with a zone, or a `Date`). */
+  shippedDate?: PackageStatusDate;
+  /** In transit: estimated arrival (RFC 3339 with a zone, or a `Date`). */
+  estimatedArrivalDate?: PackageStatusDate;
   /** In transit: volumetric weight. */
   deci?: number;
   /** In transit: shipping cost. */
@@ -280,14 +342,14 @@ export type PackageStatusInput = {
   tax?: number;
   /** Delivered: who received the package. */
   receivedBy?: string;
-  /** Delivered: when it was received. */
-  receivedDate?: string;
+  /** Delivered: when it was received (RFC 3339 with a zone, or a `Date`). */
+  receivedDate?: PackageStatusDate;
   /** Delivered: codes of digital products. */
   digitalCodes?: string[];
-  /** Not delivered: Hepsiburada's undelivered-reason value. */
-  undeliveredReason?: string;
-  /** Not delivered: when delivery failed. */
-  undeliveredDate?: string;
+  /** Not delivered: Hepsiburada's undelivered-reason value; see {@link UndeliveredReason}. */
+  undeliveredReason?: UndeliveredReason;
+  /** Not delivered: when delivery failed (RFC 3339 with a zone, or a `Date`). */
+  undeliveredDate?: PackageStatusDate;
 } & Record<string, unknown>;
 
 /**
@@ -312,13 +374,21 @@ export type LaborCostInput = {
 
 /** One invoice entry in {@link InvoiceLinkInput}'s `invoices` list. */
 export type InvoiceLinkItem = {
-  /** Invoice issue date. */
+  /** Invoice issue date, e.g. `'2026-10-27'`. */
   arrangementDate?: string;
-  /** Invoice content type (`pdf` / `html`); when set the link is not re-queried. */
+  /**
+   * Invoice content type (`pdf` / `html`). The spec says a set value stops
+   * Hepsiburada from fetching the link again, but SIT still fetched it and
+   * refused a link served as `application/json` (2026-10-27): the link itself
+   * must answer with `application/pdf` or `text/html`.
+   */
   contentType?: string;
-  /** Invoice URL. */
+  /** Invoice URL; it must be served as `application/pdf` or `text/html`. */
   invoiceLink?: string;
-  /** Order number the invoice belongs to. */
+  /**
+   * Order number the invoice belongs to. Needed: without it Hepsiburada
+   * answers `500 "order number not found in the package"` (SIT, 2026-10-27).
+   */
   orderNumber?: string;
   /** Invoice row number. */
   rowNumber?: string;
@@ -330,11 +400,17 @@ export type InvoiceLinkItem = {
  * Body for `orders.sendInvoiceLink()` — the spec's `AddInvoiceOfPackageRequest`:
  * either a single link (`invoiceLink` + `serialNumber` / `rowNumber`) or a
  * multi-invoice `invoices` list.
+ *
+ * Hepsiburada downloads every link and accepts it only when it is served as
+ * `application/pdf` or `text/html`; otherwise it answers `400` code `2003`
+ * ("Url must be pdf or html link … ContentType: <what it got>"). The single
+ * link form with a PDF link was accepted on SIT (2026-10-27). A top-level
+ * `contentType` is not read.
  */
 export type InvoiceLinkInput = {
-  /** Invoice issue date. */
+  /** Invoice issue date, e.g. `'2026-10-27'`. */
   arrangementDate?: string;
-  /** Invoice URL. */
+  /** Invoice URL; it must be served as `application/pdf` or `text/html`. */
   invoiceLink?: string;
   /** Multiple invoices for the package. */
   invoices?: InvoiceLinkItem[];

@@ -1,7 +1,8 @@
 /**
  * Hepsiburada request samples, checked against `specs/hepsiburada`. The
- * portal publishes no API definition for the listing, shipping, claim and
- * test-order services (see `specs/hepsiburada/README.md`), so those samples
+ * portal publishes no API definition for the listing, shipping and test-order
+ * services, and its claim definitions (`talep-listeleme`, `talep-olusturma`)
+ * are not captured in `specs/hepsiburada` (see its README), so those samples
  * run but are not compared.
  */
 import { createHepsiburadaClient, type HepsiburadaClient } from '@lonca/hepsiburada';
@@ -18,7 +19,8 @@ const NO_SPEC = (service: string) =>
   `${service}: Hepsiburada publishes no API definition for it, so specs/hepsiburada has none`;
 const LISTING = NO_SPEC('listing-external');
 const SHIPPING = NO_SPEC('shipping-external');
-const CLAIMS = NO_SPEC('claims (oms-external / claim-stub-external)');
+const CLAIMS =
+  'claims (oms-external / claim-stub-external): the portal definitions (talep-listeleme, talep-olusturma) are not captured in specs/hepsiburada';
 const TEST_ORDERS = NO_SPEC('oms-stub-external (test orders)');
 
 /** mpop's `{ success, code, message, data }` envelope, so the catalog reads succeed. */
@@ -180,7 +182,10 @@ export const hepsiburadaRequests: RequestSet<HepsiburadaClient> = {
       call: (c) => c.orders.listMissingInvoicePackages({ offset: 0, limit: 100 }),
     },
     { name: 'orders.getPackage', call: (c) => c.orders.getPackage(PACKAGE) },
-    { name: 'orders.getPackageLabel', call: (c) => c.orders.getPackageLabel(PACKAGE) },
+    {
+      name: 'orders.getPackageLabel',
+      call: (c) => c.orders.getPackageLabel(PACKAGE, { format: 'pdf' }),
+    },
     {
       name: 'orders.getChangeableCargoCompaniesForLineItem',
       call: (c) => c.orders.getChangeableCargoCompaniesForLineItem(LINE_ID),
@@ -210,15 +215,25 @@ export const hepsiburadaRequests: RequestSet<HepsiburadaClient> = {
     { name: 'orders.unpackPackage', call: (c) => c.orders.unpackPackage(PACKAGE) },
     {
       name: 'orders.markPackageInTransit',
-      call: (c) => c.orders.markPackageInTransit(PACKAGE, { trackingNumber: 'TR-456' }),
+      call: (c) =>
+        c.orders.markPackageInTransit(PACKAGE, {
+          trackingNumber: 'TR-456',
+          // A Date is sent as RFC 3339 (`…Z`), the form Hepsiburada parses.
+          shippedDate: new Date('2026-10-14T09:00:00Z'),
+        }),
     },
-    { name: 'orders.markPackageDelivered', call: (c) => c.orders.markPackageDelivered(PACKAGE) },
+    {
+      name: 'orders.markPackageDelivered',
+      call: (c) =>
+        c.orders.markPackageDelivered(PACKAGE, { receivedDate: '2026-10-15T14:30:00+03:00' }),
+    },
     {
       name: 'orders.markPackageUndelivered',
       call: (c) =>
         c.orders.markPackageUndelivered(PACKAGE, {
-          undeliveredReason: 'AddressNotFound',
-          undeliveredDate: '2026-10-14T12:00:00',
+          // The one value SIT accepts (2026-10-27); dates need a zone.
+          undeliveredReason: 'CustomerUnreachable',
+          undeliveredDate: '2026-10-14T12:00:00Z',
         }),
     },
     {
@@ -513,28 +528,30 @@ export const hepsiburadaRequests: RequestSet<HepsiburadaClient> = {
       call: (c) => c.claims.listByStatus('AwaitingAction', { limit: 50 }),
       skip: CLAIMS,
     },
+    // Bodies per the portal's talep-listeleme / talep-olusturma definitions.
     {
       name: 'claims.accept',
-      call: (c) => c.claims.accept('CLM-1', { reasonCode: 'APPROVED' }),
+      call: (c) => c.claims.accept('060600001', { FinalizedWith: 'Refund' }),
       skip: CLAIMS,
     },
     {
       name: 'claims.reject',
-      call: (c) => c.claims.reject('CLM-1', { reasonCode: 'NOT_ELIGIBLE' }),
+      call: (c) =>
+        c.claims.reject('060600001', {
+          ClaimRejectionReason: 'ProductNotDefective',
+          MerchantStatement: 'Ürün test edildi, çalışıyor.',
+        }),
       skip: CLAIMS,
     },
     {
       name: 'claims.preApprovalConfirm',
-      call: (c) => c.claims.preApprovalConfirm('CLM-1', { confirmed: true }),
+      call: (c) => c.claims.preApprovalConfirm('060600001'),
       skip: CLAIMS,
     },
     {
       name: 'claims.create',
       call: (c) =>
-        c.claims.create({
-          orderNumber: '4012345678',
-          lines: [{ lineItemId: LINE_ID, quantity: 1 }],
-        }),
+        c.claims.create({ orderNumber: '4012345678', type: 'return', reason: 'ProductIsBroken' }),
       skip: CLAIMS,
     },
 

@@ -76,16 +76,41 @@ The same pattern applies to `uploadInventory`, `uploadStock`, `uploadShippingInf
 // 1. Find paid orders awaiting packaging
 const open = await client.orders.list({ limit: 100 });
 
-// 2. Package + transition status. createPackages resolves to a PackageReceipt
-//    ({ packageNumber, barcode, raw }); the transitions resolve to MutationResult ({ raw }).
+// 2. Package. createPackages resolves to a PackageReceipt ({ packageNumber, barcode, raw }).
 const { packageNumber } = await client.orders.createPackages({
-  lineItems: ['L1', 'L2'],
-  cargoCompany: 'ARAS',
+  lineItemRequests: [
+    { id: 'L1', quantity: 1 },
+    { id: 'L2', quantity: 1 },
+  ],
 });
-await client.orders.markPackageInTransit(packageNumber!, { trackingNumber: 'TR-456' });
-await client.orders.markPackageDelivered(packageNumber!);
 
-// 3. Reconcile invoice attachment
+// 3a. HepsiJet / Aras: print the shared label ({ data: string[], format, hasMerchantMutualBarcode }).
+const label = await client.orders.getPackageLabel(packageNumber!, { format: 'pdf' });
+
+// 3b. Your own cargo: transition the status yourself (resolves to MutationResult ({ raw })).
+//     Dates are a Date or an RFC 3339 string with a zone ('2026-10-27T13:00:00+03:00');
+//     '2026-10-27 13:00' or '2026-10-27' is refused with 400.
+await client.orders.markPackageInTransit(packageNumber!, {
+  trackingNumber: 'TR-456',
+  shippedDate: new Date(),
+});
+await client.orders.markPackageDelivered(packageNumber!, { receivedDate: new Date() });
+// A failed delivery: 'CustomerUnreachable' is the one reason value known to be accepted.
+// await client.orders.markPackageUndelivered(packageNumber!, {
+//   undeliveredReason: 'CustomerUnreachable',
+//   undeliveredDate: new Date(),
+// });
+
+// 4. Attach the invoice. Hepsiburada downloads the link: it must be served as
+//    application/pdf or text/html (otherwise 400 code 2003); one invoice per package.
+await client.orders.sendInvoiceLink(packageNumber!, {
+  invoiceLink: 'https://my-erp.example/inv/2026-00123.pdf',
+  serialNumber: 'INV',
+  rowNumber: '2026-00123',
+  arrangementDate: '2026-10-27',
+});
+
+// 5. Reconcile invoice attachment
 const missingInvoice = await client.orders.listMissingInvoicePackages({ limit: 100 });
 console.log(`${missingInvoice.totalCount} shipped packages still missing invoice`);
 ```
@@ -98,7 +123,21 @@ console.log(`${missingInvoice.totalCount} shipped packages still missing invoice
 const awaiting = await client.claims.listByStatus('AwaitingAction', { limit: 100 });
 
 for (const claim of awaiting) {
-  await client.claims.accept(claim.claimNumber!, { reasonCode: 'APPROVED' });
+  if (shouldRefund(claim)) {
+    await client.claims.accept(claim.claimNumber!, { FinalizedWith: 'Refund' });
+  } else {
+    // An empty reject body is refused; send a reason from Hepsiburada's list and a statement.
+    await client.claims.reject(claim.claimNumber!, {
+      ClaimRejectionReason: 'ProductNotDefective',
+      MerchantStatement: 'The product was tested and works.',
+    });
+  }
+}
+
+// Exchange claims awaiting pre-approval: "send it to me, I'll inspect it".
+// The SDK sends preApprovalReason: 'ProductInvestigation', the only accepted value.
+for (const claim of await client.claims.listByStatus('AwaitingPreApproval')) {
+  await client.claims.preApprovalConfirm(claim.claimNumber!);
 }
 ```
 

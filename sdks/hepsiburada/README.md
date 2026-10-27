@@ -130,16 +130,22 @@ for (const order of open.items) {
   console.log(`packaged as ${receipt.packageNumber} (barcode ${receipt.barcode})`);
 }
 
-// 4. As the cargo firm scans / delivers, transition status
-await client.orders.markPackageInTransit('HBP-123', { trackingNumber: 'TR-456' });
-await client.orders.markPackageDelivered('HBP-123');
+// 4. Shipping with your own cargo? Transition the status yourself. Dates are
+//    a Date or an RFC 3339 string with a zone ('2026-10-27T13:00:00+03:00').
+//    HepsiJet / Aras packages answer 400 "Package does not have an alternative cargo."
+await client.orders.markPackageInTransit('HBP-123', {
+  trackingNumber: 'TR-456',
+  shippedDate: new Date(),
+});
+await client.orders.markPackageDelivered('HBP-123', { receivedDate: new Date() });
 // or, on a failed delivery:
 await client.orders.markPackageUndelivered('HBP-123', {
-  undeliveredReason: '…', // a Hepsiburada undelivered-reason value
-  undeliveredDate: new Date().toISOString(),
+  undeliveredReason: 'CustomerUnreachable', // the one value known to be accepted
+  undeliveredDate: new Date(),
 });
 
-// 5. Attach an invoice link before delivery
+// 5. Attach an invoice link. Hepsiburada downloads it: the link must be served
+//    as application/pdf or text/html, otherwise 400 code 2003.
 await client.orders.sendInvoiceLink('HBP-123', {
   invoiceLink: 'https://my-erp.example/inv/HBP-123.pdf',
   serialNumber: 'INV-2026-00123',
@@ -203,15 +209,22 @@ const awaiting = await client.claims.listByStatus('AwaitingAction', { limit: 100
 
 // 2. Drive the action
 for (const claim of awaiting) {
-  // Inspect claim.raw for category, reason code, items
+  // Inspect claim.raw for claimType, explanation, sku, quantity
   const decision = decideAccept(claim); // your business logic
-  if (decision === 'accept') {
-    await client.claims.accept(claim.claimNumber!, { reasonCode: 'APPROVED' });
+  if (decision === 'refund') {
+    await client.claims.accept(claim.claimNumber!, { FinalizedWith: 'Refund' });
   } else if (decision === 'reject') {
-    await client.claims.reject(claim.claimNumber!, { reasonCode: 'NOT_ELIGIBLE' });
-  } else {
-    await client.claims.preApprovalConfirm(claim.claimNumber!, { confirmed: true });
+    // An empty body is refused; the claim goes to InDispute
+    await client.claims.reject(claim.claimNumber!, {
+      ClaimRejectionReason: 'ProductNotDefective', // from Hepsiburada's list
+      MerchantStatement: 'The product was tested and works.',
+    });
   }
+}
+
+// 3. Exchange claims waiting for your pre-approval: "send it to me, I'll inspect it"
+for (const claim of await client.claims.listByStatus('AwaitingPreApproval')) {
+  await client.claims.preApprovalConfirm(claim.claimNumber!); // sends preApprovalReason: 'ProductInvestigation'
 }
 ```
 
@@ -313,6 +326,7 @@ await client.listings.uploadAdditionalInfo([
 ### `shipping` — cargo firms + shipping profiles (4 methods)
 
 ```ts
+// One row per firm and label: { id: 21, name: 'HepsiJet', labelId: 2, labelName: 'LowDeci', … }
 const firms = await client.shipping.getCargoFirms();
 const profiles = await client.shipping.listProfiles();
 // Both resolve to MutationResult ({ raw }) — the portal publishes no response schema.
@@ -341,7 +355,8 @@ await client.orders.listUndeliveredPackages({ limit: 100 });
 await client.orders.listUnpackedPackages({ limit: 100 });
 await client.orders.listMissingInvoicePackages({ limit: 100 });
 await client.orders.getPackage('HBP-1');
-await client.orders.getPackageLabel('HBP-1'); // PDF / barcode
+// Shared label (HepsiJet / Aras): { data: string[], format, hasMerchantMutualBarcode }
+await client.orders.getPackageLabel('HBP-1', { format: 'zpl' }); // zpl | base64zpl | pdf | png | jpg
 
 // Packaging mutations — createPackages resolves to a PackageReceipt
 // ({ packageNumber, barcode, raw }); every other action below resolves to
@@ -360,12 +375,16 @@ await client.orders.splitPackage('HBP-1', {
 });
 await client.orders.unpackPackage('HBP-1');
 
-// Status transitions
-await client.orders.markPackageInTransit('HBP-1', { trackingNumber: 'TR-1' });
-await client.orders.markPackageDelivered('HBP-1');
+// Status transitions (own-cargo packages). Dates: a Date, or RFC 3339 with a
+// zone ('…Z' / '…+03:00'); '2026-10-27 10:00' or '2026-10-27' is a 400.
+await client.orders.markPackageInTransit('HBP-1', {
+  trackingNumber: 'TR-1',
+  shippedDate: new Date(),
+});
+await client.orders.markPackageDelivered('HBP-1', { receivedDate: '2026-10-27T13:00:00+03:00' });
 await client.orders.markPackageUndelivered('HBP-1', {
-  undeliveredReason: '…',
-  undeliveredDate: '…',
+  undeliveredReason: 'CustomerUnreachable',
+  undeliveredDate: new Date(),
 });
 
 // Line-item actions
@@ -375,7 +394,8 @@ await client.orders.updateLineItemLaborCost('L1', { unitLaborCost: 12.5 });
 
 // Package field updates
 await client.orders.updatePackageCargoCompany('HBP-1', { CargoCompanyShortName: 'YK' });
-await client.orders.sendInvoiceLink('HBP-1', { invoiceLink: '...', serialNumber: '...' });
+// The link must be served as application/pdf or text/html; one invoice per package (a second is 409)
+await client.orders.sendInvoiceLink('HBP-1', { invoiceLink: '….pdf', serialNumber: '...' });
 await client.orders.updateParcelInfo('HBP-1', { totalDesi: 8, totalParcel: 1 });
 await client.orders.updatePackageWarehouse('HBP-1', { shippingAddressLabel: 'WH-2' });
 
@@ -396,14 +416,19 @@ import type { ClaimStatus } from '@lonca/hepsiburada';
 await client.claims.list({ beginDate: '2026-01-01 00:00', limit: 50 });
 await client.claims.listByStatus('AwaitingAction', { limit: 50 });
 
-await client.claims.accept('CLM-1', { reasonCode: 'APPROVED' });
-await client.claims.reject('CLM-1', { reasonCode: 'NOT_ELIGIBLE' });
-await client.claims.preApprovalConfirm('CLM-1', { confirmed: true });
+await client.claims.accept('CLM-1', { FinalizedWith: 'Refund' }); // or 'Change'
+await client.claims.reject('CLM-1', {
+  ClaimRejectionReason: 'CustomerReturnedWrongItem',
+  MerchantStatement: '…',
+}); // an empty body throws ValidationError
+await client.claims.preApprovalConfirm('CLM-1'); // AwaitingPreApproval claims only
 
-// Create a new claim (routes to a different host: claim-stub)
+// Create a claim on a test order (routes to a different host: claim-stub).
+// A failed create (Hepsiburada answers 200) throws ValidationError.
 await client.claims.create({
   orderNumber: 'O-1',
-  lines: [/* ... */],
+  type: 'return',
+  reason: 'ProductIsBroken',
 });
 ```
 

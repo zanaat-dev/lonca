@@ -26,7 +26,8 @@
  *   the tracking flow runs end to end and nothing real is created or deleted.
  * - Claims, suppliers, promotions: SIT cannot run their success path (see the
  *   notes each check prints); the requests still go out and the answers are
- *   recorded.
+ *   recorded. The claim actions use the bodies of the portal's
+ *   `talep-listeleme` definition; no claim is accepted or rejected.
  *
  * Left behind on SIT (by design): the test order and its package, the seeded
  * questions, an invoice link on the new package and one `LONCA-E2E-PROFILE`
@@ -343,8 +344,12 @@ await check(
 await check('shipping.getCargoFirms', 'shipping.getCargoFirms', async () => {
   const firms = await client.shipping.getCargoFirms();
   assert(firms.length > 0, 'empty');
-  const named = firms.filter((f) => f.name !== undefined).length;
-  return `${firms.length} rows, ${named} with a mapped name (rows are label groups with nested cargoFirms)`;
+  assert(
+    firms.every((f) => f.id !== undefined && f.name && f.labelName),
+    `row without id/name/labelName: ${json(firms[0])}`,
+  );
+  const labels = new Set(firms.map((f) => f.labelName));
+  return `${firms.length} firm rows in ${labels.size} labels`;
 });
 const PROFILE_NAME = 'LONCA-E2E-PROFILE';
 let profileId: string | undefined;
@@ -989,8 +994,13 @@ await check(
           MerchantId: MERCHANT_ID,
           Quantity: 2,
           Price: { Amount: 11, Currency: 'TRY' },
-          Vat: 0,
+          // The portal asks claim tests to use a 10 or 20 % VAT order.
+          Vat: 20,
+          VatRate: 20,
           TotalPrice: { Amount: 22, Currency: 'TRY' },
+          // The merchant's own cargo ("Mağaza Hesabı"): the status transitions
+          // below only apply to it. HepsiJet (21) / Aras (2) packages answer
+          // 400 "Package does not have an alternative cargo." instead.
           CargoCompanyId: 89100,
         },
       ],
@@ -1051,8 +1061,11 @@ if (lineId && packageNumber) {
     assert(found.packageNumber === pkg, `packageNumber ${found.packageNumber}`);
     return `status ${found.status}, cargo ${found.cargoCompany}`;
   });
-  await check('orders.getPackageLabel', `orders.getPackageLabel: ${pkg}`, () =>
-    refused(() => client.orders.getPackageLabel(pkg)),
+  // Shared labels exist for HepsiJet and Aras only: our own-cargo package is
+  // refused ("Cargo company does not provide mutual barcodes."), and a stub
+  // HepsiJet / Aras package has no delivery record (500 "Delivery not found").
+  await check('orders.getPackageLabel', `orders.getPackageLabel: ${pkg}, pdf`, () =>
+    refused(() => client.orders.getPackageLabel(pkg, { format: 'pdf' })),
   );
   let cargoCode: string | undefined;
   await check(
@@ -1120,34 +1133,48 @@ if (lineId && packageNumber) {
         noDelivery,
       ),
   );
-  await check('orders.markPackageInTransit', 'orders.markPackageInTransit', () =>
+  await check('orders.markPackageInTransit', 'orders.markPackageInTransit: Date fields', () =>
     refused(
       () =>
         client.orders.markPackageInTransit(pkg, {
           trackingNumber: `LONCA${Date.now()}`,
           trackingUrl: 'https://example.com/track',
-          shippedDate: today.toISOString(),
-          estimatedArrivalDate: new Date(today.getTime() + 2 * DAY_MS).toISOString(),
+          shippedDate: today,
+          estimatedArrivalDate: new Date(today.getTime() + 2 * DAY_MS),
           deci: 1,
         }),
       noDelivery,
     ),
   );
-  await check('orders.markPackageDelivered', 'orders.markPackageDelivered', () =>
+  await check('orders.markPackageDelivered', 'orders.markPackageDelivered: +03:00 date', () =>
     refused(
       () =>
         client.orders.markPackageDelivered(pkg, {
           receivedBy: 'Lonca Test',
-          receivedDate: today.toISOString(),
+          receivedDate: `${ymd(today)}T12:00:00+03:00`,
         }),
       noDelivery,
     ),
   );
-  // Hepsiburada documents no list of undelivered reasons, and every value tried
-  // on SIT (AddressNotFound, AddressIncorrect, CustomerNotAtAddress, …) is
-  // refused as "incorrect undeliveredReason value". That refusal still shows the
-  // field name is read; set HB_E2E_UNDELIVERED_REASON to try a known value.
-  const undeliveredReason = process.env.HB_E2E_UNDELIVERED_REASON ?? 'AddressNotFound';
+  await check(
+    'orders.markPackageDelivered',
+    'orders.markPackageDelivered: date without a zone',
+    () =>
+      refused(
+        () =>
+          client.orders.markPackageDelivered(pkg, {
+            receivedBy: 'Lonca Test',
+            receivedDate: `${ymd(today)} 12:00`,
+          }),
+        { validation: /Bad Request/ },
+      ),
+  );
+  // Hepsiburada documents no list of undelivered reasons. `CustomerUnreachable`
+  // passes the reason check (the stub package then answers 409, no delivery
+  // in transit); AddressNotFound, WrongAddress, CustomerRefused, Other, … are
+  // refused as "incorrect undeliveredReason value" (SIT, 2026-10-27). Set
+  // HB_E2E_UNDELIVERED_REASON to try another value.
+  const undeliveredReason = process.env.HB_E2E_UNDELIVERED_REASON ?? 'CustomerUnreachable';
   await check(
     'orders.markPackageUndelivered',
     `orders.markPackageUndelivered: reason ${undeliveredReason}`,
@@ -1156,9 +1183,9 @@ if (lineId && packageNumber) {
         () =>
           client.orders.markPackageUndelivered(pkg, {
             undeliveredReason,
-            undeliveredDate: today.toISOString(),
+            undeliveredDate: today,
           }),
-        { ...noDelivery, validation: /incorrect +undeliveredReason value/ },
+        noDelivery,
       ),
   );
   await check('orders.updateParcelInfo', 'orders.updateParcelInfo: stub cargo', () =>
@@ -1175,27 +1202,31 @@ if (lineId && packageNumber) {
   await check('orders.cancelLineItem', 'orders.cancelLineItem: packaged line', () =>
     refused(() => client.orders.cancelLineItem(line, { reasonId: 1 }), { validation: false }),
   );
+  // Hepsiburada downloads the link and needs it served as application/pdf or
+  // text/html; the plain single-link form is enough for that.
+  const invoiceUrl = 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf';
   await check('orders.sendInvoiceLink', `orders.sendInvoiceLink: ${pkg}`, async () => {
     const result = await client.orders.sendInvoiceLink(pkg, {
-      invoices: [
-        {
-          orderNumber,
-          invoiceLink: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-          contentType: 'pdf',
-          serialNumber: 'LNC',
-          rowNumber: String(Date.now() % 1_000_000_000),
-          arrangementDate: ymd(today),
-        },
-      ],
+      invoiceLink: invoiceUrl,
+      serialNumber: 'LNC',
+      rowNumber: String(Date.now() % 1_000_000_000),
+      arrangementDate: ymd(today),
     });
     return `accepted (${json(result.raw ?? null, 60)})`;
   });
-  await check('orders.sendInvoiceLink', `orders.sendInvoiceLink: ${pkg} again`, () =>
+  await check('orders.sendInvoiceLink', `orders.sendInvoiceLink: ${pkg} again, invoices[]`, () =>
     refused(() =>
       client.orders.sendInvoiceLink(pkg, {
-        invoiceLink: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-        serialNumber: 'LNC',
-        arrangementDate: ymd(today),
+        invoices: [
+          {
+            orderNumber,
+            invoiceLink: invoiceUrl,
+            contentType: 'pdf',
+            serialNumber: 'LNC',
+            rowNumber: String(Date.now() % 1_000_000_000),
+            arrangementDate: ymd(today),
+          },
+        ],
       }),
     ),
   );
@@ -1252,41 +1283,56 @@ await check('claims.listByStatus', 'claims.listByStatus: unknown status', () =>
   refused(() => client.claims.listByStatus('Open', { limit: 10 })),
 );
 if (lineId) {
-  const line = lineId;
   await check('claims.create', `claims.create: test order ${orderNumber}`, async () => {
-    const result = await client.claims.create({
-      orderNumber,
-      lineItemId: line,
-      quantity: 1,
-      type: 'Return',
-      explanation: 'Lonca SDK uçtan uca testi',
-    });
-    const created = (result.raw as { ClaimList?: { claimNumber?: string }[] }).ClaimList?.[0];
-    if (created?.claimNumber && /^\d+$/.test(created.claimNumber)) {
-      return `claim ${created.claimNumber} created`;
+    try {
+      const result = await client.claims.create({
+        orderNumber,
+        type: 'return',
+        reason: 'ProductIsBroken',
+      });
+      return `created ${json(result.raw, 120)}`;
+    } catch (error) {
+      // The stub answers 200 and puts its failure in place of the claim
+      // number; the SDK throws that as a ValidationError with status 200.
+      if (error instanceof ValidationError && error.status === 200) {
+        return { outcome: 'refused', note: `200 failure: ${error.message}` };
+      }
+      throw error;
     }
-    // The stub answers 200 and puts its failure in place of the claim number.
-    return { outcome: 'refused', note: `200, ClaimList: ${json(created, 120)}` };
   });
 } else {
   skip('claims.create', 'no test order line');
 }
 const unknownClaim = { server: /GetClaimByNumberNotFoundError/ } as const;
 await check('claims.accept', 'claims.accept: unknown claim', () =>
-  refused(() => client.claims.accept('000000001'), unknownClaim),
+  refused(() => client.claims.accept('000000001', { FinalizedWith: 'Refund' }), unknownClaim),
 );
 await check('claims.reject', 'claims.reject: unknown claim', () =>
-  refused(() => client.claims.reject('000000001'), unknownClaim),
+  refused(
+    () =>
+      client.claims.reject('000000001', {
+        ClaimRejectionReason: 'ProductNotDefective',
+        MerchantStatement: 'Lonca SDK uçtan uca testi',
+      }),
+    unknownClaim,
+  ),
 );
 await check('claims.preApprovalConfirm', 'claims.preApprovalConfirm: unknown claim', () =>
   refused(() => client.claims.preApprovalConfirm('000000001'), unknownClaim),
 );
+// The SDK sends preApprovalReason: 'ProductInvestigation'; on a claim that is
+// not AwaitingPreApproval that passes validation and is refused for the status.
+// The claim is not accepted or rejected here: SIT has very few claims and a
+// later run could not repeat the check.
 if (awaitingClaim) {
   const claimNumber = awaitingClaim;
   await check(
     'claims.preApprovalConfirm',
-    `claims.preApprovalConfirm: ${claimNumber}, no reason`,
-    () => refused(() => client.claims.preApprovalConfirm(claimNumber, {})),
+    `claims.preApprovalConfirm: ${claimNumber}, AwaitingAction`,
+    () =>
+      refused(() => client.claims.preApprovalConfirm(claimNumber), {
+        validation: /not in AwaitingPreApproval status/,
+      }),
   );
 }
 
