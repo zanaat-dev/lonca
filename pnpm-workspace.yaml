@@ -59,3 +59,14 @@ overrides:
   "svgo@4": ^4.0.2
   # GHSA-rgw5-rvv9-x895 / GHSA-mh99-v99m-4gvg — via typedoc > minimatch > brace-expansion
   "brace-expansion@>=4": ^5.0.9
+  # GHSA-g3hv-75wg-m249 — minimatch < 11.0.1, dev tooling only. The fix ships
+  # only in 11.0.1 (no 10.x/3.x backport). Scoped per parent because 11
+  # removed `Minimatch#matchOne`: eslint 10, @eslint/config-array and
+  # typescript-estree call only `minimatch()` / `new Minimatch()`, so they
+  # take 11. typedoc (docs build) calls `matchOne` and breaks on 11, and the
+  # 3.x copy under eslint 8 (eslint-formatter-sarif) cannot take 11's API, so
+  # both stay on their pinned line until upstream moves. Drop each entry once
+  # its parent asks for ^11.
+  "eslint@10>minimatch": ^11.0.1
+  "@eslint/config-array>minimatch": ^11.0.1
+  "@typescript-eslint/typescript-estree>minimatch": ^11.0.1
